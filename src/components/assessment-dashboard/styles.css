@@ -1,0 +1,26 @@
+/* styles.css */
+.custom-textfield .MuiInputBase-input {
+    height: 20px; /* Set height */
+    padding: 5px; /* Remove padding to fit the height */
+    font-size: 12px;
+}
+
+.custom-datefield .MuiInputBase-input {
+    height: 20px; /* Set height */
+    padding: 5px; /* Remove padding to fit the height */
+    font-size: 12px;
+    width: 62px !important;
+    min-width: 62px;
+}
+
+.custom-textfield .MuiOutlinedInput-root {
+    min-height: 20px; /* Override default min-height */
+    padding: 2px !important;
+}
+
+.MuiTableCell-body.tabel-index {
+    min-width: unset !important;
+}
+.MuiTableCell-body {
+    min-width: 150px !important;
+}

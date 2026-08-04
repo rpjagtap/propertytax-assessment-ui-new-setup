@@ -1,0 +1,11 @@
+/* styles.css */
+.custom-textfield .MuiInputBase-input {
+    height: 20px; /* Set height */
+    padding: 5px; /* Remove padding to fit the height */
+    font-size: 12px;
+  }
+  
+  .custom-textfield .MuiOutlinedInput-root {
+    min-height: 20px; /* Override default min-height */
+  }
+  

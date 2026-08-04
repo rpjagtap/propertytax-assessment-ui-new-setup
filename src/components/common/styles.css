@@ -1,0 +1,32 @@
+.checkbox-style-switch {
+    width: 34px;
+    height: 34px;
+    padding: 4px;
+  }
+  
+  .checkbox-style-switch .MuiSwitch-switchBase {
+    padding: 4px;
+  }
+  
+  .checkbox-style-switch .MuiSwitch-switchBase.Mui-checked {
+    transform: translateX(0);
+    color: var(--primary-color);
+  }
+  
+  .checkbox-style-switch .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+    background-color: var(--primary-color);
+  }
+  
+  .checkbox-style-switch .MuiSwitch-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px; /* Square shape */
+    background-color: white;
+    border: 1px solid #ccc;
+  }
+  
+  .checkbox-style-switch .MuiSwitch-track {
+    border-radius: 4px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+  }

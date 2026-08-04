@@ -1,0 +1,40 @@
+/* styles.css */
+.mainMenuItem {
+  /* background-color: #f5f5f5; Example main menu background color */
+  font-size: 4px; /* Main menu font size */
+  font-weight: bold; /* Main menu font weight */
+  color: #333; /* Main menu text color */
+}
+
+/* .mainMenuItem:hover {
+  background-color: #e0e0e0; Main menu hover color
+} */
+
+.subMenuItem {
+  font-size: "10px"!important; /* Submenu font size */
+  font-weight: normal; /* Submenu font weight */
+  color: #555; /* Submenu text color */
+  cursor: pointer;
+}
+
+.subMenuItem:hover {
+  background-color: #f0f0f0; /* Submenu hover color */
+  cursor: pointer;
+}
+
+.subMenu {
+  background-color: #f0f0f0; /* Submenu background color */
+}
+
+.MuiToolbar-root {
+  min-height: 40px !important; /* Adjust button height */
+}
+
+.hover-background {
+  background-color: transparent; /* Default background */
+  transition: background-color 0.3s ease; /* Optional for smooth transition */
+}
+
+.hover-background:hover {
+  background-color: #064f99;
+}

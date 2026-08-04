@@ -1,0 +1,30 @@
+.bordered-table {
+  border: 1px solid #000;
+  border-collapse: collapse;
+}
+
+.bordered-table td,
+.bordered-table th {
+  border: 1px solid #000;
+}
+
+thead {
+  break-inside: avoid;
+  break-after: avoid;
+}
+
+@media print {
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+
+  body {
+    zoom: 0.8; /* works in most browsers except Firefox */
+  }
+
+  /* fallback for Firefox */
+  #print-scale-wrapper {
+    transform: scale(0.85);
+    transform-origin: top;
+  }
+  
+}
