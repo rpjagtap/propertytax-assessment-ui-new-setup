@@ -17,11 +17,10 @@ import {
   TableCell,
   TableContainer,
   TableRow,
-  TableHead,
   Button,
   TextField,
 } from "@mui/material";
-// import { useSelector } from "react-redux";
+
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { trackApplicationSchema } from "../../utils/validation-schema";
@@ -38,10 +37,7 @@ import { ArrowBack, Schema } from "@mui/icons-material";
 
 import TextInput from "../form-fields/text-input";
 import {
-  getAllStages,
   getGatByZonekey,
-  getStagewiseApplicationsRpt,
-  getStagewiseApplicationsCountRpt,
   getStagesByProfile,
   getZoneByProfile,
   getPropertyTransferPendingCount,
@@ -68,18 +64,15 @@ const PropertyTransferDashBoard = () => {
 
   const lang = useSelector((state) => state.userDetails.lang);
   const { loading, setLoading, error, setError } = useApiState();
-  // const [selectedTransactions, setSelectedTransactions] = useState([]);
   const [stages, setStages] = useState([]);
   const [zoneKeys, setZoneKeys] = useState([]);
   const [gatKeys, setGatKeys] = useState([]);
   const [showTable, setShowTable] = useState(false);
-
   const [isShowTrackAppTable, setTrackAppTable] = useState(false);
   const [pendingAppCountData, setPendingAppCountData] = useState([]);
   const [pendingAppsData, setPendingAppsData] = useState({
     assessmentFormVOLst: [],
   });
-
   const [tableLoading, setTableLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20); // Default rows per page
@@ -155,7 +148,6 @@ const PropertyTransferDashBoard = () => {
       }
     };
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -208,6 +200,7 @@ const PropertyTransferDashBoard = () => {
     try {
       setLoading(true);
       const res = await getPropertyTransferPendingCount(body);
+      console.log("Pending Applications Count:", res);
       setPendingAppCountData(
         Array.isArray(res?.propertyTransferDetails)
           ? res.propertyTransferDetails
@@ -231,26 +224,6 @@ const PropertyTransferDashBoard = () => {
     isSubmitIcon={false}
     disabled={loading} // Add this prop if possible
   />;
-
-  //   const handleCountClick = async (completionNo, floorMarathi, wingName) => {
-  //     const body = {
-  //       formStatus: formik.values.formStatus,
-  //       completionNo,
-  //       applicationNo: formik.values.applicationNo,
-  //       floorMarathi,
-  //       wingName,
-  //     };
-  //     try {
-  //       setLoading(true);
-  //       const res = await getPendingApplications(body);
-  //       setPendingAppsData(res);
-  //       setTrackAppTable(true);
-  //     } catch (error) {
-  //       showToastError(getErrorMsg(error));
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
 
   const [showTrackTable, setShowTrackTable] = useState(false);
   const [trackTableData, setTrackTableData] = useState(null);
@@ -291,21 +264,6 @@ const PropertyTransferDashBoard = () => {
     setShowTrackTable(false);
     setTrackTableData(null);
   };
-  // const [selectedRow, setSelectedRow] = useState(null);
-  // const [openViewDialog, setOpenViewDialog] = useState(false);
-  // const [openCalculateDialog, setOpenCalculateDialog] = useState(false);
-
-  // const handleClickOpenCalculate = (row) => {
-  //   // Example: open calculate fees dialog with data
-  //   setSelectedRow(row); // You'll need to define this state: const [selectedRow, setSelectedRow] = useState(null);
-  //   setOpenCalculateDialog(true); // Also define: const [openCalculateDialog, setOpenCalculateDialog] = useState(false);
-  // };
-
-  // const handleClickOpenFee = (row) => {
-  //   // Example: open view fees dialog with data
-  //   setSelectedRow(row);
-  //   setOpenViewDialog(true); // Also define: const [openViewDialog, setOpenViewDialog] = useState(false);
-  // };
 
   return (
     <DashBoardContainer>
@@ -547,7 +505,6 @@ const PropertyTransferDashBoard = () => {
                                     <Link
                                       onClick={() =>
                                         handleCountClick(
-                                          // item.appId == 0 && 2526000120
                                           item.appId,
                                         )
                                       }
@@ -585,14 +542,6 @@ const PropertyTransferDashBoard = () => {
               )}
             </Grid>
           )}
-          {/* {showTable && <TransferDashBoardTable data={pendingAppCountData} />} */}
-          {/* {showTable && pendingAppCountData.length > 0 && (
-            <TransferDashBoardTable
-              data={pendingAppCountData}
-              onCalculateClick={handleClickOpenCalculate}
-              onViewClick={handleClickOpenFee}
-            />
-          )} */}
         </>
       )}
     </DashBoardContainer>

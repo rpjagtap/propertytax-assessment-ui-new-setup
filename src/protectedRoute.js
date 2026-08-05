@@ -2,19 +2,24 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { getUserDetails } from "./utils/sessionUtils";
 import { useSelector } from "react-redux";
-const findFormName = (data, targetFormName) => {
-  let foundFormName = false;
 
-  data.forEach((subArray) => {
-    const foundItem = subArray.find((item) => item.formName === targetFormName);
-    if (foundItem) {
-      foundFormName = foundItem.formName;
-      return; // Exit the forEach loop early if a match is found
+const findFormName = (menus, targetFormName) => {
+  for (const menu of menus) {
+    if (menu.formName === targetFormName) {
+      return menu.formName;
     }
-  });
 
-  return foundFormName;
+    if (menu.children?.length) {
+      const result = findFormName(menu.children, targetFormName);
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  return false;
 };
+
 const ProtectedRoute = ({ routeName, element: Component, ...rest }) => {
   const menuData = useSelector((state) => {
     if (routeName === "home") {
