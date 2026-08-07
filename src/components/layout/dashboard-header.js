@@ -28,7 +28,34 @@ import PCMCHeader from "./pcmc-header";
 import ProfileMenu from "./profile-menu";
 import { Apartment, Assignment, FactCheck } from "@mui/icons-material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import RecursiveSubMenu from "./RecursiveSubMenu";
+
 // import { capitalizeFirstLetter } from "../../utils/helpers";
+
+// Compares interfaceIds like "05.02" vs "05.10" numerically segment-by-segment
+// (plain string comparison would wrongly put "05.10" before "05.2")
+const compareInterfaceIds = (a, b) => {
+  const partsA = a.interfaceId.split(".").map(Number);
+  const partsB = b.interfaceId.split(".").map(Number);
+  const len = Math.max(partsA.length, partsB.length);
+  for (let i = 0; i < len; i++) {
+    const numA = partsA[i] ?? 0;
+    const numB = partsB[i] ?? 0;
+    if (numA !== numB) return numA - numB;
+  }
+  return 0;
+};
+
+// Recursively sorts a node's children (and grandchildren, etc.) by interfaceId
+const sortTree = (nodes) => {
+  nodes.sort(compareInterfaceIds);
+  nodes.forEach((node) => {
+    if (node.children.length > 0) {
+      sortTree(node.children);
+    }
+  });
+  return nodes;
+};
 
 const buildMenuTree = (menuList) => {
   const map = {};
@@ -57,6 +84,8 @@ const buildMenuTree = (menuList) => {
     }
   });
 
+  sortTree(tree);
+
   return tree;
 };
 
@@ -67,15 +96,14 @@ const DashboardHeader = () => {
   const sessionData = getUserDetails();
   const menuData = useSelector((state) => state.userDetails.userMenu);
 
-  const [menuState, setMenuState] = useState({
-    anchorEl: null,
-    menuId: null,
-  });
+  // Per-menu-level open state instead of a single shared anchor, so nested
+  // submenus don't close their parent the moment they open.
+  // Shape: { [interfaceId]: anchorElDomNode }
+  const [openMenus, setOpenMenus] = useState({});
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
 
   useEffect(() => {
     const getData = async () => {
@@ -92,7 +120,6 @@ const DashboardHeader = () => {
           type: "SET_USER_INFO",
           payload: res,
         });
-
       } catch (error) {
         setError(error);
       } finally {
@@ -106,22 +133,54 @@ const DashboardHeader = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Opens the menu for a given interfaceId, anchored to the hovered/clicked element
   const handleMenuOpen = (event, menuId) => {
-    setMenuState({
-      anchorEl: event.currentTarget,
-      menuId,
+
+    setOpenMenus(prev => {
+
+      const updated = {};
+
+      // Keep only parents of current menu open.
+      Object.keys(prev).forEach(key => {
+
+        if (
+          menuId.startsWith(key + ".") ||
+          key === menuId
+        ) {
+          updated[key] = prev[key];
+        }
+
+      });
+
+      updated[menuId] = event.currentTarget;
+
+      return updated;
+
+    });
+
+  };
+
+  // Closes a specific menu AND all of its descendant submenus
+  // (interfaceId "04.02" is a descendant of "04", "04.02.01" is a descendant of "04.02", etc.)
+  const closeMenuAndChildren = (menuId) => {
+    setOpenMenus((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        if (key === menuId || key.startsWith(menuId + ".")) {
+          delete next[key];
+        }
+      });
+      return next;
     });
   };
 
-  const handleMenuClose = () => {
-    setMenuState({
-      anchorEl: null,
-      menuId: null,
-    });
+  // Closes everything (used after navigation / final click)
+  const handleMenuCloseAll = () => {
+    setOpenMenus({});
   };
 
   const handleMenuClick = (menu, subMenuLink, displayName) => {
-    handleMenuClose();
+    handleMenuCloseAll();
 
     dispatch({
       type: "SET_ACTIVE_MENU",
@@ -152,80 +211,13 @@ const DashboardHeader = () => {
     },
   };
 
-  const renderSubMenu = (children, parentMenu) =>
-    children.map((item) => {
-
-      if (item.children.length > 0) {
-        return (
-          <MenuItem
-            key={item.interfaceId}
-            onMouseEnter={(e) =>
-              handleMenuOpen(e, item.interfaceId)
-            }
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: 250,
-            }}
-          >
-            {item.enDisplayName}
-
-            <ExpandMoreIcon fontSize="small" />
-
-            <Menu
-              anchorEl={menuState.anchorEl}
-              open={
-                menuState.menuId === item.interfaceId
-              }
-              onClose={handleMenuClose}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-            >
-              {renderSubMenu(
-                item.children,
-                parentMenu
-              )}
-            </Menu>
-          </MenuItem>
-        );
-      }
-
-      return (
-        <MenuItem
-          sx={{
-            fontSize: "13px",
-            py: 1,
-            "&:hover": {
-              backgroundColor: "#E3F2FD",
-              color: "#1565C0",
-            },
-          }}
-          key={item.interfaceId}
-          onClick={() =>
-            handleMenuClick(
-              parentMenu,
-              item.formName,
-              item.enDisplayName
-            )
-          }
-        >
-          {item.enDisplayName}
-        </MenuItem>
-      );
-    });
 
 
   const renderMenuItems = () =>
     menuData.map((menu) => (
       <div
         key={menu.interfaceId}
-        onMouseLeave={handleMenuClose}
+        //onMouseLeave={() => closeMenuAndChildren(menu.interfaceId)}
         className="hover-background"
       >
         <span
@@ -250,46 +242,38 @@ const DashboardHeader = () => {
             color: "white",
             margin: "4px 6px",
             borderRadius: "4px",
-            background:
-              menuState.menuId === menu.interfaceId
-                ? "rgba(255,255,255,.15)"
-                : "transparent",
+            background: openMenus[menu.interfaceId]
+              ? "rgba(255,255,255,.15)"
+              : "transparent",
           }}
         >
           {menu.enDisplayName}
 
           {menu.children.length > 0 && (
-            <ExpandMoreIcon
-              sx={{
-                ml: 0.5,
-                fontSize: 18,
-              }}
-            />
+            <ExpandMoreIcon fontSize="small" />
           )}
         </span>
 
         {menu.children.length > 0 && (
           <Menu
-            anchorEl={menuState.anchorEl}
+            anchorEl={openMenus[menu.interfaceId] || null}
+            open={Boolean(openMenus[menu.interfaceId])}
+            onClose={() => closeMenuAndChildren(menu.interfaceId)}
             PaperProps={{
               elevation: 6,
               sx: {
-                minWidth: 250,
+                minWidth: 260,
                 borderRadius: 2,
-                mt: 0.5,
-                boxShadow:
-                  "0px 8px 24px rgba(0,0,0,.18)",
+                width:"340px",
+                overflow: "visible", // IMPORTANT
               },
             }}
-            open={
-              menuState.menuId === menu.interfaceId
-            }
-            onClose={handleMenuClose}
           >
-            {renderSubMenu(
-              menu.children,
-              menu.enDisplayName
-            )}
+            <RecursiveSubMenu
+              items={menu.children}
+              parentMenu={menu.enDisplayName}
+              onMenuClick={handleMenuClick}
+            />
           </Menu>
         )}
       </div>
