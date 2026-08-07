@@ -15,19 +15,16 @@ export const getHeaders = () => {
   // console.log("!Get headers called...");
   const isAuthenticated = isSessionValid();
   //console.log("!Authenticated: ", isAuthenticated);
-  
+
   if (isAuthenticated) {
     const userDetails = getUserDetails();
 
-    const { profileId, zoneKey, userCode, userId, counterKey,prabhag,gatKey } = userDetails || {};
+    const { profileId, userCode, userId, counterKey } = userDetails || {};
     return {
       "Profile-ID": profileId,
-      "Zone-Key": zoneKey,
       "User-Code": userCode,
       "User-ID": userId,
       "counter-key": counterKey,
-      "prabhag" :prabhag,
-      "gat-key" :gatKey
     };
   } else {
     clearSession();
@@ -59,7 +56,7 @@ apiClient.interceptors.request.use(
     ) {
       config.headers["Content-Type"] = "application/json";
     }
-    
+
     return config;
   },
   (error) => {
