@@ -19,6 +19,15 @@ import {
   TableRow,
   Button,
   TextField,
+  Box,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Chip,
+  Divider,
+  Typography,
+  Stack,
 } from "@mui/material";
 
 import useApiState from "../common/useApiState";
@@ -33,7 +42,14 @@ import { RenderTableHead } from "../common/table";
 import DateInput from "../form-fields/date-picker";
 import { getCurrentDate, getErrorMsg } from "../../utils/helpers";
 import { showToastError } from "../common/toastHelper";
-import { ArrowBack, Schema } from "@mui/icons-material";
+import {
+  ArrowBack,
+  Schema,
+  MapOutlined,
+  SwapHorizOutlined,
+  SearchOutlined,
+  ListAltOutlined,
+} from "@mui/icons-material";
 
 import TextInput from "../form-fields/text-input";
 import {
@@ -277,15 +293,16 @@ const PropertyTransferDashBoard = () => {
         />
       )}
       {loading ? (
-        <div
-          style={{
+        <Box
+          sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            py: 8,
           }}
         >
-          <CircularProgress sx={{ marginTop: "65px" }} />
-        </div>
+          <CircularProgress sx={{ color: "#12233F" }} />
+        </Box>
       ) : (
         <>
           <ScrollBottom />
@@ -302,118 +319,200 @@ const PropertyTransferDashBoard = () => {
               {!showTrackTable && !trackTableData ? (
                 <FormikProvider value={formik}>
                   <Form>
-                    <Paper elevation={4} sx={{ marginBottom: "15px" }}>
-                      <FormTitle title="Property Transfer Dashboard" />
-                      <GridRow>
-                        <FormLabel label={labels.Stage[lang]} />
-                        <FormValue
-                          component={
-                            <SelectInput name="formStatus" options={stages} />
-                          }
-                        />
-                        <FormLabel label={labels.ApplicationNo[lang]} />
-                        <FormValue
-                          component={<TextInput name="applicationNo" />}
-                        />
-                      </GridRow>
-                      <GridRow>
-                        <FormLabel label={labels.Zone[lang]} />
-                        <FormValue
-                          component={
-                            <SelectInput name="zoneKey" options={zoneKeys} />
-                          }
-                        />
-                        <FormLabel label={labels.Gat[lang]} />
-                        <FormValue
-                          component={
-                            <SelectInput name="gatKey" options={gatKeys} />
-                          }
-                        />
-                      </GridRow>
-                      <GridRow>
-                        <FormLabel label={labels.FromDate[lang]} required />
-                        <FormValue
-                          component={<DateInput name="fromDate" required />}
-                        />
-                        <FormLabel label={labels.ToDate[lang]} required />
-                        <FormValue
-                          component={<DateInput name="toDate" required />}
-                        />
-                      </GridRow>
-                      <Grid
-                        container
-                        justifyContent="center"
-                        alignItems="center"
+                    <Card
+                      elevation={4}
+                      sx={{ borderRadius: 3, mt: 2, mb: 3, overflow: "hidden" }}
+                    >
+                      {/* Header band */}
+                      <Box
+                        sx={{
+                          px: 3,
+                          py: 2.5,
+                          background:
+                            "linear-gradient(90deg, #12233F 0%, #1B3A63 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
                       >
-                        <Grid
-                          item
-                          md={3}
-                          container
-                          justifyContent={{ md: "flex-end" }}
-                          alignItems="center"
-                          p={2}
+                        <Avatar
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            bgcolor: "rgba(255,255,255,0.12)",
+                            color: "#5DCAA5",
+                          }}
                         >
-                          <FormButtons
-                            isValid={!(formik.isValid && formik.dirty)}
-                            handleSubmitButtonClick={handleSubmit}
-                            resetForm={() => {
-                              window.location.reload();
-                            }}
-                            submitBtnLabel="Show"
-                            isSubmitIcon={false}
+                          <SwapHorizOutlined />
+                        </Avatar>
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography
+                            sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}
+                          >
+                            Property Transfer Dashboard
+                          </Typography>
+                          <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                            Filter by stage, zone or gat to track pending property
+                            transfer applications.
+                          </Typography>
+                        </Box>
+                        {!!pendingAppCountData?.length && (
+                          <Chip
+                            icon={
+                              <ListAltOutlined sx={{ color: "#0F6E56 !important" }} />
+                            }
+                            label={`${pendingAppCountData.length} records`}
+                            sx={{ bgcolor: "#E1F5EE", color: "#0F6E56", fontWeight: 600 }}
                           />
+                        )}
+                      </Box>
+
+                      <CardContent sx={{ px: 3, py: 3 }}>
+                        <Grid container spacing={3}>
+                          {/* Search criteria */}
+                          <Grid item xs={12}>
+                            <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                              <CardHeader
+                                avatar={
+                                  <SearchOutlined sx={{ color: "text.secondary" }} />
+                                }
+                                title="Search criteria"
+                                titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
+                                subheader="Narrow down applications by stage, application number, zone/gat and date range"
+                                sx={{ pb: 0 }}
+                              />
+                              <CardContent>
+                                <GridRow>
+                                  <FormLabel label={labels.Stage[lang]} />
+                                  <FormValue
+                                    component={
+                                      <SelectInput name="formStatus" options={stages} />
+                                    }
+                                  />
+                                  <FormLabel label={labels.ApplicationNo[lang]} />
+                                  <FormValue
+                                    component={<TextInput name="applicationNo" />}
+                                  />
+                                </GridRow>
+                                <GridRow>
+                                  <FormLabel label={labels.Zone[lang]} />
+                                  <FormValue
+                                    component={
+                                      <SelectInput name="zoneKey" options={zoneKeys} />
+                                    }
+                                  />
+                                  <FormLabel label={labels.Gat[lang]} />
+                                  <FormValue
+                                    component={
+                                      <SelectInput name="gatKey" options={gatKeys} />
+                                    }
+                                  />
+                                </GridRow>
+                                <GridRow>
+                                  <FormLabel label={labels.FromDate[lang]} required />
+                                  <FormValue
+                                    component={<DateInput name="fromDate" required />}
+                                  />
+                                  <FormLabel label={labels.ToDate[lang]} required />
+                                  <FormValue
+                                    component={<DateInput name="toDate" required />}
+                                  />
+                                </GridRow>
+                              </CardContent>
+                            </Card>
+                          </Grid>
                         </Grid>
-                      </Grid>
-                    </Paper>
+
+                        <Divider sx={{ my: 3 }} />
+
+                        <Grid container justifyContent="center">
+                          <Grid item md={4} p={0}>
+                            <FormButtons
+                              isValid={!(formik.isValid && formik.dirty)}
+                              handleSubmitButtonClick={handleSubmit}
+                              resetForm={() => {
+                                window.location.reload();
+                              }}
+                              submitBtnLabel="Show"
+                              isSubmitIcon={false}
+                            />
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
                   </Form>
                 </FormikProvider>
               ) : (
                 <Button
                   variant="contained"
-                  color="primary"
                   onClick={handleBackClick}
                   startIcon={<ArrowBack />}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: 2,
+                    bgcolor: "#12233F",
+                    "&:hover": { bgcolor: "#1B3A63" },
+                    mb: 2,
+                  }}
                 >
                   Back
                 </Button>
               )}
 
               {pendingAppCountData && (
-                <Paper>
+                <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
                   <Grid>
-                    {/* Pagination Component */}
-                    {pendingAppCountData.length > rowsPerPage && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginTop: "10px",
-                        }}
-                      >
-                        <Select
-                          value={rowsPerPage}
-                          onChange={handleRowsPerPageChange}
-                          size="small"
+                    <Box
+                      sx={{
+                        px: 2.5,
+                        py: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 1.5,
+                      }}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Avatar
+                          sx={{ width: 34, height: 34, bgcolor: "#E1F5EE", color: "#0F6E56" }}
                         >
-                          {[5, 10, 20, 50, 100].map((num) => (
-                            <MenuItem key={num} value={num}>
-                              {num} Rows
-                            </MenuItem>
-                          ))}
-                        </Select>
+                          <ListAltOutlined fontSize="small" />
+                        </Avatar>
+                        <Typography sx={{ fontWeight: 600, fontSize: 15, color: "#12233F" }}>
+                          Transfer applications
+                        </Typography>
+                      </Stack>
 
-                        <Pagination
-                          count={Math.ceil(
-                            pendingAppCountData.length / rowsPerPage,
-                          )}
-                          page={page}
-                          onChange={handleChangePage}
-                          sx={{ marginTop: "10px" }}
-                        />
-                      </div>
-                    )}
-                    <Grid container justifyContent="flex-end" spacing={1} p={1}>
+                      {/* Pagination Component */}
+                      {pendingAppCountData.length > rowsPerPage && (
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Select
+                            value={rowsPerPage}
+                            onChange={handleRowsPerPageChange}
+                            size="small"
+                          >
+                            {[5, 10, 20, 50, 100].map((num) => (
+                              <MenuItem key={num} value={num}>
+                                {num} Rows
+                              </MenuItem>
+                            ))}
+                          </Select>
+
+                          <Pagination
+                            count={Math.ceil(
+                              pendingAppCountData.length / rowsPerPage,
+                            )}
+                            page={page}
+                            onChange={handleChangePage}
+                          />
+                        </Stack>
+                      )}
+                    </Box>
+
+                    <Divider />
+
+                    <Grid container justifyContent="flex-end" spacing={1} p={1.5}>
                       <Grid item xs={12} md={4}>
                         <TextField
                           fullWidth
@@ -426,7 +525,7 @@ const PropertyTransferDashBoard = () => {
                       </Grid>
                     </Grid>
 
-                    <TableContainer component={Paper}>
+                    <TableContainer>
                       <Table
                         sx={{
                           minWidth: 650,
@@ -437,15 +536,13 @@ const PropertyTransferDashBoard = () => {
                       >
                         <RenderTableHead
                           thSx={{
-                            bgcolor: "#abd9e3",
+                            bgcolor: "#12233F",
+                            color: "#fff",
                             fontWeight: 600,
                             fontSize: "13px",
                           }}
                           trSx={{
-                            "& th": {
-                              border: "1px solid grey",
-                              padding: "4px 8px", // Tight padding
-                            },
+                            "& th": { padding: "10px 12px" },
                           }}
                           cells={[
                             labels.SrNo?.[lang],
@@ -467,10 +564,10 @@ const PropertyTransferDashBoard = () => {
                               filteredData.map((item, index) => (
                                 <TableRow
                                   key={index}
+                                  hover
                                   sx={{
                                     "& td": {
-                                      border: "1px solid grey",
-                                      padding: "4px 8px", // Minimal spacing
+                                      padding: "8px 12px",
                                       fontSize: "13px",
                                     },
                                   }}
@@ -479,8 +576,21 @@ const PropertyTransferDashBoard = () => {
                                     {index + 1}
                                   </TableCell>
 
-                                  <TableCell align="center">
-                                    {item.applicantName}
+                                  <TableCell align="left">
+                                    <Stack direction="row" spacing={1.2} alignItems="center">
+                                      <Avatar
+                                        sx={{
+                                          width: 28,
+                                          height: 28,
+                                          fontSize: 12,
+                                          bgcolor: "#E1F5EE",
+                                          color: "#0F6E56",
+                                        }}
+                                      >
+                                        <MapOutlined sx={{ fontSize: 15 }} />
+                                      </Avatar>
+                                      <span>{item.applicantName}</span>
+                                    </Stack>
                                   </TableCell>
 
                                   <TableCell align="center">
@@ -488,7 +598,11 @@ const PropertyTransferDashBoard = () => {
                                   </TableCell>
 
                                   <TableCell align="center">
-                                    {item.transferType}
+                                    <Chip
+                                      size="small"
+                                      label={item.transferType}
+                                      sx={{ bgcolor: "#EEF2FA", color: "#12233F" }}
+                                    />
                                   </TableCell>
 
                                   <TableCell align="center">
@@ -509,6 +623,7 @@ const PropertyTransferDashBoard = () => {
                                         )
                                       }
                                       component="button"
+                                      sx={{ fontWeight: 600, color: "#0F6E56" }}
                                     >
                                       {/* {item.appId} /{item.applicationCount} */}
                                       {item.applicationCount}
