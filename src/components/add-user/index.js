@@ -69,8 +69,20 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
      - Zone Officer        -> exactly one zone, no gat, no counter
      - Gat (Gat Pramukh)   -> exactly one zone, multiple gats
      - Cashier             -> exactly one zone, one cash counter
+
    Matching is done on the profile label text since profile ids
    come from the API and aren't guaranteed stable across envs.
+
+   API PAYLOAD SHAPE (confirmed from Postman sample):
+   {
+     userName, userCode, employeeId (number), password,
+     counterKey (number, cashier only),
+     profileId,
+     emailAddress, mobileNumber,
+     userZoneGatVO: [
+       { zoneKey, isSelect: true, lstUserGatVOs?: [{ zoneKey, isSelect: true, gatKey }] }
+     ]
+   }
 --------------------------------------------------------- */
 const ROLE_ADMIN = "admin"; // Prashashan Adhikari
 const ROLE_ZONE_OFFICER = "zoneofficer";
@@ -99,7 +111,8 @@ const extractGatList = (res) => {
   return list.map((item) => ({ label: item.label, value: item.value }));
 };
 
-// Small helper: dedupe an array of {label, value} options by value
+// Small helper: dedupe an array of {label, value, zoneKey} options by value.
+// Keeps the first occurrence, so zoneKey tagging survives the dedupe.
 const dedupeOptions = (list = []) => {
   const seen = new Map();
   list.forEach((opt) => {
@@ -124,6 +137,8 @@ const AddUser = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [zoneKeys, setZoneKeys] = useState([]);
+  // gatKeys entries carry { label, value, zoneKey } so we know which
+  // zone each gat belongs to when building userZoneGatVO on save
   const [gatKeys, setGatKeys] = useState([]);
   const [showTable, setShowTable] = useState(false);
   const [editProfile, seteditProfile] = useState({});
@@ -138,7 +153,7 @@ const AddUser = () => {
     profileId: "",
     zoneKey: [], // array of zone values; single or multiple depending on role
     gatKey: [], // array of gat values; only used for the Gat role
-    cashCounter: "", // only used for the Cashier role
+    cashCounter: "", // only used for the Cashier role -> mapped to counterKey on save
     emailAddress: "",
     mobileNumber: "",
     isActive: true,
@@ -186,7 +201,9 @@ const AddUser = () => {
   /* -------------------------------------------------------
      Loads gat options for ALL currently selected zones and
      merges them into one list, since a user can now be given
-     access across multiple zones at once.
+     access across multiple zones at once. Each gat option is
+     tagged with the zoneKey it came from so handleSave can
+     nest it under the right zone in userZoneGatVO.
   ------------------------------------------------------- */
   const loadGatOptionsForZones = async (zoneKeyList) => {
     const zones = Array.isArray(zoneKeyList) ? zoneKeyList : [zoneKeyList].filter(Boolean);
@@ -199,10 +216,13 @@ const AddUser = () => {
     try {
       setLoading(true);
       const results = await Promise.all(
-        zones.map((zoneKey) => getAllGatByZoneKey({ zoneKey }))
+        zones.map(async (zoneKey) => {
+          const res = await getAllGatByZoneKey({ zoneKey });
+          return extractGatList(res).map((g) => ({ ...g, zoneKey: String(zoneKey) }));
+        })
       );
 
-      const merged = results.flatMap((res) => extractGatList(res));
+      const merged = results.flat();
       const formatted = dedupeOptions(merged);
       setGatKeys(formatted);
 
@@ -258,6 +278,46 @@ const AddUser = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleKey]);
 
+  /* -------------------------------------------------------
+     Builds the userZoneGatVO array expected by the API:
+       [{ zoneKey, isSelect: true, lstUserGatVOs?: [...] }]
+     For the Gat role, gats selected for a given zone are
+     nested under that zone's lstUserGatVOs. Other roles just
+     send the zone entries with no nested gat list.
+  ------------------------------------------------------- */
+  const buildUserZoneGatVO = (values) => {
+    // send EVERY zone the system knows about, marking isSelect true/false
+    // based on whether the user actually picked it — not just the picked ones
+    const selectedZoneValues = (values.zoneKey || []).map(String);
+    const selectedGatValues = (values.gatKey || []).map(String);
+
+    return zoneKeys.map((z) => {
+      const zk = String(z.value);
+      const isZoneSelected = selectedZoneValues.includes(zk);
+
+      const entry = {
+        zoneKey: Number(z.value),
+        isSelect: isZoneSelected,
+      };
+
+      // only attach lstUserGatVOs for the Gat role, and only for zones
+      // that are actually selected
+      if (isGatRole && isZoneSelected) {
+        const gatsForZone = gatKeys.filter((g) => String(g.zoneKey) === zk);
+
+        if (gatsForZone.length) {
+          entry.lstUserGatVOs = gatsForZone.map((g) => ({
+            zoneKey: Number(z.value),
+            isSelect: selectedGatValues.includes(String(g.value)),
+            gatKey: Number(g.value),
+          }));
+        }
+      }
+
+      return entry;
+    });
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -265,21 +325,23 @@ const AddUser = () => {
 
       const body = {
         userName: values.userName,
-        employeeId: values.employeeId,
+        employeeId: Number(values.employeeId),
         userCode: values.userCode,
         password: values.password,
-        isActive: values.isActive ? "Y" : "N",
-        // sent as arrays — one user, one or more zone/gat access grants
-        // depending on role. backend needs to accept zoneKey/gatKey as
-        // arrays for this endpoint.
-        zoneKey: values.zoneKey,
-        gatKey: values.gatKey,
-        // only meaningful for the Cashier role, empty string otherwise
-        cashCounter: values.cashCounter,
         profileId: values.profileId,
         emailAddress: values.emailAddress,
         mobileNumber: values.mobileNumber,
+        userZoneGatVO: buildUserZoneGatVO(values),
       };
+
+      // counterKey only applies to the Cashier role
+      if (isCashierRole && values.cashCounter) {
+        body.counterKey = Number(values.cashCounter);
+      }
+
+      // NOTE: isActive wasn't present in the sample Postman payload.
+      // Uncomment if the backend still expects it:
+      // body.isActive = values.isActive ? "Y" : "N";
 
       await getAddUser(body);
       showToastSuccess("Saved Successfully!");
@@ -315,18 +377,15 @@ const AddUser = () => {
       const res = await editUserApi(body);
       seteditProfile(res);
 
-      // normalize zoneKey/gatKey from the API into arrays, whether the
-      // API returns a single value (legacy) or already an array
-      const editZoneKeys = Array.isArray(res.zoneKey)
-        ? res.zoneKey.map(String)
-        : res.zoneKey
-        ? [String(res.zoneKey)]
-        : [];
-      const editGatKeys = Array.isArray(res.gatKey)
-        ? res.gatKey.map(String)
-        : res.gatKey
-        ? [String(res.gatKey)]
-        : [];
+      // normalize the userZoneGatVO shape coming back from the API into
+      // the flat zoneKey/gatKey arrays formik uses for the selects
+      const zoneGatList = Array.isArray(res.userZoneGatVO) ? res.userZoneGatVO : [];
+      const editZoneKeys = zoneGatList.map((z) => String(z.zoneKey));
+      const editGatKeys = zoneGatList.flatMap((z) =>
+        Array.isArray(z.lstUserGatVOs)
+          ? z.lstUserGatVOs.map((g) => String(g.gatKey))
+          : []
+      );
 
       const editRoleKey = getRoleKey(
         profiles.find((p) => String(p.value) === String(res.profileId))?.label
@@ -343,13 +402,13 @@ const AddUser = () => {
       // a "leave blank to keep current password" pattern in handleSave.
       formik.setValues({
         userName: res.userName || "",
-        employeeId: res.employeeId || "",
+        employeeId: res.employeeId ? String(res.employeeId) : "",
         userCode: res.userCode || "",
         password: res.password || "",
         isActive: res.isActive === "Y" ? true : false,
         zoneKey: editZoneKeys,
         gatKey: editGatKeys,
-        cashCounter: res.cashCounter ? String(res.cashCounter) : "",
+        cashCounter: res.counterKey ? String(res.counterKey) : "",
         profileId: String(res.profileId) || "",
         emailAddress: res.emailAddress || "",
         mobileNumber: res.mobileNumber || "",
