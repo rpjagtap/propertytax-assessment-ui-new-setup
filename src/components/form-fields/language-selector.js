@@ -40,11 +40,7 @@ const LanguageSelector = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center">
         <ToggleButtonGroup
           value={selectedLanguage}
           exclusive
@@ -57,7 +53,18 @@ const LanguageSelector = () => {
               value="ma"
               aria-label="मराठी"
               sx={{
-                background: "#f0f0f0",
+                backgroundColor: "#f0f0f0",
+                color: "#12233F",
+                "&:hover": {
+                  backgroundColor: "#e0e0e0",
+                },
+                "&.Mui-selected": {
+                  backgroundColor: "#1976d2",
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: "#1565c0",
+                  },
+                },
               }}
             >
               अ
@@ -68,7 +75,18 @@ const LanguageSelector = () => {
               value="en"
               aria-label="English"
               sx={{
-                background: "#f0f0f0",
+                backgroundColor: "#f0f0f0",
+                color: "#12233F",
+                "&:hover": {
+                  backgroundColor: "#e0e0e0",
+                },
+                "&.Mui-selected": {
+                  backgroundColor: "#1976d2",
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: "#1565c0",
+                  },
+                },
               }}
             >
               EN

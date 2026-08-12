@@ -46,7 +46,7 @@ const theme = createTheme({
         root: {
           borderRadius: 10,
           backgroundColor: "#fff",
-          fontSize: 14,
+          fontSize: 16,
           transition: "box-shadow 0.15s ease, border-color 0.15s ease",
           "& fieldset": { borderColor: colors.border },
           "&:hover fieldset": { borderColor: colors.navyLight },
@@ -59,13 +59,13 @@ const theme = createTheme({
           },
           "&.Mui-disabled": { backgroundColor: "#F5F6F8" },
         },
-        input: { padding: "10.5px 14px" },
+        input: { padding: "13px 16px" },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          fontSize: 14,
+          fontSize: 16,
           color: colors.textSecondary,
           "&.Mui-focused": { color: colors.navy },
         },
@@ -73,7 +73,7 @@ const theme = createTheme({
     },
     MuiFormHelperText: {
       styleOverrides: {
-        root: { marginLeft: 2, fontSize: 12 },
+        root: { marginLeft: 2, fontSize: 14 },
       },
     },
 
@@ -97,7 +97,7 @@ const theme = createTheme({
     MuiMenuItem: {
       styleOverrides: {
         root: {
-          fontSize: 14,
+          fontSize: 16,
           borderRadius: 8,
           margin: "2px 6px",
           "&:hover": { backgroundColor: "rgba(93,202,165,0.12)" },
@@ -125,7 +125,7 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           fontWeight: 500,
-          fontSize: 14,
+          fontSize: 16,
           "&:hover": { backgroundColor: "rgba(93,202,165,0.15)" },
           "&.Mui-selected": {
             backgroundColor: `${colors.navy} !important`,
@@ -144,6 +144,7 @@ const theme = createTheme({
         root: {
           "& .MuiPickersCalendarHeader-label": {
             fontWeight: 600,
+            fontSize: 16,
             color: colors.navy,
           },
         },
@@ -194,7 +195,7 @@ const theme = createTheme({
           width: "100%",
           margin: 0,
           borderRadius: 8,
-          fontSize: 15,
+          fontSize: 17,
           "&.Mui-selected": {
             backgroundColor: `${colors.navy} !important`,
             color: "#fff",
@@ -215,14 +216,25 @@ const theme = createTheme({
           boxShadow: "none",
         },
         contained: {
-          background: `linear-gradient(90deg, ${colors.navy} 0%, ${colors.navyLight} 100%)`,
+          // FIX 1: explicit text color so it doesn't fall back to
+          // theme.palette.text.primary (navy) on buttons that don't
+          // set their own `color` via sx.
+          color: "#fff",
+          // FIX 2: use `backgroundImage` instead of the `background`
+          // shorthand. The shorthand resets background-color too, which
+          // was silently wiping out any per-button `sx={{ bgcolor }}`
+          // override (e.g. the Login page's marigold Sign In button),
+          // causing it to fall back to this navy gradient instead.
+          backgroundColor: colors.navy,
+          backgroundImage: `linear-gradient(90deg, ${colors.navy} 0%, ${colors.navyLight} 100%)`,
           boxShadow: "0 4px 12px rgba(18,35,63,0.22)",
           "&:hover": {
-            background: `linear-gradient(90deg, ${colors.navyDark} 0%, ${colors.navy} 100%)`,
+            backgroundImage: `linear-gradient(90deg, ${colors.navyDark} 0%, ${colors.navy} 100%)`,
             boxShadow: "0 6px 16px rgba(18,35,63,0.3)",
           },
           "&.Mui-disabled": {
-            background: "#C9D0DC",
+            backgroundColor: "#C9D0DC",
+            backgroundImage: "none",
             color: "#fff",
           },
         },

@@ -56,6 +56,8 @@ import PropertyTransactionApplicationViewPa from "./components/property-transact
 import PropertyUseTypeChange from "./components/pro-use-type-change-process";
 import AdditionalConstructedPropertyProcess from "./components/property-add-constructed-process";
 import SthapatyaVadhivPropertyDashboard from "./components/sthapatya-vadhiv-propertydata";
+import CreateAssignInterface from "./components/create-assign-interface";
+import EditProfileInterface from "./components/edit-profile-interface";
 
 const routes = [
   {
@@ -282,6 +284,14 @@ const routes = [
   {
     path: "SthapatyaVadhivPropertyDashboard",
     component: SthapatyaVadhivPropertyDashboard,
+  },
+  {
+    path: "CreateAssignInterface",
+    component : CreateAssignInterface,
+  },
+  {
+    path: "EditProfileInterface",
+    component : EditProfileInterface,
   }
   
   // Add other routes here

@@ -792,4 +792,14 @@ export const submitSthapathyaVadhivProperty = async (body) => {
   return response.data;
 }; 
 
+export const createassignInterface = async (body) => {
+  const response = await apiClient.post(`userdetails/create-assign-interface` ,body);
+  return response.data;
+};
+
+export const editProfileInterface = async (body) => {
+  const response = await apiClient.post(`userdetails/edit-profile-interface` ,body);
+  return response.data;
+};
+
 

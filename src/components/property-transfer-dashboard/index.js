@@ -216,7 +216,6 @@ const PropertyTransferDashBoard = () => {
     try {
       setLoading(true);
       const res = await getPropertyTransferPendingCount(body);
-      console.log("Pending Applications Count:", res);
       setPendingAppCountData(
         Array.isArray(res?.propertyTransferDetails)
           ? res.propertyTransferDetails
@@ -265,7 +264,6 @@ const PropertyTransferDashBoard = () => {
       setLoading(true);
       const res = await getTransferPendingApplications({ appId }); // API call
       setTrackTableData(res); // store result
-      console.log(res);
       setShowTrackTable(true); // trigger rendering
     } catch (error) {
       showToastError(getErrorMsg(error));
