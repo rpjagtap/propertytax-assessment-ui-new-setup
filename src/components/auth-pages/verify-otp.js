@@ -241,14 +241,14 @@ const VerifyOtp = () => {
                   endIcon={<CheckCircle />}
                   sx={{
                     bgcolor: palette.marigold,
-                    color: palette.navyDeep,
+                    color: "#fff",              // was palette.navyDeep
                     fontWeight: 600,
                     textTransform: "none",
                     fontSize: 14.5,
                     borderRadius: 1.5,
                     px: 2.5,
                     boxShadow: "none",
-                    "&:hover": { bgcolor: "#D8922E", boxShadow: "none" },
+                    "&:hover": { bgcolor: "#D8922E", color: "#fff", boxShadow: "none" },
                     "&.Mui-disabled": { bgcolor: "#EFE3CB", color: "#A99566" },
                   }}
                 >

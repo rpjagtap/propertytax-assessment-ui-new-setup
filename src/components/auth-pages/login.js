@@ -414,7 +414,7 @@ const Login = () => {
                   endIcon={<LoginOutlined />}
                   sx={{
                     bgcolor: palette.marigold,
-                    color: palette.navyDeep,
+                    color: "#fff",              // was palette.navyDeep — that's what was invisible
                     fontWeight: 600,
                     textTransform: "none",
                     fontSize: 15,
@@ -423,7 +423,7 @@ const Login = () => {
                     boxShadow: "none",
                     "&:hover": {
                       bgcolor: "#D8922E",
-                      boxShadow: "none",
+                      color: "#fff",
                     },
                     "&.Mui-disabled": {
                       bgcolor: "#EFE3CB",
