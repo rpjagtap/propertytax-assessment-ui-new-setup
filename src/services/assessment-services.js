@@ -802,4 +802,10 @@ export const editProfileInterface = async (body) => {
   return response.data;
 };
 
+export const getAllUserByUserCode = async(body) => {
+  const response = await apiClient.post(`userdetails/get-all-user-by-usercode` ,body);
+  return response.data;
+}
+
+
 
