@@ -1,22 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
-import {
-  CircularProgress,
-  Grid,
-  Link,
-  MenuItem,
-  Pagination,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-} from "@mui/material";
+import { CircularProgress, Grid, Link, Paper } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 // import { useSelector } from "react-redux";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
@@ -26,7 +14,6 @@ import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
 import SelectInput from "../form-fields/select-input";
-import { RenderTableHead } from "../common/table";
 import DateInput from "../form-fields/date-picker";
 import { getCurrentDate, getErrorMsg } from "../../utils/helpers";
 import { showToastError } from "../common/toastHelper";
@@ -65,39 +52,12 @@ const AssessmentDashboard = () => {
   const [pendingAppCountData, setPendingAppCountData] = useState("");
   const [pendingAppsData, setPendingAppsData] = useState("");
 
-  const [tableLoading, setTableLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20); // Default rows per page
-
-  // Calculate the slice range for current page
-  const paginatedData = useMemo(() => {
-    if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
-
-    const startIndex = (page - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    return pendingAppCountData.slice(startIndex, endIndex);
-  }, [pendingAppCountData, page, rowsPerPage]);
-
-  const handleChangePage = useCallback((event, newPage) => {
-    setTableLoading(true);
-    setPage(newPage);
-
-    // Wait for state to update before disabling loader
-    setTimeout(() => {
-      setTableLoading(false);
-    }, 0);
-  }, []);
-
-  const handleRowsPerPageChange = useCallback((event) => {
-    const value = parseInt(event.target.value, 10);
-    setTableLoading(true);
-    setRowsPerPage(value);
-    setPage(1); // Reset to first page
-
-    setTimeout(() => {
-      setTableLoading(false);
-    }, 0);
-  }, []);
+  // DataGrid manages paging itself via this single object,
+  // instead of the separate page / rowsPerPage / tableLoading state we had before.
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 20,
+  });
 
   const formik = useFormik({
     initialValues: initialState,
@@ -177,6 +137,7 @@ const AssessmentDashboard = () => {
       setLoading(true);
       const res = await getPendingApplicationsCount(body);
       setPendingAppCountData(res);
+      setPaginationModel((prev) => ({ ...prev, page: 0 })); // jump back to page 1 on a fresh search
     } catch (error) {
       showToastError(getErrorMsg(error));
     } finally {
@@ -184,6 +145,8 @@ const AssessmentDashboard = () => {
     }
   };
 
+  // Same as your original: a plain function declared after `formik`,
+  // so it always reads the current formStatus value. No stale-closure risk.
   const handleCountClick = async (completionNo, floorMarathi, wingName) => {
     const body = { formStatus: formik.values.formStatus, completionNo, floorMarathi, wingName };
     try {
@@ -203,7 +166,89 @@ const AssessmentDashboard = () => {
     setPendingAppsData("");
   };
 
-  console.log(rowsPerPage, page);
+  // Rows for DataGrid: it requires a unique "id" field on every row,
+  // so we stamp one on using data that's already unique per row.
+  const rows = useMemo(() => {
+    if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
+    return pendingAppCountData.map((item, index) => ({
+      id: `${item.completionNo}-${item.wingName}-${item.floorMarathi}-${index}`,
+      srNo: index + 1,
+      ...item,
+    }));
+  }, [pendingAppCountData]);
+
+  // Column definitions replace both RenderTableHead (headers) and the
+  // hand-written <TableCell> list (body) in one place.
+  // Plain array, rebuilt on every render (like your original table body was) -
+  // so applicationCount's onClick always calls the current handleCountClick,
+  // exactly like your original code.
+  const columns = [
+    {
+      field: "srNo",
+      headerName: labels.SrNo[lang],
+      width: 80,
+      sortable: false,
+    },
+    {
+      field: "zoneName",
+      headerName: labels.Zone[lang],
+      flex: 1,
+      minWidth: 120,
+    },
+    {
+      field: "gatName",
+      headerName: labels.Gat[lang],
+      flex: 1,
+      minWidth: 120,
+    },
+    {
+      field: "completionNo",
+      headerName: labels.CompletionNumber[lang],
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      field: "completionDate",
+      headerName: labels.CompletionDate[lang],
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      field: "wingName",
+      headerName: labels.Wing[lang],
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: "floorMarathi",
+      headerName: labels.Floor[lang],
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: "applicationCount",
+      headerName: labels.FlatsCounts[lang],
+      flex: 1,
+      minWidth: 120,
+      sortable: false,
+      renderCell: (params) => (
+        <Link
+          component="button"
+          onClick={() =>
+            handleCountClick(params.row.completionNo, params.row.floorMarathi, params.row.wingName)
+          }
+        >
+          {params.value}
+        </Link>
+      ),
+    },
+    {
+      field: "createdDate",
+      headerName: labels.ApplicationDate[lang],
+      flex: 1,
+      minWidth: 140,
+    },
+  ];
 
   return (
     <DashBoardContainer>
@@ -279,122 +324,30 @@ const AssessmentDashboard = () => {
                 </Form>
               </FormikProvider>
 
-              {paginatedData && (
-                <Paper>
-                  <Grid>
-                    {/* Pagination Component */}
-                    {pendingAppCountData.length > rowsPerPage && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginTop: "10px",
-                        }}
-                      >
-                        {/* Rows Per Page Dropdown */}
-                        <Select value={rowsPerPage} onChange={handleRowsPerPageChange} size="small">
-                          {[5, 10, 20, 50, 100].map((num) => (
-                            <MenuItem key={num} value={num}>
-                              {num} Rows
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        <Pagination
-                          count={Math.ceil(pendingAppCountData.length / rowsPerPage)}
-                          page={page}
-                          onChange={handleChangePage}
-                          sx={{ display: "flex", justifyContent: "center", marginTop: "10px" }}
-                        />
-                      </div>
-                    )}
-                    <TableContainer component={Paper}>
-                      <Table
-                        sx={{
-                          minWidth: 650,
-                          border: 1,
-                          borderColor: "grey.300",
-                        }}
-                        size="small"
-                        aria-label="a dense table"
-                      >
-                        <RenderTableHead
-                          thSx={{
-                            bgcolor: "#abd9e3",
-                            fontWeight: 600,
-                          }}
-                          trSx={{
-                            "& th": {
-                              border: "1px solid grey",
-                              padding: 0,
-                              margin: 0,
-                            },
-                          }}
-                          cells={[
-                            labels.SrNo[lang],
-                            labels.Zone[lang],
-                            labels.Gat[lang],
-                            labels.CompletionNumber[lang],
-                            labels.CompletionDate[lang],
-                            labels.Wing[lang],
-                            labels.Floor[lang],
-                            labels.FlatsCounts[lang],
-                            labels.ApplicationDate[lang],
-                          ]}
-                        />
-                        {tableLoading ? (
-                          <>Please wait loading data...</>
-                        ) : (
-                          <TableBody>
-                            {paginatedData.length ? (
-                              paginatedData.map((item, index) => {
-                                return (
-                                  <TableRow
-                                    key={1}
-                                    sx={{
-                                      "& td": {
-                                        border: "1px solid grey",
-                                      },
-                                      padding: 0,
-                                      margin: 0,
-                                    }}
-                                  >
-                                    {" "}
-                                    <TableCell align="center" sx={{ minWidth: "10px !important" }}>
-                                      {rowsPerPage * page - rowsPerPage + index + 1}
-                                    </TableCell>
-                                    <TableCell align="center">{item.zoneName}</TableCell>
-                                    <TableCell align="center">{item.gatName}</TableCell>
-                                    <TableCell align="center">{item.completionNo}</TableCell>
-                                    <TableCell align="center">{item.completionDate}</TableCell>
-                                    <TableCell align="center">{item.wingName}</TableCell>
-                                    <TableCell align="center">{item.floorMarathi}</TableCell>
-                                    <TableCell align="center">
-                                      <Link
-                                        onClick={() =>
-                                          handleCountClick(
-                                            item.completionNo,
-                                            item.floorMarathi,
-                                            item.wingName
-                                          )
-                                        }
-                                        component="button"
-                                      >
-                                        {item.applicationCount}
-                                      </Link>
-                                    </TableCell>
-                                    <TableCell align="center">{item.createdDate}</TableCell>
-                                  </TableRow>
-                                );
-                              })
-                            ) : (
-                              <>Data not available</>
-                            )}
-                          </TableBody>
-                        )}
-                      </Table>
-                    </TableContainer>
-                  </Grid>
+              {pendingAppCountData && (
+                <Paper sx={{ height: 600, width: "100%" }}>
+                  <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    getRowId={(row) => row.id}
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={setPaginationModel}
+                    pageSizeOptions={[5, 10, 20, 50, 100]}
+                    disableRowSelectionOnClick
+                    sx={{
+                      "& .MuiDataGrid-columnHeaders": {
+                        bgcolor: "#abd9e3",
+                      },
+                      "& .MuiDataGrid-columnHeader": {
+                        bgcolor: "#abd9e3",
+                      },
+                      "& .MuiDataGrid-columnHeaderTitle": {
+                        fontWeight: 600,
+                      },
+                      border: 1,
+                      borderColor: "grey.300",
+                    }}
+                  />
                 </Paper>
               )}
             </Grid>
