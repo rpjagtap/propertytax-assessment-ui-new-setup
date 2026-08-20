@@ -15,6 +15,12 @@ const colors = {
   errorBg: "#FAECE7",
   border: "#DDE3EC",
   textSecondary: "#5C6B84",
+  // Table-specific tokens — kept separate from `border` because tables
+  // need a visibly darker line than inputs/cards do.
+  tableBorder: "rgba(18,35,63,0.18)",
+  tableHeaderBg: "linear-gradient(180deg, #F6F8FB 0%, #EDF1F7 100%)",
+  tableRowHover: "rgba(93,202,165,0.10)",
+  tableRowZebra: "rgba(18,35,63,0.025)",
 };
 
 const theme = createTheme({
@@ -286,6 +292,60 @@ const theme = createTheme({
           backgroundColor: colors.navy,
           fontSize: 12,
           borderRadius: 6,
+        },
+      },
+    },
+
+    /* ---------- Tables (applies to every MUI Table in the app) ---------- */
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          borderRadius: 14,
+          border: `1px solid ${colors.tableBorder}`,
+          overflow: "hidden",
+        },
+      },
+    },
+    MuiTableHead: {
+      styleOverrides: {
+        root: {
+          "& .MuiTableRow-root": {
+            backgroundImage: colors.tableHeaderBg,
+          },
+        },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          "&:hover": {
+            backgroundColor: colors.tableRowHover,
+            transition: "background-color 0.15s ease",
+          },
+          // Zebra striping only applies to body rows (head rows keep
+          // their gradient from MuiTableHead above).
+          "&.MuiTableRow-root:not(.MuiTableRow-head):nth-of-type(odd)": {
+            backgroundColor: colors.tableRowZebra,
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: `1px solid ${colors.tableBorder}`,
+          padding: "10px 16px",
+          fontSize: 13.5,
+          color: colors.navy,
+        },
+        head: {
+          fontWeight: 700,
+          fontSize: 13,
+          color: colors.navy,
+          textTransform: "uppercase",
+          letterSpacing: "0.03em",
+          borderBottom: `1px solid ${colors.tableBorder}`,
+          padding: "12px 16px",
         },
       },
     },

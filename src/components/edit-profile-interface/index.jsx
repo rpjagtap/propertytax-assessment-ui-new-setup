@@ -42,7 +42,6 @@ import {
 
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
-import TextInput from "../form-fields/text-input";
 import FormButtons from "../common/buttons";
 import { RenderTableHead } from "../common/table";
 import { labels } from "../../lang/labels";
@@ -50,10 +49,6 @@ import { getErrorMsg } from "../../utils/helpers";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
 import useApiState from "../common/useApiState";
 
-// Using the same live services as CreateAssignInterface.
-// TODO: confirm the exact exported name/signature of the "edit profile
-// interface" service in your services file — adjust the import and the
-// call inside loadInterfacesForProfile() below if it differs.
 import {
   getAllProfile,
   createassignInterface,
@@ -141,7 +136,7 @@ const EditProfileInterface = () => {
 
       const list = Array.isArray(res) ? res : res?.lst || res?.data || [];
       const formatted = list.map((item) => ({
-        label: item.label ?? item.nameEnglish ?? item.mrDisplayName,
+        label: item.label ?? item.nameEnglish ?? item.enDisplayName,
         value: item.value ?? item.mrDisplayName,
         isSelect: !!item.isSelect,
       }));
@@ -175,8 +170,6 @@ const EditProfileInterface = () => {
       const body = {
         profileId: values.profileId,
         leafNode: values.isActive ? "Y" : "N",
-        // TODO: confirm the expected payload shape for saving the
-        // profile -> interface assignment against the live endpoint.
         interfaceDetailsRO: (values.interfaceIds || []).map((interfaceId) => ({
           interfaceId,
         })),
@@ -462,4 +455,4 @@ const EditProfileInterface = () => {
   );
 };
 
-export default React.memo(EditProfileInterface);
+export default EditProfileInterface;

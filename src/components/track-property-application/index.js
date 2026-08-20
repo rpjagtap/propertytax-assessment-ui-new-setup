@@ -36,6 +36,7 @@ import DateInput from "../form-fields/date-picker";
 import { getCurrentDate, getErrorMsg } from "../../utils/helpers";
 import { showToastError } from "../common/toastHelper";
 import { ArrowBack, Schema } from "@mui/icons-material";
+import TableCard from "../common/table-card";
 
 import TextInput from "../form-fields/text-input";
 import {
@@ -73,7 +74,6 @@ const TrackPropertyApplication = () => {
 
   const lang = useSelector((state) => state.userDetails.lang);
   const { loading, setLoading, error, setError } = useApiState();
-  // const [selectedTransactions, setSelectedTransactions] = useState([]);
   const [stages, setStages] = useState([]);
   const [zoneKeys, setZoneKeys] = useState([]);
   const [transactionType, setTransactionType] = useState([]);
@@ -88,13 +88,11 @@ const TrackPropertyApplication = () => {
 
   const [tableLoading, setTableLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20); // Default rows per page
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Calculate the slice range for current page
   const paginatedData = useMemo(() => {
     if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
-
     const startIndex = (page - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return pendingAppCountData.slice(startIndex, endIndex);
@@ -103,8 +101,6 @@ const TrackPropertyApplication = () => {
   const handleChangePage = useCallback((event, newPage) => {
     setTableLoading(true);
     setPage(newPage);
-
-    // Wait for state to update before disabling loader
     setTimeout(() => {
       setTableLoading(false);
     }, 0);
@@ -114,8 +110,7 @@ const TrackPropertyApplication = () => {
     const value = parseInt(event.target.value, 10);
     setTableLoading(true);
     setRowsPerPage(value);
-    setPage(1); // Reset to first page
-
+    setPage(1);
     setTimeout(() => {
       setTableLoading(false);
     }, 0);
@@ -208,12 +203,6 @@ const TrackPropertyApplication = () => {
 
   const handleSubmit = async () => {
     const fromDateValue = dayjs(formik.values.fromDate, "DD/MM/YYYY");
-    // const threeMonthsAgo = dayjs().subtract(3, "month");
-
-    // if (fromDateValue.isBefore(threeMonthsAgo)) {
-    //   showToastError("From Date must be within last 3 months");
-    //   return;
-    // }
 
     const {
       propertyCode,
@@ -250,27 +239,16 @@ const TrackPropertyApplication = () => {
     }
   };
 
-  // 2. Button disables when loading
-  <FormButtons
-    isValid={!(formik.isValid && formik.dirty)}
-    handleSubmitButtonClick={handleSubmit}
-    resetForm={() => window.location.reload()}
-    submitBtnLabel="Show"
-    isSubmitIcon={false}
-    disabled={loading} // Add this prop if possible
-  />;
-
   const [showTrackTable, setShowTrackTable] = useState(false);
   const [trackTableData, setTrackTableData] = useState(null);
 
   const handleApplicationCountClick = async (row) => {
     try {
       setLoading(true);
-      // Replace `getTransferPendingApplications` params as needed
       const res = await getTransferPendingApplications({
         applicationNo: row.applicationNo,
       });
-      setSelectedApplicationData(res?.propertyTransferDetails || []); // adjust path if needed
+      setSelectedApplicationData(res?.propertyTransferDetails || []);
       setShowTransferTable(true);
     } catch (error) {
       showToastError(getErrorMsg(error));
@@ -282,10 +260,9 @@ const TrackPropertyApplication = () => {
   const handleCountClick = async (appId) => {
     try {
       setLoading(true);
-      const res = await getTransferPendingApplications({ appId }); // API call
-      setTrackTableData(res); // store result
-      console.log(res);
-      setShowTrackTable(true); // trigger rendering
+      const res = await getTransferPendingApplications({ appId });
+      setTrackTableData(res);
+      setShowTrackTable(true);
     } catch (error) {
       showToastError(getErrorMsg(error));
       setShowTrackTable(false);
@@ -329,7 +306,6 @@ const TrackPropertyApplication = () => {
             <TransferDashBoardTable
               data={trackTableData}
               handleBackClick={handleBackClick}
-              //   stage={formik.values.formStatus}
               resetData={resetData}
             />
           ) : (
@@ -424,167 +400,112 @@ const TrackPropertyApplication = () => {
               )}
 
               {pendingAppCountData && (
-                <Paper>
-                  <Grid>
-                    {/* Pagination Component */}
-                    {pendingAppCountData.length > rowsPerPage && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginTop: "10px",
-                        }}
-                      >
-                        <Select
-                          value={rowsPerPage}
-                          onChange={handleRowsPerPageChange}
-                          size="small"
-                        >
-                          {[5, 10, 20, 50, 100].map((num) => (
-                            <MenuItem key={num} value={num}>
-                              {num} Rows
-                            </MenuItem>
-                          ))}
-                        </Select>
-
-                        <Pagination
-                          count={Math.ceil(
-                            pendingAppCountData.length / rowsPerPage,
-                          )}
-                          page={page}
-                          onChange={handleChangePage}
-                          sx={{ marginTop: "10px" }}
-                        />
-                      </div>
-                    )}
-                    <Grid container justifyContent="flex-end" spacing={1} p={1}>
-                      <Grid item xs={12} md={4}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Search by Application No"
-                          variant="outlined"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </Grid>
-                    </Grid>
-
-                    <TableContainer component={Paper}>
-                      <Table
-                        sx={{
-                          minWidth: 650,
-                          borderCollapse: "collapse", // Ensures single borders
-                        }}
+                // TableCard supplies the padded shell — all border/header/
+                // zebra/hover styling for the Table below comes from the
+                // MuiTableContainer/MuiTableHead/MuiTableRow/MuiTableCell
+                // overrides in theme.js, so it matches every other table
+                // in the app automatically.
+                <TableCard>
+                  {pendingAppCountData.length > rowsPerPage && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <Select
+                        value={rowsPerPage}
+                        onChange={handleRowsPerPageChange}
                         size="small"
-                        aria-label="clean table"
                       >
-                        <RenderTableHead
-                          thSx={{
-                            bgcolor: "#abd9e3",
-                            fontWeight: 600,
-                            fontSize: "13px",
-                          }}
-                          trSx={{
-                            "& th": {
-                              border: "1px solid grey",
-                              padding: "4px 8px", // Tight padding
-                            },
-                          }}
-                          cells={[
-                            labels.SrNo?.[lang],
-                            labels.applicationNo?.[lang],
-                            labels.transactiontype?.[lang],
-                            labels.applicationDate?.[lang],
-                            labels.Action?.[lang],
-                          ]}
-                        />
+                        {[5, 10, 20, 50, 100].map((num) => (
+                          <MenuItem key={num} value={num}>
+                            {num} Rows
+                          </MenuItem>
+                        ))}
+                      </Select>
 
-                        {tableLoading ? (
-                          <>Please wait loading data...</>
-                        ) : (
-                          <TableBody>
-                            {filteredData.length ? (
-                              filteredData.map((item, index) => (
-                                <TableRow
-                                  key={index}
-                                  sx={{
-                                    "& td": {
-                                      border: "1px solid grey",
-                                      padding: "4px 8px", // Minimal spacing
-                                      fontSize: "13px",
-                                    },
-                                  }}
-                                >
-                                  <TableCell align="center">
-                                    {index + 1}
-                                  </TableCell>
+                      <Pagination
+                        count={Math.ceil(
+                          pendingAppCountData.length / rowsPerPage,
+                        )}
+                        page={page}
+                        onChange={handleChangePage}
+                      />
+                    </div>
+                  )}
 
-                                  <TableCell align="center">
-                                    {item.applicationNo}
-                                  </TableCell>
+                  <Grid container justifyContent="flex-end" spacing={1} sx={{ mb: 2 }}>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Search by Application No"
+                        variant="outlined"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </Grid>
+                  </Grid>
 
-                                  <TableCell align="center">
-                                    {item.transactiontype}
-                                  </TableCell>
-
-                                  <TableCell align="center">
-                                    {item.applicationDate}
-                                  </TableCell>
-
-                                  <TableCell align="center">
-                                    <Button
-                                      variant="contained"
-                                      size="small"
-                                      onClick={() =>
-                                        navigate(
-                                          `/track-application-status?applicationNo=${item.applicationNo}`,
-                                        )
-                                      }
-                                    >
-                                      Show
-                                    </Button>
-                                  </TableCell>
-
-                                  {/* <TableCell align="center"> */}
-                                  {/* <Link
-                                      onClick={() =>
-                                        handleCountClick(
-                                          // item.appId == 0 && 2526000120
-                                          item.appId
-                                        )
-                                      }
-                                      component="button"
-                                    >
-                                      {item.applicationCount}
-                                    </Link> */}
-
-                                  {/* Show Transfer Table */}
-                                  {/* {showTrackTable && trackTableData && (
-                                      <TransferDashBoardTable
-                                        data={trackTableData}
-                                        handleBackClick={() =>
-                                          setShowTrackTable(false)
-                                        }
-                                      />
-                                    )}
-                                  </TableCell> */}
-                                </TableRow>
-                              ))
-                            ) : (
-                              <TableRow>
-                                <TableCell colSpan={7} align="center">
-                                  {labels.NoRecordFound[lang]}
+                  <TableContainer component={Paper} elevation={0}>
+                    <Table sx={{ minWidth: 650 }} size="small" aria-label="applications table">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell align="center">{labels.SrNo?.[lang]}</TableCell>
+                          <TableCell align="center">{labels.applicationNo?.[lang]}</TableCell>
+                          <TableCell align="center">{labels.transactiontype?.[lang]}</TableCell>
+                          <TableCell align="center">{labels.applicationDate?.[lang]}</TableCell>
+                          <TableCell align="center">{labels.Action?.[lang]}</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      {tableLoading ? (
+                        <TableBody>
+                          <TableRow>
+                            <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                              <CircularProgress size={22} sx={{ mr: 1 }} />
+                              Please wait, loading data...
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      ) : (
+                        <TableBody>
+                          {filteredData.length ? (
+                            filteredData.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell align="center">{index + 1}</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>
+                                  {item.applicationNo}
+                                </TableCell>
+                                <TableCell align="center">{item.transactiontype}</TableCell>
+                                <TableCell align="center">{item.applicationDate}</TableCell>
+                                <TableCell align="center">
+                                  <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() =>
+                                      navigate(`/track-application-status?applicationNo=${item.applicationNo}`)
+                                    }
+                                  >
+                                    Show
+                                  </Button>
                                 </TableCell>
                               </TableRow>
-                            )}
-                          </TableBody>
-                        )}
-                      </Table>
-                    </TableContainer>
-                  </Grid>
-                </Paper>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                                {labels.NoRecordFound[lang]}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      )}
+                    </Table>
+                  </TableContainer>
+                </TableCard>
               )}
             </Grid>
           )}
