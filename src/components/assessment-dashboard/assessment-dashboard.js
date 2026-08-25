@@ -3,7 +3,15 @@ import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
-import { CircularProgress, Grid, Link, Paper } from "@mui/material";
+import {
+  CircularProgress,
+  Grid,
+  Link,
+  Paper,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import { DataGrid } from "@mui/x-data-grid";
 // import { useSelector } from "react-redux";
 import useApiState from "../common/useApiState";
@@ -51,6 +59,9 @@ const AssessmentDashboard = () => {
   const [isShowGenerateSRTable, setIsShowGenerateSRTable] = useState(false);
   const [pendingAppCountData, setPendingAppCountData] = useState("");
   const [pendingAppsData, setPendingAppsData] = useState("");
+
+  // Search box text used to filter the DataGrid rows client-side.
+  const [searchText, setSearchText] = useState("");
 
   // DataGrid manages paging itself via this single object,
   // instead of the separate page / rowsPerPage / tableLoading state we had before.
@@ -138,6 +149,7 @@ const AssessmentDashboard = () => {
       const res = await getPendingApplicationsCount(body);
       setPendingAppCountData(res);
       setPaginationModel((prev) => ({ ...prev, page: 0 })); // jump back to page 1 on a fresh search
+      setSearchText(""); // clear any previous filter text on a fresh search
     } catch (error) {
       showToastError(getErrorMsg(error));
     } finally {
@@ -168,14 +180,33 @@ const AssessmentDashboard = () => {
 
   // Rows for DataGrid: it requires a unique "id" field on every row,
   // so we stamp one on using data that's already unique per row.
+  // Then we filter by searchText across the visible text columns.
   const rows = useMemo(() => {
     if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
-    return pendingAppCountData.map((item, index) => ({
+
+    const mapped = pendingAppCountData.map((item, index) => ({
       id: `${item.completionNo}-${item.wingName}-${item.floorMarathi}-${index}`,
       srNo: index + 1,
       ...item,
     }));
-  }, [pendingAppCountData]);
+
+    if (!searchText.trim()) return mapped;
+
+    const term = searchText.trim().toLowerCase();
+    return mapped.filter((row) =>
+      [
+        row.zoneName,
+        row.gatName,
+        row.completionNo,
+        row.completionDate,
+        row.wingName,
+        row.floorMarathi,
+        row.createdDate,
+      ]
+        .filter(Boolean)
+        .some((val) => String(val).toLowerCase().includes(term))
+    );
+  }, [pendingAppCountData, searchText]);
 
   // Column definitions replace both RenderTableHead (headers) and the
   // hand-written <TableCell> list (body) in one place.
@@ -325,7 +356,26 @@ const AssessmentDashboard = () => {
               </FormikProvider>
 
               {pendingAppCountData && (
-                <Paper sx={{ height: 600, width: "100%" }}>
+                <Paper sx={{ height: 600, width: "100%", p: 1 }}>
+                  <Grid container justifyContent="flex-end" sx={{ mb: 1 }}>
+                    <TextField
+                      size="small"
+                      placeholder="Search records..."
+                      value={searchText}
+                      onChange={(e) => {
+                        setSearchText(e.target.value);
+                        setPaginationModel((prev) => ({ ...prev, page: 0 })); // jump to page 1 on search
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ width: 280 }}
+                    />
+                  </Grid>
                   <DataGrid
                     rows={rows}
                     columns={columns}
