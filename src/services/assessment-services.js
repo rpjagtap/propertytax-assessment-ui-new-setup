@@ -807,5 +807,11 @@ export const getAllUserByUserCode = async(body) => {
   return response.data;
 }
 
+export const saveProfileInterface = async (body) => {
+  const response = await apiClient.post(`userdetails/save-profile-interface` ,body);
+  return response.data;
+};
+
+
 
 

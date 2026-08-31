@@ -51,8 +51,8 @@ import useApiState from "../common/useApiState";
 
 import {
   getAllProfile,
-  createassignInterface,
   editProfileInterface,
+  saveProfileInterface
 } from "../../services/assessment-services";
 
 const initials = (name = "") =>
@@ -67,8 +67,8 @@ const initials = (name = "") =>
 const EditProfileInterface = () => {
   const lang = useSelector((state) => state.userDetails.lang);
   const { loading, setLoading } = useApiState();
-  const [profiles, setProfiles] = useState([]); // dropdown options (from getAllProfile)
-  const [interfaceOptions, setInterfaceOptions] = useState([]); // checkbox options (from editProfileInterface)
+  const [profiles, setProfiles] = useState([]);
+  const [interfaceOptions, setInterfaceOptions] = useState([]);
   const [interfacesLoading, setInterfacesLoading] = useState(false);
   const [filteredData, setFilteredData] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
@@ -76,8 +76,8 @@ const EditProfileInterface = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const initialState = {
-    profileId: "", // selected profile from the dropdown
-    interfaceIds: [], // selected interface checkboxes for that profile
+    profileId: "",
+    interfaceIds: [],
     isActive: true,
   };
 
@@ -107,7 +107,6 @@ const EditProfileInterface = () => {
     setIsEditMode(false);
   };
 
-
   useEffect(() => {
     const loadProfiles = async () => {
       try {
@@ -130,25 +129,36 @@ const EditProfileInterface = () => {
       formik.setFieldValue("interfaceIds", []);
       return;
     }
+
     try {
       setInterfacesLoading(true);
       const res = await editProfileInterface({ profileId });
-
       const list = Array.isArray(res) ? res : res?.lst || res?.data || [];
       const formatted = list.map((item) => ({
-        label: item.label ?? item.nameEnglish ?? item.enDisplayName,
-        value: item.value ?? item.mrDisplayName,
+        profileId: Number(profileId),
+        interfaceId: item.interfaceId,
+        formName: item.formName,
+        enDisplayName: item.enDisplayName,
+        mrDisplayName: item.mrDisplayName,
         isSelect: !!item.isSelect,
+        menuDetailsRO: item.menuDetailsRO || [],
+        valid: item.valid ?? false,
+        otpverified: item.otpverified ?? false,
+        label: item.enDisplayName,
+        value: item.interfaceId,
       }));
 
       setInterfaceOptions(formatted);
-      formik.setFieldValue(
-        "interfaceIds",
-        formatted.filter((item) => item.isSelect).map((item) => String(item.value)),
-      );
+
+      const selectedIds = formatted
+        .filter((item) => item.isSelect)
+        .map((item) => String(item.interfaceId));
+
+      formik.setFieldValue("interfaceIds", selectedIds);
     } catch (err) {
       showToastError(getErrorMsg(err));
       setInterfaceOptions([]);
+      formik.setFieldValue("interfaceIds", []);
     } finally {
       setInterfacesLoading(false);
     }
@@ -167,18 +177,31 @@ const EditProfileInterface = () => {
     try {
       setLoading(true);
       const values = formik.values;
-      const body = {
-        profileId: values.profileId,
-        leafNode: values.isActive ? "Y" : "N",
-        interfaceDetailsRO: (values.interfaceIds || []).map((interfaceId) => ({
-          interfaceId,
-        })),
-      };
+      const selectedIds = (values.interfaceIds || []).map(String);
+      const interfaceList = (interfaceOptions || []).map((item) => ({
+        profileId: Number(values.profileId),
+        interfaceId: item.interfaceId,
+        formName: item.formName,
+        enDisplayName: item.enDisplayName,
+        mrDisplayName: item.mrDisplayName,
+        isSelect: selectedIds.includes(String(item.interfaceId)),
+        menuDetailsRO: [],
+        valid: item.valid ?? false,
+        otpverified: item.otpverified ?? false,
+      }));
 
-      await createassignInterface(body);
+      const body = {
+        lst: interfaceList,
+        menuDetailsRO: [],
+        valid: false,
+        otpverified: false,
+      };
+      await saveProfileInterface(body);
       showToastSuccess("Saved Successfully!");
       resetForm();
+      setInterfaceOptions([]);
     } catch (err) {
+      console.error("Save Error:", err);
       showToastError(getErrorMsg(err));
     } finally {
       setLoading(false);
@@ -263,17 +286,22 @@ const EditProfileInterface = () => {
           <CardContent sx={{ px: 3, py: 3 }}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+                <Card
+                  variant="outlined"
+                  sx={{ borderRadius: 2, height: "100%" }}
+                >
                   <CardHeader
-                    avatar={<Person4Outlined sx={{ color: "text.secondary" }} />}
+                    avatar={
+                      <Person4Outlined sx={{ color: "text.secondary" }} />
+                    }
                     title="Profile access"
                     titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
                     subheader={
                       !formik.values.profileId
                         ? "Select a profile to see and edit its interface access"
                         : interfacesLoading
-                        ? "Loading interfaces…"
-                        : "Tick every interface this profile should be able to use"
+                          ? "Loading interfaces…"
+                          : "Tick every interface this profile should be able to use"
                     }
                     sx={{ pb: 0 }}
                   />
@@ -290,7 +318,12 @@ const EditProfileInterface = () => {
                               onChange={handleProfileChange}
                             >
                               <MenuItem value="">
-                                <em style={{ color: "#9aa5b1", fontStyle: "normal" }}>
+                                <em
+                                  style={{
+                                    color: "#9aa5b1",
+                                    fontStyle: "normal",
+                                  }}
+                                >
                                   Select profile
                                 </em>
                               </MenuItem>
@@ -319,36 +352,73 @@ const EditProfileInterface = () => {
                         rowGap: 0.5,
                       }}
                     >
-                      {interfaceOptions.map((opt) => (
-                        <FormControlLabel
-                          key={opt.value}
-                          control={
-                            <Checkbox
-                              size="small"
-                              checked={(formik.values.interfaceIds || [])
-                                .map(String)
-                                .includes(String(opt.value))}
-                              onChange={() => toggleInterface(opt.value)}
-                            />
-                          }
-                          label={<Typography sx={{ fontSize: 14 }}>{opt.label}</Typography>}
-                        />
-                      ))}
+                      {interfaceOptions.map((item) => {
+                        const checked = (
+                          formik.values.interfaceIds || []
+                        ).includes(String(item.interfaceId));
+
+                        return (
+                          <FormControlLabel
+                            key={item.interfaceId}
+                            control={
+                              <Checkbox
+                                checked={checked}
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+
+                                  const currentIds =
+                                    formik.values.interfaceIds || [];
+
+                                  let updatedIds;
+
+                                  if (isChecked) {
+                                    updatedIds = [
+                                      ...currentIds,
+                                      String(item.interfaceId),
+                                    ];
+                                  } else {
+                                    updatedIds = currentIds.filter(
+                                      (id) =>
+                                        String(id) !== String(item.interfaceId),
+                                    );
+                                  }
+
+                                  formik.setFieldValue(
+                                    "interfaceIds",
+                                    updatedIds,
+                                  );
+                                }}
+                              />
+                            }
+                            label={item.enDisplayName}
+                          />
+                        );
+                      })}
                     </FormGroup>
 
                     {!formik.values.profileId && (
-                      <Typography sx={{ fontSize: 13, color: "text.secondary", mt: 1 }}>
-                        Interface options will appear here once a profile is selected.
+                      <Typography
+                        sx={{ fontSize: 13, color: "text.secondary", mt: 1 }}
+                      >
+                        Interface options will appear here once a profile is
+                        selected.
                       </Typography>
                     )}
 
                     {!!selectedInterfaces.length && (
-                      <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 2, rowGap: 1 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        sx={{ mt: 2, rowGap: 1 }}
+                      >
                         {selectedInterfaces.map((opt) => (
                           <Chip
                             key={opt.value}
                             size="small"
-                            icon={<VerifiedUserOutlined sx={{ fontSize: 16 }} />}
+                            icon={
+                              <VerifiedUserOutlined sx={{ fontSize: 16 }} />
+                            }
                             label={opt.label}
                             onDelete={() => toggleInterface(opt.value)}
                             sx={{ bgcolor: "#E1F5EE", color: "#0F6E56" }}
@@ -382,7 +452,12 @@ const EditProfileInterface = () => {
       {showTable && (
         <Paper
           elevation={3}
-          sx={{ width: "60%", margin: "0 auto", borderRadius: 3, overflow: "hidden" }}
+          sx={{
+            width: "60%",
+            margin: "0 auto",
+            borderRadius: 3,
+            overflow: "hidden",
+          }}
         >
           <TableContainer>
             <Table sx={{ minWidth: 500 }} size="small">
@@ -394,7 +469,11 @@ const EditProfileInterface = () => {
                   fontSize: "13px",
                 }}
                 trSx={{ "& th": { padding: "10px 12px" } }}
-                cells={["Interface Id", "Name (English)", labels.Edit?.[lang] || "Edit"]}
+                cells={[
+                  "Interface Id",
+                  "Name (English)",
+                  labels.Edit?.[lang] || "Edit",
+                ]}
               />
 
               <TableBody>
@@ -412,7 +491,11 @@ const EditProfileInterface = () => {
                       sx={{ "& td": { padding: "8px 12px", fontSize: "13px" } }}
                     >
                       <TableCell align="left">
-                        <Stack direction="row" spacing={1.2} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={1.2}
+                          alignItems="center"
+                        >
                           <Avatar
                             sx={{
                               width: 28,
