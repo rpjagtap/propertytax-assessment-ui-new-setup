@@ -221,6 +221,7 @@ const PropertyTransferDashBoard = () => {
           ? res.propertyTransferDetails
           : [],
       );
+      
       setShowTable(true);
     } catch (error) {
       // showToastError(getErrorMsg(error));

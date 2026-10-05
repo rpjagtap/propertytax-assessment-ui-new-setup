@@ -150,10 +150,14 @@ const TransferDashboardTable = ({
       const res = await saveTrevertApplication(body);
 
       if (res?.status === "Approved Successfully..!!") {
-        // setSuccessMessage(res.message || "Data saved successfully!");
-        showToastSuccess(res.message || "Data Approved successfully!");
-        resetData();
-        handleBackClick();
+
+        showToastSuccess(
+          res.message || "Data Approved successfully!"
+        );
+        setTimeout(() => {
+          resetData();
+          handleBackClick();
+        }, 5000);
       } else {
         showToastSuccess(res?.message || "Faild to save");
       }
@@ -208,7 +212,10 @@ const TransferDashboardTable = ({
 
       if (res?.status === "Revert Successfully..!!") {
         showToastSuccess(res.message || "Data Reverted Successfully!");
-        handleBackClick();
+        setTimeout(() => {
+          handleBackClick();
+        }, 5000);
+
       } else {
         showToastError(res?.message || "Failed to revert");
       }
@@ -572,7 +579,7 @@ const TransferDashboardTable = ({
                               }}
                               cells={[
                                 labels?.newOwnerName?.[lang] ||
-                                  "New Owner Name",
+                                "New Owner Name",
                                 labels?.documentType?.[lang] || "Document Type",
                                 // labels?.documentURL?.[lang] || "Document Url",
                                 "",
@@ -714,7 +721,7 @@ const TransferDashboardTable = ({
                                               View Transfer Fee
                                             </Button>
                                             {data.transferType ==
-                                            "Property Transfer" ? (
+                                              "Property Transfer" ? (
                                               <>
                                                 <Button
                                                   variant="contained"
