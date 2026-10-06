@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
@@ -62,6 +62,9 @@ const ROUTE_BY_TRANSACTION_TYPE = {
   14: "/PropertyContactChange",
 };
 
+// sessionStorage key used to restore the last search when the user comes Back
+const FILTER_KEY = "propertyTxnDashboardState";
+
 const PropertyTransactionDashboard = () => {
   const initialState = {
     fromDate: getCurrentDate(),
@@ -83,6 +86,9 @@ const PropertyTransactionDashboard = () => {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  const lastSearchRef = useRef(null); // filters used for the list currently shown
+  const restoredGatKeyRef = useRef(null); // gat to re-select after the gat list loads
 
   const formik = useFormik({
     initialValues: initialState,
@@ -161,7 +167,16 @@ const PropertyTransactionDashboard = () => {
           zoneKey: formik.values.zoneKey,
         });
         setGatKeys(gatRes.gatLst);
-        if (gatRes.gatLst.length === 1) {
+        if (
+          restoredGatKeyRef.current &&
+          gatRes.gatLst.some(
+            (g) => String(g.value) === String(restoredGatKeyRef.current),
+          )
+        ) {
+          // coming back via the Back button: re-select the saved gat
+          formik.setFieldValue("gatKey", restoredGatKeyRef.current);
+          restoredGatKeyRef.current = null;
+        } else if (gatRes.gatLst.length === 1) {
           formik.setFieldValue("gatKey", gatRes.gatLst[0].value);
         }
       } catch (error) {
@@ -176,19 +191,16 @@ const PropertyTransactionDashboard = () => {
   }, [formik.values.zoneKey]);
 
   /* ---------- Actions ---------- */
-  const handleSubmit = async () => {
-    const { zoneKey, gatKey, fromDate, toDate, transactionTypeKey } =
-      formik.values;
-    const body = { zoneKey, gatKey, fromDate, toDate, transactionTypeKey };
-
+  const fetchList = async (body, restore) => {
+    lastSearchRef.current = body;
     try {
       setLoading(true);
       const res = await getTransactionDashboard(body);
       setPendingAppCountData(
         Array.isArray(res?.propertyTransactionVO) ? res.propertyTransactionVO : [],
       );
-      setPage(1);
-      setSearchTerm("");
+      setPage(restore?.page || 1);
+      setSearchTerm(restore?.searchTerm || "");
       setShowTable(true);
     } catch (error) {
       showToastError(getErrorMsg(error));
@@ -198,6 +210,42 @@ const PropertyTransactionDashboard = () => {
       setLoading(false);
     }
   };
+
+  const handleSubmit = () => {
+    const { zoneKey, gatKey, fromDate, toDate, transactionTypeKey } =
+      formik.values;
+    fetchList({ zoneKey, gatKey, fromDate, toDate, transactionTypeKey });
+  };
+
+  /* ---------- Restore last search when coming back (Back button) ---------- */
+  useEffect(() => {
+    const raw = sessionStorage.getItem(FILTER_KEY);
+    if (!raw) return;
+    try {
+      const { body, page, rowsPerPage, searchTerm } = JSON.parse(raw);
+      restoredGatKeyRef.current = body.gatKey || null;
+      formik.setValues({ ...initialState, ...body });
+      if (rowsPerPage) setRowsPerPage(rowsPerPage);
+      fetchList(body, { page, searchTerm });
+    } catch (e) {
+      sessionStorage.removeItem(FILTER_KEY);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ---------- Save the search state whenever the list/page/search changes ---------- */
+  useEffect(() => {
+    if (!showTable || !lastSearchRef.current) return;
+    sessionStorage.setItem(
+      FILTER_KEY,
+      JSON.stringify({
+        body: lastSearchRef.current,
+        page,
+        rowsPerPage,
+        searchTerm,
+      }),
+    );
+  }, [showTable, pendingAppCountData, page, rowsPerPage, searchTerm]);
 
   const handleCountClick = (
     applicationId,
@@ -366,6 +414,7 @@ const PropertyTransactionDashboard = () => {
                           isValid={!(formik.isValid && formik.dirty)}
                           handleSubmitButtonClick={handleSubmit}
                           resetForm={() => {
+                            sessionStorage.removeItem(FILTER_KEY);
                             window.location.reload();
                           }}
                           submitBtnLabel="Show"

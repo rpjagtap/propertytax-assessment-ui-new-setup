@@ -1,18 +1,27 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
 import {
     Grid,
-    Paper,
     Typography,
     Box,
     TextField,
+    Button,
+    Card,
+    CardHeader,
+    CardContent,
+    Avatar,
+    Divider,
     Table, TableBody, TableCell, TableHead, TableRow
 } from "@mui/material";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from "react-router-dom";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
+import EditLocationAltOutlined from "@mui/icons-material/EditLocationAltOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { namChangeApplicationSchema } from "../../utils/validation-schema";
@@ -21,15 +30,8 @@ import { useSelector } from "react-redux";
 import SelectInput from "../form-fields/select-input";
 import { getErrorMsg } from "../../utils/helpers";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
-import { useSearchParams } from "react-router-dom";
 import PropertyDocumentsForm from "../sr-register/propertyDocumentsForm";
 import FormButtons from "../common/buttons";
-import FormTitle from "../form-fields/form-title";
-import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
-import TextInput from "../form-fields/text-input";
-import ArrowBack from "@mui/icons-material/ArrowBack";
-import { Button } from "@mui/material";
-
 
 import {
     getAllProTransactions,
@@ -39,6 +41,53 @@ import {
     submitPropertyInfoChange,
     ViewProTransactionDoc
 } from "../../services/assessment-services";
+
+// Theme tokens — same values used across the Property Transaction module.
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+// A single "label: value/input" row.
+const FieldRow = ({ label, children }) => (
+    <Grid item xs={12} md={6}>
+        <Box display="flex" alignItems="center">
+            <Box minWidth={160}>
+                <Typography fontWeight={600} fontSize={14} color={NAVY}>
+                    {label}:
+                </Typography>
+            </Box>
+            {children}
+        </Box>
+    </Grid>
+);
+
+// Section wrapper — icon-badged header + divider + padded body (+ optional footer).
+const SectionCard = ({ icon, title, subtitle, children, footer }) => (
+    <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
+        <CardHeader
+            avatar={
+                <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
+                    {icon}
+                </Avatar>
+            }
+            title={title}
+            titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
+            subheader={subtitle}
+            sx={{ pb: 1 }}
+        />
+        <Divider />
+        <CardContent sx={{ p: 3 }}>{children}</CardContent>
+        {footer && (
+            <>
+                <Divider />
+                <Box sx={{ p: 2, display: "flex", justifyContent: "center", bgcolor: "#FAFBFD" }}>
+                    {footer}
+                </Box>
+            </>
+        )}
+    </Card>
+);
 
 
 const PropertyTranApplication = () => {
@@ -79,7 +128,6 @@ const PropertyTranApplication = () => {
         ],
     };
 
-    //formik.setFieldValue("propertyCode", propertyCodeFromURL || "");
     const formik = useFormik({
         initialValues: initialState,
         enableReinitialize: true,
@@ -96,11 +144,6 @@ const PropertyTranApplication = () => {
             label: item.marTransactionTypeName,
         })), [allTrsactions]
     );
-
-    //Back Button 
-    const handleBackClick = () => {
-        navigate(-1);
-    };
 
     useEffect(() => {
         if (transactionTypeIdFromURL && transactionsOptions.length > 0) {
@@ -186,8 +229,6 @@ const PropertyTranApplication = () => {
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-
 
     useEffect(() => {
         formik.setFieldValue("gatKey", "");
@@ -275,10 +316,6 @@ const PropertyTranApplication = () => {
                     mobileNo: mobileNo,
                     oldMarOwnerName: propertyOwnerDetails,
                     oldMarOccupantName: occupant,
-                    // documentVOs: values.documents.map(doc => ({
-                    //     documentId: doc.documentId,
-                    //     documentURLbase64: doc.documentURLbase64,
-                    // })),
                     documentVOs:
                         applicationFromIdFromURL === "2"
                             ? values.documents.map(doc => ({
@@ -312,8 +349,6 @@ const PropertyTranApplication = () => {
         }
     };
 
-    const [isPropertyCodeDisabled, setIsPropertyCodeDisabled] = useState(true);
-
     return (
         <DashBoardContainer>
             {error && (
@@ -329,357 +364,221 @@ const PropertyTranApplication = () => {
             <ScrollBottom />
             <ScrollTop />
 
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    backgroundColor: "rgb(204, 234, 244)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    padding: 4,
-                    margin: 5,
-                    borderRadius: 4
-                }}
-            >
-                <Grid>
-                    <FormikProvider value={formik}>
-                        <Typography
-                            variant="h5"
-                            fontWeight="bolder"
-                            align="center"
-                            paddingBottom={2}
-                            paddingTop={2}
+            <Box sx={{ p: 2 }}>
+                <FormikProvider value={formik}>
+                    {/* Header band */}
+                    <Box
+                        sx={{
+                            px: 3,
+                            py: 2.5,
+                            mb: 3,
+                            borderRadius: 3,
+                            background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 2,
+                        }}
+                    >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <Avatar sx={{ width: 48, height: 48, bgcolor: "rgba(255,255,255,0.12)", color: "#5DCAA5" }}>
+                                <HomeWorkOutlined />
+                            </Avatar>
+                            <Box>
+                                <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
+                                    {labels?.NameCorrectionApplicationType?.[lang] || "Name Correction Application"}
+                                </Typography>
+                                <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                                    Review the current property details and submit the corrected owner and occupant names.
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        <Button
+                            variant="outlined"
+                            startIcon={<ArrowBack />}
+                            onClick={() => navigate(-1)}
+                            sx={{
+                                color: "#fff",
+                                borderColor: "rgba(255,255,255,0.5)",
+                                textTransform: "none",
+                                "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,0.1)" },
+                            }}
                         >
-                            {labels?.NameCorrectionApplicationType?.[lang] || ""}
-                        </Typography>
-                        <Form>
-                            <Box>
-                                <Paper
-                                    elevation={3}
-                                    sx={{
-                                        width: "90%",
-                                        padding: 5,
-                                        marginLeft: "1.5%",
-                                        borderRadius: 5,
-                                    }}
-                                >
-                                    <Grid container spacing={3}>
-                                        {/* Row 1: Owner Name and Occupant Name side by side */}
-                                        <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.Type[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <SelectInput name="transactionTypeId" options={transactionsOptions} disabled />
-                                                </Box>
-                                            </Grid>
+                            Back
+                        </Button>
+                    </Box>
 
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.PropertyNumber[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField fullWidth variant="standard" size="small" name="propertyCode" disabled value={propertyCodeFromURL} />
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
+                    <Form>
+                        {/* ---------- Current details ---------- */}
+                        <SectionCard
+                            icon={<HomeWorkOutlined fontSize="small" />}
+                            title="Current property details"
+                            subtitle="Existing owner and occupant information on record"
+                        >
+                            <Grid container spacing={3}>
+                                <FieldRow label={labels.Type[lang]}>
+                                    <SelectInput name="transactionTypeId" options={transactionsOptions} disabled />
+                                </FieldRow>
 
-                                        {/* row 2: occupantName in english and marathi  */}
-                                        <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.Zone[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <SelectInput name="zoneKey" options={zoneKeys} />
-                                                </Box>
-                                            </Grid>
+                                <FieldRow label={labels.PropertyNumber[lang]}>
+                                    <TextField fullWidth variant="standard" size="small" name="propertyCode" disabled value={propertyCodeFromURL || ""} />
+                                </FieldRow>
 
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.Gat[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <SelectInput name="gatKey" options={gatKeys} />
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
-                                        {/* Row 2: Mobile Number full width */}
-                                        <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.ownerName[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="propertyOwnerName" disabled value={propertyOwnerDetails}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
+                                <FieldRow label={labels.Zone[lang]}>
+                                    <SelectInput name="zoneKey" options={zoneKeys} />
+                                </FieldRow>
 
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.occupantName[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="occupantName" disabled value={occupant}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
+                                <FieldRow label={labels.Gat[lang]}>
+                                    <SelectInput name="gatKey" options={gatKeys} />
+                                </FieldRow>
 
-                                        <Grid item xs={12}>
-                                            <Box display="flex" alignItems="center">
-                                                <Box minWidth={140}>
-                                                    <Typography fontWeight="bold">
-                                                        {labels.RemarkForProperty[lang]}:
-                                                    </Typography>
-                                                </Box>
-                                                <TextField
-                                                    fullWidth={false}
-                                                    variant="standard"
-                                                    size="small"
-                                                    name="remark" required
-                                                    onChange={formik.handleChange}
-                                                    onBlur={formik.handleBlur}
-                                                    sx={{ width: "35.5%" }}
-                                                />
-                                            </Box>
-                                        </Grid>
+                                <FieldRow label={labels.ownerName[lang]}>
+                                    <TextField variant="standard" size="small" name="propertyOwnerName" disabled value={propertyOwnerDetails} sx={{ width: "100%" }} />
+                                </FieldRow>
+
+                                <FieldRow label={labels.occupantName[lang]}>
+                                    <TextField variant="standard" size="small" name="occupantName" disabled value={occupant} sx={{ width: "100%" }} />
+                                </FieldRow>
+
+                                <FieldRow label={labels.RemarkForProperty[lang]}>
+                                    <TextField
+                                        variant="standard"
+                                        size="small"
+                                        name="remark"
+                                        required
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        sx={{ width: "100%" }}
+                                    />
+                                </FieldRow>
+                            </Grid>
+                        </SectionCard>
+
+                        {/* ---------- New details ---------- */}
+                        <SectionCard
+                            icon={<EditLocationAltOutlined fontSize="small" />}
+                            title={labels?.NewDetails?.[lang] || "New details"}
+                            subtitle="Enter the corrected owner and occupant names in both languages"
+                        >
+                            <Grid container spacing={3}>
+                                <FieldRow label={labels.PropertyNameMar[lang]}>
+                                    <TextField
+                                        variant="standard"
+                                        size="small"
+                                        name="marPropertyName"
+                                        required
+                                        sx={{ width: "100%" }}
+                                        value={formik.values.marPropertyName}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                    />
+                                </FieldRow>
+
+                                <FieldRow label={labels.PropertyNameEng[lang]}>
+                                    <TextField
+                                        variant="standard"
+                                        size="small"
+                                        name="engPropertyName"
+                                        required
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        sx={{ width: "100%" }}
+                                    />
+                                </FieldRow>
+
+                                <FieldRow label={labels.PropertyOccupantNameMar[lang]}>
+                                    <TextField
+                                        variant="standard"
+                                        size="small"
+                                        name="marPropertyOccupantName"
+                                        required
+                                        sx={{ width: "100%" }}
+                                        value={formik.values.marPropertyOccupantName}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                    />
+                                </FieldRow>
+
+                                <FieldRow label={labels.PropertyOccupantNameEng[lang]}>
+                                    <TextField
+                                        variant="standard"
+                                        size="small"
+                                        name="engPropertyOccupantName"
+                                        required
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        sx={{ width: "100%" }}
+                                    />
+                                </FieldRow>
+                            </Grid>
+                        </SectionCard>
+
+                        {/* ---------- Documents + submit ---------- */}
+                        <SectionCard
+                            icon={<DescriptionOutlined fontSize="small" />}
+                            title={labels?.DocumentDetails?.[lang] || "Document details"}
+                            subtitle="Supporting documents for this name correction request"
+                            footer={
+                                <FormButtons
+                                    disabled={!formik.isValid || !formik.dirty}
+                                    handleSubmitButtonClick={handleSubmit}
+                                    resetForm={() => { window.location.reload(); }}
+                                    submitBtnLabel="Submit"
+                                    isSubmitIcon={false}
+                                    cancelRedirect="/PropertyTransactionsDashBoard"
+                                />
+                            }
+                        >
+                            {applicationFromIdFromURL === '2' ? (
+                                <Grid container spacing={3}>
+                                    <Grid container item spacing={3} xs={12}>
+                                        <PropertyDocumentsForm />
                                     </Grid>
-                                </Paper>
-                            </Box>
-
-                            <Typography
-                                variant="h5"
-                                fontWeight="bolder"
-                                align="center"
-                                paddingBottom={2}
-                                paddingTop={2}
-                            >
-                                {labels?.NewDetails?.[lang] || ""}
-                            </Typography>
-
-                            <Box>
-                                <Paper
-                                    elevation={3}
+                                </Grid>
+                            ) : (
+                                <Table
                                     sx={{
-                                        width: "90%",
-                                        padding: 5,
-                                        marginLeft: "1.5%",
-                                        borderRadius: 5,
+                                        width: "100%",
+                                        border: "1px solid #D5DCE6",
+                                        borderRadius: 1,
                                     }}
+                                    size="small"
                                 >
-                                    <Grid container spacing={3}>
-                                        {/* Row 1: Owner Name and Occupant Name side by side */}
-                                        <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.PropertyNameMar[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="marPropertyName" required
-                                                        sx={{ width: "100%" }}
-                                                        value={formik.values.marPropertyName}
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: "#EEF2F7" }}>
+                                            <TableCell sx={{ fontWeight: 600, width: "10%", color: NAVY, borderRight: "1px solid #D5DCE6" }}>Sr.</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, width: "60%", color: NAVY, borderRight: "1px solid #D5DCE6" }}>
+                                                {labels.docs[lang]}
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600, width: "30%", color: NAVY }} align="center">View</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+
+                                    <TableBody>
+                                        {documents.map((doc, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>{doc.documentName}</TableCell>
+                                                <TableCell align="center">
+                                                    <VisibilityIcon
+                                                        fontSize="small"
+                                                        onClick={() => handleDownload(doc.documentName, doc.documentURLbase64)}
+                                                        style={{
+                                                            color: MINT,
+                                                            cursor: "pointer",
+                                                        }}
                                                     />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.PropertyNameEng[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="engPropertyName" required
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.PropertyOccupantNameMar[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="marPropertyOccupantName" required
-                                                        sx={{ width: "100%" }}
-                                                        value={formik.values.marPropertyOccupantName}
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.PropertyOccupantNameEng[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="engPropertyOccupantName" required
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                </Paper>
-                            </Box>
-
-                            <Typography
-                                variant="h5"
-                                fontWeight="bolder"
-                                align="center"
-                                paddingBottom={2}
-                                paddingTop={2}
-                            >
-                                {labels?.DocumentDetails?.[lang] || ""}
-                            </Typography>
-
-                            <Box>
-                                <Paper
-                                    elevation={3}
-                                    sx={{
-                                        width: "90%",
-                                        padding: 5,
-                                        marginLeft: "1.5%",
-                                        borderRadius: 5,
-                                    }}
-                                >
-                                    {applicationFromIdFromURL === '2' ? (
-                                        <Grid container spacing={3}>
-                                            <Grid container item spacing={3} xs={12}>
-                                                <PropertyDocumentsForm />
-                                            </Grid>
-                                        </Grid>
-                                    ) : (
-                                        <Paper
-                                            elevation={3}
-                                            sx={{
-                                                width: "90%",
-                                                maxWidth: 1200,
-                                                padding: 5,
-                                                borderRadius: 4
-                                            }}
-                                        >
-                                            <Table
-                                                sx={{
-                                                    width: "100%",
-                                                    border: "1px solid #bdbdbd",
-                                                    marginTop: 2,
-                                                    borderRadius: 1,
-                                                }}
-                                                size="small"
-                                            >
-                                                <TableHead>
-                                                    <TableRow sx={{ bgcolor: "#abd9e3" }}>
-                                                        <TableCell sx={{ fontWeight: 600, width: "10%", borderRight: "1px solid #bdbdbd" }}>Sr.</TableCell>
-                                                        <TableCell sx={{ fontWeight: 600, width: "60%", borderRight: "1px solid #bdbdbd" }}>
-                                                            {labels.docs[lang]}
-                                                        </TableCell>
-                                                        <TableCell sx={{ fontWeight: 600, width: "30%" }} align="center">View</TableCell>
-                                                    </TableRow>
-                                                </TableHead>
-
-                                                <TableBody>
-                                                    {documents.map((doc, index) => (
-                                                        <TableRow key={index}>
-                                                            <TableCell>{index + 1}</TableCell>
-                                                            <TableCell>{doc.documentName}</TableCell>
-                                                            <TableCell align="center">
-                                                                <VisibilityIcon
-                                                                    fontSize="small"
-                                                                    onClick={() => handleDownload(doc.documentName, doc.documentURLbase64)}
-                                                                    style={{
-                                                                        color: "#1976d2",
-                                                                        cursor: "pointer",
-                                                                    }}
-                                                                />
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </Paper>
-                                    )}
-                                    <Grid container justifyContent="center" alignItems="center">
-                                        <Grid
-                                            item
-                                            md={3}
-                                            container
-                                            justifyContent={{ md: "flex-end" }}
-                                            alignItems="center"
-                                            p={2}
-                                        >
-                                            <FormButtons
-                                                disabled={!formik.isValid || !formik.dirty}
-                                                handleSubmitButtonClick={handleSubmit}
-                                                resetForm={() => { window.location.reload(); }}
-                                                submitBtnLabel="Submit"
-                                                isSubmitIcon={false}
-                                                cancelRedirect="/PropertyTransactionsDashBoard"
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                </Paper>
-                            </Box>
-                        </Form>
-                    </FormikProvider>
-
-                </Grid>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </SectionCard>
+                    </Form>
+                </FormikProvider>
             </Box>
-
         </DashBoardContainer>
     );
 };
