@@ -1,32 +1,35 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
 import {
+  Box,
   CircularProgress,
   Grid,
   Link,
-  MenuItem,
-  Pagination,
+  TextField,
+  InputAdornment,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Divider,
+  Typography,
+  Stack,
   Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
 } from "@mui/material";
-// import { useSelector } from "react-redux";
+import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
+import TrackChangesOutlined from "@mui/icons-material/TrackChangesOutlined";
+import { DataGrid } from "@mui/x-data-grid";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { trackApplicationSchema } from "../../utils/validation-schema";
-import FormTitle from "../form-fields/form-title";
 import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
 import SelectInput from "../form-fields/select-input";
-import { RenderTableHead } from "../common/table";
 import DateInput from "../form-fields/date-picker";
 import { getCurrentDate, getErrorMsg } from "../../utils/helpers";
 import { showToastError } from "../common/toastHelper";
@@ -36,11 +39,46 @@ import {
   getGatByZonekey,
   getStagewiseApplicationsRpt,
   getStagewiseApplicationsCountRpt,
-  // getPDF,
   getZoneByProfile,
 } from "../../services/assessment-services";
 import TrackApplicationTable from "./track-application-table";
 import FormButtons from "../common/buttons";
+
+// Theme tokens — same values used across the other redesigned pages.
+// Kept local so this file has no dependency on any shared common/
+// component that might not exist in the project.
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+// Reusable results card header (avatar + title + optional right side)
+const ResultsHeader = ({ title, right }) => (
+  <>
+    <Box
+      sx={{
+        px: 2.5,
+        py: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 1.5,
+      }}
+    >
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 34, height: 34, bgcolor: MINT_BG, color: MINT }}>
+          <FactCheckOutlined fontSize="small" />
+        </Avatar>
+        <Typography sx={{ fontWeight: 600, fontSize: 15, color: NAVY }}>
+          {title}
+        </Typography>
+      </Stack>
+      {right}
+    </Box>
+    <Divider />
+  </>
+);
 
 const TrackApplication = () => {
   const initialState = {
@@ -54,7 +92,6 @@ const TrackApplication = () => {
 
   const lang = useSelector((state) => state.userDetails.lang);
   const { loading, setLoading, error, setError } = useApiState();
-  // const [selectedTransactions, setSelectedTransactions] = useState([]);
   const [stages, setStages] = useState([]);
   const [zoneKeys, setZoneKeys] = useState([]);
   const [gatKeys, setGatKeys] = useState([]);
@@ -63,40 +100,15 @@ const TrackApplication = () => {
   const [pendingAppCountData, setPendingAppCountData] = useState([]);
   const [pendingAppsData, setPendingAppsData] = useState("");
 
-  const [tableLoading, setTableLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20); // Default rows per page
+  // Search box text used to filter the DataGrid rows client-side.
+  const [searchText, setSearchText] = useState("");
 
-  // Calculate the slice range for current page
-  const paginatedData = useMemo(() => {
-    if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
-  
-    const startIndex = (page - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    return pendingAppCountData.slice(startIndex, endIndex);
-  }, [pendingAppCountData, page, rowsPerPage]);
-
-
-  const handleChangePage = useCallback((event, newPage) => {
-    setTableLoading(true);
-    setPage(newPage);
-
-    // Wait for state to update before disabling loader
-    setTimeout(() => {
-      setTableLoading(false);
-    }, 0);
-  }, []);
-
-  const handleRowsPerPageChange = useCallback((event) => {
-    const value = parseInt(event.target.value, 10);
-    setTableLoading(true);
-    setRowsPerPage(value);
-    setPage(1); // Reset to first page
-
-    setTimeout(() => {
-      setTableLoading(false);
-    }, 0);
-  }, []);
+  // DataGrid manages paging itself via this single object, and sorting
+  // is handled internally by the grid (click any column header).
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 20,
+  });
 
   const formik = useFormik({
     initialValues: initialState,
@@ -108,13 +120,13 @@ const TrackApplication = () => {
 
   useEffect(() => {
     setPendingAppsData("");
-    setPendingAppCountData("");
+    setPendingAppCountData([]);
   }, [formik.values.formStatus]);
 
   const resetData = () => {
     setTrackAppTable(false);
     setPendingAppsData("");
-    setPendingAppCountData("");
+    setPendingAppCountData([]);
     handleSubmit();
   };
 
@@ -176,7 +188,9 @@ const TrackApplication = () => {
     try {
       setLoading(true);
       const res = await getStagewiseApplicationsCountRpt(body);
-      setPendingAppCountData(res?.assessmentFormVOLst);
+      setPendingAppCountData(res?.assessmentFormVOLst || []);
+      setPaginationModel((prev) => ({ ...prev, page: 0 })); // jump back to page 1 on a fresh search
+      setSearchText(""); // clear any previous filter text on a fresh search
     } catch (error) {
       showToastError(getErrorMsg(error));
     } finally {
@@ -204,35 +218,109 @@ const TrackApplication = () => {
     }
   };
 
-  // const handleDisplayPDF = async (id) => {
-  //     try {
-  //         // Make an API call to get the PDF as a byte array
-  //         const pdfRes = await getPDF(id);
-
-  //         if (!pdfRes) {
-  //             throw new Error('Failed to fetch the PDF');
-  //         }
-
-  //         // Convert the response to a Blob
-  //         const blob = await pdfRes.blob();
-
-  //         // Create a URL for the Blob
-  //         const url = window.URL.createObjectURL(blob);
-
-  //         // Open the PDF in a new tab
-  //         window.open(url, '_blank');
-
-  //         // Optional: Clean up the URL object when done
-  //         // setTimeout(() => window.URL.revokeObjectURL(url), 100);
-  //     } catch (error) {
-  //         console.error('Error displaying PDF:', error);
-  //     }
-  // };
-
   const handleBackClick = () => {
     setTrackAppTable(false);
     setPendingAppsData("");
   };
+
+  // Rows for DataGrid: it requires a unique "id" field on every row, so
+  // we stamp one on using data that's already unique per row. Then we
+  // filter by searchText across the visible text columns.
+  const rows = useMemo(() => {
+    if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
+
+    const mapped = pendingAppCountData.map((item, index) => ({
+      id: `${item.completionNo}-${item.wingName}-${item.floorMarathi}-${index}`,
+      srNo: index + 1,
+      ...item,
+    }));
+
+    if (!searchText.trim()) return mapped;
+
+    const term = searchText.trim().toLowerCase();
+    return mapped.filter((row) =>
+      [
+        row.zoneName,
+        row.gatName,
+        row.completionNo,
+        row.wingName,
+        row.floorMarathi,
+        row.completionDate,
+        row.createdDate,
+      ]
+        .filter(Boolean)
+        .some((val) => String(val).toLowerCase().includes(term))
+    );
+  }, [pendingAppCountData, searchText]);
+
+  const columns = [
+    {
+      field: "srNo",
+      headerName: labels.SrNo[lang],
+      width: 80,
+      sortable: false,
+    },
+    {
+      field: "zoneName",
+      headerName: labels.Zone[lang],
+      flex: 1,
+      minWidth: 120,
+    },
+    {
+      field: "gatName",
+      headerName: labels.Gat[lang],
+      flex: 1,
+      minWidth: 120,
+    },
+    {
+      field: "completionNo",
+      headerName: labels.CompletionNumber[lang],
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      field: "wingName",
+      headerName: labels.Wing[lang],
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: "floorMarathi",
+      headerName: labels.Floor[lang],
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: "completionDate",
+      headerName: labels.CompletionDate[lang],
+      flex: 1,
+      minWidth: 140,
+    },
+    {
+      field: "applicationCount",
+      headerName: labels.FlatsCounts[lang],
+      flex: 1,
+      minWidth: 120,
+      sortable: true,
+      renderCell: (params) => (
+        <Link
+          component="button"
+          sx={{ fontWeight: 600, color: MINT }}
+          onClick={() =>
+            handleCountClick(params.row.completionNo, params.row.floorMarathi, params.row.wingName)
+          }
+        >
+          {params.value}
+        </Link>
+      ),
+    },
+    {
+      field: "createdDate",
+      headerName: labels.Date[lang],
+      flex: 1,
+      minWidth: 140,
+    },
+  ];
 
   return (
     <DashBoardContainer>
@@ -262,187 +350,174 @@ const TrackApplication = () => {
               resetData={resetData}
             />
           ) : (
-            <Grid>
+            <Box sx={{ p: 2 }}>
+              {/* ---------- Filter card ---------- */}
               <FormikProvider value={formik}>
                 <Form>
-                  <Paper elevation={4} sx={{ marginBottom: "15px" }}>
-                    <FormTitle title="Track Application" />
-                    <GridRow>
-                      <FormLabel label={labels.Stage[lang]} />
-                      <FormValue component={<SelectInput name="formStatus" options={stages} />} />
-                      <FormLabel label={labels.ApplicationNo[lang]} />
-                      <FormValue component={<TextInput name="applicationNo" />} />
-                    </GridRow>
-                    <GridRow>
-                      <FormLabel label={labels.Zone[lang]} />
-                      <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} />} />
-                      <FormLabel label={labels.Gat[lang]} />
-                      <FormValue component={<SelectInput name="gatKey" options={gatKeys} />} />
-                    </GridRow>
-                    <GridRow>
-                      <FormLabel label={labels.FromDate[lang]} required />
-                      <FormValue component={<DateInput name="fromDate" required />} />
-                      <FormLabel label={labels.ToDate[lang]} required />
-                      <FormValue component={<DateInput name="toDate" required />} />
-                    </GridRow>
-                    <Grid container justifyContent="center" alignItems="center">
-                      <Grid
-                        item
-                        md={3}
-                        container
-                        justifyContent={{ md: "flex-end" }}
-                        alignItems="center"
-                        p={2}
+                  <Card elevation={4} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
+                    {/* Header band */}
+                    <Box
+                      sx={{
+                        px: 3,
+                        py: 2.5,
+                        background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "rgba(255,255,255,0.12)",
+                          color: "#5DCAA5",
+                        }}
                       >
-                        <FormButtons
-                          isValid={!(formik.isValid && formik.dirty)}
-                          handleSubmitButtonClick={handleSubmit}
-                          resetForm={() => {
-                            window.location.reload();
-                          }}
-                          submitBtnLabel="Show"
-                          isSubmitIcon={false}
+                        <TrackChangesOutlined />
+                      </Avatar>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
+                          Track Application
+                        </Typography>
+                        <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                          Search and track applications by stage, zone/gat, date range or application number.
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <CardContent sx={{ px: 3, py: 3 }}>
+                      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                        <CardHeader
+                          avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
+                          title="Search criteria"
+                          titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
+                          subheader="Narrow down applications by stage, zone/gat, application number and date range"
+                          sx={{ pb: 0 }}
                         />
+                        <CardContent>
+                          <GridRow>
+                            <FormLabel label={labels.Stage[lang]} />
+                            <FormValue component={<SelectInput name="formStatus" options={stages} />} />
+                            <FormLabel label={labels.ApplicationNo[lang]} />
+                            <FormValue component={<TextInput name="applicationNo" />} />
+                          </GridRow>
+                          <GridRow>
+                            <FormLabel label={labels.Zone[lang]} />
+                            <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} />} />
+                            <FormLabel label={labels.Gat[lang]} />
+                            <FormValue component={<SelectInput name="gatKey" options={gatKeys} />} />
+                          </GridRow>
+                          <GridRow>
+                            <FormLabel label={labels.FromDate[lang]} required />
+                            <FormValue component={<DateInput name="fromDate" required />} />
+                            <FormLabel label={labels.ToDate[lang]} required />
+                            <FormValue component={<DateInput name="toDate" required />} />
+                          </GridRow>
+                        </CardContent>
+                      </Card>
+
+                      <Divider sx={{ my: 3 }} />
+
+                      <Grid container justifyContent="center">
+                        <Grid item md={4} p={0}>
+                          <FormButtons
+                            isValid={!(formik.isValid && formik.dirty)}
+                            handleSubmitButtonClick={handleSubmit}
+                            resetForm={() => {
+                              window.location.reload();
+                            }}
+                            submitBtnLabel="Show"
+                            isSubmitIcon={false}
+                          />
+                        </Grid>
                       </Grid>
-                    </Grid>
-                  </Paper>
+                    </CardContent>
+                  </Card>
                 </Form>
               </FormikProvider>
 
+              {/* ---------- Results ---------- */}
               {pendingAppCountData && (
-                <Paper>
-                  <Grid>
-                    {/* Pagination Component */}
-                    {pendingAppCountData.length > rowsPerPage && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginTop: "10px",
-                        }}
-                      >
-                        {/* Rows Per Page Dropdown */}
-                        <Select value={rowsPerPage} onChange={handleRowsPerPageChange} size="small">
-                          {[5, 10, 20, 50, 100].map((num) => (
-                            <MenuItem key={num} value={num}>
-                              {num} Rows
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        <Pagination
-                          count={Math.ceil(pendingAppCountData.length / rowsPerPage)}
-                          page={page}
-                          onChange={handleChangePage}
-                          sx={{ display: "flex", justifyContent: "center", marginTop: "10px" }}
-                        />
-                      </div>
-                    )}
-                    <TableContainer component={Paper}>
-                      <Table
-                        sx={{
-                          minWidth: 650,
-                          border: 1,
-                          borderColor: "grey.300",
-                        }}
+                <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
+                  <ResultsHeader
+                    title="Tracked applications"
+                    right={
+                      <TextField
                         size="small"
-                        aria-label="a dense table"
-                      >
-                        <RenderTableHead
-                          thSx={{
-                            bgcolor: "#abd9e3",
-                            fontWeight: 600,
-                          }}
-                          trSx={{
-                            "& th": {
-                              border: "1px solid grey",
-                              padding: 0,
-                              margin: 0,
-                            },
-                          }}
-                          cells={[
-                            labels.SrNo[lang],
-                            labels.Zone[lang],
-                            labels.Gat[lang],
-                            labels.CompletionNumber[lang],
-                            labels.Wing[lang],
-                            labels.Floor[lang],
-                            // labels.docs[lang],
-                            labels.CompletionDate[lang],
-                            labels.FlatsCounts[lang],
-                            labels.Date[lang],
-                          ]}
-                        />
-                        {tableLoading ? (
-                          <>Please wait loading data...</>
-                        ) : (
-                          <TableBody>
-                            {paginatedData.length ? (
-                              paginatedData.map((item, index) => {
-                                return (
-                                  <TableRow
-                                    key={1}
-                                    sx={{
-                                      "& td": {
-                                        border: "1px solid grey",
-                                      },
-                                      padding: 0,
-                                      margin: 0,
-                                    }}
-                                  >
-                                    {" "}
-                                    <TableCell align="center">
-                                      {rowsPerPage * page - rowsPerPage + index + 1}
-                                    </TableCell>
-                                    <TableCell align="center">{item.zoneName}</TableCell>
-                                    <TableCell align="center">{item.gatName}</TableCell>
-                                    <TableCell align="center">{item.completionNo}</TableCell>
-                                    <TableCell align="center">{item.wingName}</TableCell>
-                                    <TableCell align="center">{item.floorMarathi}</TableCell>
-                                    {/* <TableCell align="center">
-                                                                        <Link onClick={(e)=>{e.preventDefault(); 
-                                                                            handleDisplayPDF(item.completionDocs);
-                                                                        }} href="#" underline="none">
-                                                                            View
-                                                                            <PictureAsPdf sx={{ color: "#CC3300", fontSize: "20px" }} />
-                                                                        </Link>
-                                                                    </TableCell> */}
-                                    {/* <TableCell align="center">
-                                    <Link href={item.completionDocs} target="_blank" underline="none">
-                                      View
-                                      <PictureAsPdf sx={{ color: "#CC3300", fontSize: "20px" }} />
-                                    </Link>
-                                  </TableCell> */}
-                                    <TableCell align="center">{item.completionDate}</TableCell>
-                                    <TableCell align="center">
-                                      <Link
-                                        onClick={() =>
-                                          handleCountClick(
-                                            item.completionNo,
-                                            item.floorMarathi,
-                                            item.wingName
-                                          )
-                                        }
-                                        component="button"
-                                      >
-                                        {item.applicationCount}
-                                      </Link>
-                                    </TableCell>
-                                    <TableCell align="center">{item.createdDate}</TableCell>
-                                  </TableRow>
-                                );
-                              })
-                            ) : (
-                              <>{labels.NoRecordFound[lang]}</>
-                            )}
-                          </TableBody>
-                        )}
-                      </Table>
-                    </TableContainer>
-                  </Grid>
+                        placeholder="Search records..."
+                        value={searchText}
+                        onChange={(e) => {
+                          setSearchText(e.target.value);
+                          setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchOutlined fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{ width: 280, bgcolor: "#fff", borderRadius: 1 }}
+                      />
+                    }
+                  />
+
+                  <Box sx={{ p: 2 }}>
+                    <DataGrid
+                      rows={rows}
+                      columns={columns}
+                      getRowId={(row) => row.id}
+                      paginationModel={paginationModel}
+                      onPaginationModelChange={setPaginationModel}
+                      pageSizeOptions={[5, 10, 20, 50, 100]}
+                      disableRowSelectionOnClick
+                      autoHeight
+                      sx={{
+                        border: "1px solid #DDE3EC",
+                        borderRadius: 2,
+                        // MUI X DataGrid paints the header/pinned-column
+                        // background via this CSS variable, not a plain
+                        // background-color — override it directly or the
+                        // header text (white, below) ends up invisible
+                        // against the variable's default white background.
+                        "--DataGrid-containerBackground": NAVY,
+                        "--DataGrid-pinnedBackground": NAVY,
+                        "& .MuiDataGrid-columnHeaders": {
+                          bgcolor: NAVY,
+                        },
+                        "& .MuiDataGrid-columnHeader": {
+                          bgcolor: NAVY,
+                        },
+                        "& .MuiDataGrid-columnHeaderTitle": {
+                          color: "#fff",
+                          fontWeight: 600,
+                          fontSize: 13,
+                        },
+                        "& .MuiDataGrid-columnSeparator": {
+                          color: "rgba(255,255,255,0.3)",
+                        },
+                        "& .MuiDataGrid-sortIcon, & .MuiDataGrid-menuIconButton, & .MuiDataGrid-iconButtonContainer svg": {
+                          color: "#fff",
+                        },
+                        "& .MuiDataGrid-cell": {
+                          fontSize: 13,
+                        },
+                        "& .MuiDataGrid-row:nth-of-type(odd)": {
+                          backgroundColor: "#F7F9FC",
+                        },
+                        "& .MuiDataGrid-row:hover": {
+                          backgroundColor: MINT_BG,
+                        },
+                        "& .MuiDataGrid-footerContainer": {
+                          borderTop: "1px solid #DDE3EC",
+                        },
+                      }}
+                    />
+                  </Box>
                 </Paper>
               )}
-            </Grid>
+            </Box>
           )}
         </>
       )}

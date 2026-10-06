@@ -4,20 +4,28 @@ import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
 import {
+  Box,
   CircularProgress,
   Grid,
   Link,
-  Paper,
   TextField,
   InputAdornment,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Divider,
+  Typography,
+  Stack,
+  Paper,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import SearchOutlined from "@mui/icons-material/SearchOutlined";
+import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
+import AssignmentTurnedInOutlined from "@mui/icons-material/AssignmentTurnedInOutlined";
 import { DataGrid } from "@mui/x-data-grid";
-// import { useSelector } from "react-redux";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { assessmentDashSchema } from "../../utils/validation-schema";
-import FormTitle from "../form-fields/form-title";
 import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
@@ -35,6 +43,42 @@ import {
 import GenerateSRTable from "./generate-sr-table";
 import FormButtons from "../common/buttons";
 
+// Theme tokens (same as Zonewise Property Transfer Report / Property
+// Transfer Dashboard) — kept local so this file has no dependency on
+// any shared common/ component that might not exist in the project.
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+// Reusable results card header (avatar + title + optional right side)
+const ResultsHeader = ({ title, right }) => (
+  <>
+    <Box
+      sx={{
+        px: 2.5,
+        py: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 1.5,
+      }}
+    >
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 34, height: 34, bgcolor: MINT_BG, color: MINT }}>
+          <FactCheckOutlined fontSize="small" />
+        </Avatar>
+        <Typography sx={{ fontWeight: 600, fontSize: 15, color: NAVY }}>
+          {title}
+        </Typography>
+      </Stack>
+      {right}
+    </Box>
+    <Divider />
+  </>
+);
+
 const AssessmentDashboard = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const stage = urlParams.get("stage");
@@ -47,11 +91,8 @@ const AssessmentDashboard = () => {
     gatKey: "",
   };
 
-  // const [isSelectAll, setIsSelectAll] = useState(false);
-
   const lang = useSelector((state) => state.userDetails.lang);
   const { loading, setLoading, error, setError } = useApiState();
-  // const [selectedTransactions, setSelectedTransactions] = useState([]);
   const [stages, setStages] = useState([]);
   const [zoneKeys, setZoneKeys] = useState([]);
   const [gatKeys, setGatKeys] = useState([]);
@@ -60,11 +101,8 @@ const AssessmentDashboard = () => {
   const [pendingAppCountData, setPendingAppCountData] = useState("");
   const [pendingAppsData, setPendingAppsData] = useState("");
 
-  // Search box text used to filter the DataGrid rows client-side.
   const [searchText, setSearchText] = useState("");
 
-  // DataGrid manages paging itself via this single object,
-  // instead of the separate page / rowsPerPage / tableLoading state we had before.
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 20,
@@ -148,8 +186,8 @@ const AssessmentDashboard = () => {
       setLoading(true);
       const res = await getPendingApplicationsCount(body);
       setPendingAppCountData(res);
-      setPaginationModel((prev) => ({ ...prev, page: 0 })); // jump back to page 1 on a fresh search
-      setSearchText(""); // clear any previous filter text on a fresh search
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+      setSearchText("");
     } catch (error) {
       showToastError(getErrorMsg(error));
     } finally {
@@ -157,8 +195,6 @@ const AssessmentDashboard = () => {
     }
   };
 
-  // Same as your original: a plain function declared after `formik`,
-  // so it always reads the current formStatus value. No stale-closure risk.
   const handleCountClick = async (completionNo, floorMarathi, wingName) => {
     const body = { formStatus: formik.values.formStatus, completionNo, floorMarathi, wingName };
     try {
@@ -178,9 +214,6 @@ const AssessmentDashboard = () => {
     setPendingAppsData("");
   };
 
-  // Rows for DataGrid: it requires a unique "id" field on every row,
-  // so we stamp one on using data that's already unique per row.
-  // Then we filter by searchText across the visible text columns.
   const rows = useMemo(() => {
     if (!pendingAppCountData || pendingAppCountData.length === 0) return [];
 
@@ -208,11 +241,6 @@ const AssessmentDashboard = () => {
     );
   }, [pendingAppCountData, searchText]);
 
-  // Column definitions replace both RenderTableHead (headers) and the
-  // hand-written <TableCell> list (body) in one place.
-  // Plain array, rebuilt on every render (like your original table body was) -
-  // so applicationCount's onClick always calls the current handleCountClick,
-  // exactly like your original code.
   const columns = [
     {
       field: "srNo",
@@ -265,6 +293,7 @@ const AssessmentDashboard = () => {
       renderCell: (params) => (
         <Link
           component="button"
+          sx={{ fontWeight: 600, color: MINT }}
           onClick={() =>
             handleCountClick(params.row.completionNo, params.row.floorMarathi, params.row.wingName)
           }
@@ -310,97 +339,173 @@ const AssessmentDashboard = () => {
               zoneKey={formik.values.zoneKey}
             />
           ) : (
-            <Grid>
+            <Box sx={{ p: 2 }}>
+              {/* ---------- Filter card ---------- */}
               <FormikProvider value={formik}>
                 <Form>
-                  <Paper elevation={4} sx={{ marginBottom: "15px" }}>
-                    <FormTitle title="Process Applications" />
-                    <GridRow>
-                      <FormLabel label={labels.Stage[lang]} required />
-                      <FormValue component={<SelectInput name="formStatus" options={stages} required />} />
-                    </GridRow>
-                    <GridRow>
-                      <FormLabel label={labels.Zone[lang]} required />
-                      <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} required />} />
-                      <FormLabel label={labels.Gat[lang]} required />
-                      <FormValue component={<SelectInput name="gatKey" options={gatKeys} required />} />
-                    </GridRow>
-                    <GridRow>
-                      <FormLabel label={labels.FromDate[lang]} required />
-                      <FormValue component={<DateInput name="fromDate" required />} />
-                      <FormLabel label={labels.ToDate[lang]} required />
-                      <FormValue component={<DateInput name="toDate" required />} />
-                    </GridRow>
-                    <Grid container justifyContent="center" alignItems="center">
-                      <Grid
-                        item
-                        md={3}
-                        container
-                        justifyContent={{ md: "flex-end" }}
-                        alignItems="center"
-                        p={2}
+                  <Card elevation={4} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
+                    {/* Header band */}
+                    <Box
+                      sx={{
+                        px: 3,
+                        py: 2.5,
+                        background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          bgcolor: "rgba(255,255,255,0.12)",
+                          color: "#5DCAA5",
+                        }}
                       >
-                        <FormButtons
-                          isValid={!(formik.isValid && formik.dirty)}
-                          handleSubmitButtonClick={handleSubmit}
-                          resetForm={() => {
-                            window.location.reload();
-                          }}
-                          submitBtnLabel={labels.show[lang]}
-                          isSubmitIcon={false}
+                        <AssignmentTurnedInOutlined />
+                      </Avatar>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
+                          Process Applications
+                        </Typography>
+                        <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                          Review pending applications by stage, zone and gat, and generate SR.
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <CardContent sx={{ px: 3, py: 3 }}>
+                      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+                        <CardHeader
+                          avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
+                          title="Search criteria"
+                          titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
+                          subheader="Filter pending applications by stage, zone/gat and date range"
+                          sx={{ pb: 0 }}
                         />
+                        <CardContent>
+                          <GridRow>
+                            <FormLabel label={labels.Stage[lang]} required />
+                            <FormValue component={<SelectInput name="formStatus" options={stages} required />} />
+                          </GridRow>
+                          <GridRow>
+                            <FormLabel label={labels.Zone[lang]} required />
+                            <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} required />} />
+                            <FormLabel label={labels.Gat[lang]} required />
+                            <FormValue component={<SelectInput name="gatKey" options={gatKeys} required />} />
+                          </GridRow>
+                          <GridRow>
+                            <FormLabel label={labels.FromDate[lang]} required />
+                            <FormValue component={<DateInput name="fromDate" required />} />
+                            <FormLabel label={labels.ToDate[lang]} required />
+                            <FormValue component={<DateInput name="toDate" required />} />
+                          </GridRow>
+                        </CardContent>
+                      </Card>
+
+                      <Divider sx={{ my: 3 }} />
+
+                      <Grid container justifyContent="center">
+                        <Grid item md={4} p={0}>
+                          <FormButtons
+                            isValid={!(formik.isValid && formik.dirty)}
+                            handleSubmitButtonClick={handleSubmit}
+                            resetForm={() => {
+                              window.location.reload();
+                            }}
+                            submitBtnLabel={labels.show[lang]}
+                            isSubmitIcon={false}
+                          />
+                        </Grid>
                       </Grid>
-                    </Grid>
-                  </Paper>
+                    </CardContent>
+                  </Card>
                 </Form>
               </FormikProvider>
 
+              {/* ---------- Results ---------- */}
               {pendingAppCountData && (
-                <Paper sx={{ height: 600, width: "100%", p: 1 }}>
-                  <Grid container justifyContent="flex-end" sx={{ mb: 1 }}>
-                    <TextField
-                      size="small"
-                      placeholder="Search records..."
-                      value={searchText}
-                      onChange={(e) => {
-                        setSearchText(e.target.value);
-                        setPaginationModel((prev) => ({ ...prev, page: 0 })); // jump to page 1 on search
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon fontSize="small" />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{ width: 280 }}
-                    />
-                  </Grid>
-                  <DataGrid
-                    rows={rows}
-                    columns={columns}
-                    getRowId={(row) => row.id}
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                    pageSizeOptions={[5, 10, 20, 50, 100]}
-                    disableRowSelectionOnClick
-                    sx={{
-                      "& .MuiDataGrid-columnHeaders": {
-                        bgcolor: "#abd9e3",
-                      },
-                      "& .MuiDataGrid-columnHeader": {
-                        bgcolor: "#abd9e3",
-                      },
-                      "& .MuiDataGrid-columnHeaderTitle": {
-                        fontWeight: 600,
-                      },
-                      border: 1,
-                      borderColor: "grey.300",
-                    }}
+                <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
+                  <ResultsHeader
+                    title="Pending applications"
+                    right={
+                      <TextField
+                        size="small"
+                        placeholder="Search records..."
+                        value={searchText}
+                        onChange={(e) => {
+                          setSearchText(e.target.value);
+                          setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchOutlined fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{ width: 280, bgcolor: "#fff", borderRadius: 1 }}
+                      />
+                    }
                   />
+
+                  <Box sx={{ p: 2 }}>
+                    <DataGrid
+                      rows={rows}
+                      columns={columns}
+                      getRowId={(row) => row.id}
+                      paginationModel={paginationModel}
+                      onPaginationModelChange={setPaginationModel}
+                      pageSizeOptions={[5, 10, 20, 50, 100]}
+                      disableRowSelectionOnClick
+                      autoHeight
+                      sx={{
+                        border: "1px solid #DDE3EC",
+                        borderRadius: 2,
+                        // MUI X DataGrid paints the header/pinned-column
+                        // background via this CSS variable, not a plain
+                        // background-color — overriding "& .MuiDataGrid-
+                        // columnHeaders" alone leaves the variable's white
+                        // default in place, which is why the header text
+                        // (set to white below) was invisible.
+                        "--DataGrid-containerBackground": NAVY,
+                        "--DataGrid-pinnedBackground": NAVY,
+                        "& .MuiDataGrid-columnHeaders": {
+                          bgcolor: NAVY,
+                        },
+                        "& .MuiDataGrid-columnHeader": {
+                          bgcolor: NAVY,
+                        },
+                        "& .MuiDataGrid-columnHeaderTitle": {
+                          color: "#fff",
+                          fontWeight: 600,
+                          fontSize: 13,
+                        },
+                        "& .MuiDataGrid-columnSeparator": {
+                          color: "rgba(255,255,255,0.3)",
+                        },
+                        "& .MuiDataGrid-sortIcon, & .MuiDataGrid-menuIconButton, & .MuiDataGrid-iconButtonContainer svg": {
+                          color: "#fff",
+                        },
+                        "& .MuiDataGrid-cell": {
+                          fontSize: 13,
+                        },
+                        "& .MuiDataGrid-row:nth-of-type(odd)": {
+                          backgroundColor: "#F7F9FC",
+                        },
+                        "& .MuiDataGrid-row:hover": {
+                          backgroundColor: MINT_BG,
+                        },
+                        "& .MuiDataGrid-footerContainer": {
+                          borderTop: "1px solid #DDE3EC",
+                        },
+                      }}
+                    />
+                  </Box>
                 </Paper>
               )}
-            </Grid>
+            </Box>
           )}
         </>
       )}

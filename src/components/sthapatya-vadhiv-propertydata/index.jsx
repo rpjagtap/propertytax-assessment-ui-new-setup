@@ -138,7 +138,6 @@ const SthapatyaVadhivPropertyDashboard = () => {
         try {
             setLoading(true);
             const res = await getSthapatyaSurveyDashboard();
-            console.log("Dashboard Response:", res);
             setRecords(res?.propertyROLst || []);
         } catch (err) {
             showToastError(getErrorMsg(err));
@@ -370,7 +369,7 @@ const SthapatyaVadhivPropertyDashboard = () => {
 
                     <Grid>
 
-                        {records && records.length > 0 && (
+                        {!loading && (
                             <Paper sx={{ p: 2 }}>                                
                                 <Typography
                                     variant="h5"
@@ -425,7 +424,7 @@ const SthapatyaVadhivPropertyDashboard = () => {
 
                                         sx={{
                                             "& .MuiDataGrid-columnHeaders": {
-                                                bgcolor: "#e3e0ab",
+                                                bgcolor: "#3d3d37",
                                             },
                                             "& .MuiDataGrid-columnHeader": {
                                                 bgcolor: "#e3e0ab",

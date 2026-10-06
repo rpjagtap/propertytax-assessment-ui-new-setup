@@ -1,38 +1,106 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Loader from "../loader/loader";
 import {
+  Box,
   Button,
+  Chip,
   Divider,
   Grid,
   Link,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
+  TableHead,
   TableRow,
-  TextareaAutosize,
+  Typography,
+  Avatar,
 } from "@mui/material";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
-import { RenderTableHead } from "../common/table";
 import "../assessment-dashboard/styles.css"; // Import the custom CSS
-import { ArrowBack, Schema } from "@mui/icons-material";
-import { getPDF } from "../../services/assessment-services";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import Schema from "@mui/icons-material/Schema";
+import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import ApplicationWorkflow from "../application-workflow";
 import { getApiBaseUrl } from "../../utils/helpers";
 
+// Theme tokens — same values used across the other redesigned pages.
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+const headCellSx = {
+  bgcolor: NAVY,
+  color: "#fff",
+  fontWeight: 600,
+  fontSize: "13px",
+  padding: "10px 12px",
+  whiteSpace: "nowrap",
+};
+
+const innerHeadCellSx = {
+  bgcolor: "#EEF1F6",
+  color: NAVY,
+  fontWeight: 600,
+  fontSize: "12px",
+  padding: "6px 10px",
+  border: "none",
+  textAlign: "center",
+};
+
+// Maps a free-text status string to a chip color — falls back to a
+// neutral navy tint for statuses not explicitly covered.
+const statusChipSx = (status) => {
+  const normalized = (status || "").toLowerCase();
+  if (normalized.includes("complete") || normalized.includes("approved")) {
+    return { bgcolor: MINT_BG, color: MINT };
+  }
+  if (normalized.includes("reject") || normalized.includes("cancel")) {
+    return { bgcolor: "#FAECE7", color: "#993C1D" };
+  }
+  return { bgcolor: "#EEF2FA", color: NAVY };
+};
+
+// Reusable results card header (avatar + title + optional right side)
+const ResultsHeader = ({ title, right }) => (
+  <>
+    <Box
+      sx={{
+        px: 2.5,
+        py: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 1.5,
+      }}
+    >
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 34, height: 34, bgcolor: MINT_BG, color: MINT }}>
+          <FactCheckOutlined fontSize="small" />
+        </Avatar>
+        <Typography sx={{ fontWeight: 600, fontSize: 15, color: NAVY }}>
+          {title}
+        </Typography>
+      </Stack>
+      {right}
+    </Box>
+    <Divider />
+  </>
+);
+
 const TrackApplicationTable = ({ data, handleBackClick }) => {
-  // const initialState = {};
-  console.log(data);
-  const [isSelectAll, setIsSelectAll] = useState(false);
   const [openWorkflowModalId, setOpenWorkflowModalId] = useState("");
-  const [pendingAppsData, setPendingAppsData] = useState({
+  const [pendingAppsData] = useState({
     ...data,
-    //assessmentFormVOLst: data.assessmentFormVOLst.slice(0, 4),
     assessmentFormVOLst: data.assessmentFormVOLst,
   });
 
@@ -41,73 +109,12 @@ const TrackApplicationTable = ({ data, handleBackClick }) => {
 
   const handleDisplayPDF = async (id) => {
     try {
-      //console.log("id is",id);
-
       const a = document.createElement("a");
-      
-      a.href = `${getApiBaseUrl()}/assessment/get-assessment-documents?docId=${id}`; // Direct path or URL to the PDF file
-      a.download = "downloaded-file.pdf"; // The filename for the downloaded file
-      document.body.appendChild(a); // Append to the DOM
-      a.click(); // Trigger the download
-      document.body.removeChild(a); // Clean up
-
-      // Make an API call to get the PDF as a byte array
-      // //const pdfRes = await getPDF(id);
-
-      // const binaryData = new Uint8Array([...pdfRes].map(char => char.charCodeAt(0)));
-      // // Create a Blob from the binary data
-      // const blob = new Blob([binaryData], { type: 'application/pdf' });
-      // const pdfUrl = URL.createObjectURL(blob);
-      // console.log(blob);
-      // console.log(pdfUrl);
-      // const a = document.createElement('a');
-      // a.href = pdfUrl;
-      // a.download = 'test.pdf';
-      // a.click();
-      //window.open(pdfUrl, '_blank');
-      //setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-
-      //             console.log(pdfRes.slice(0, 100)); // Check the beginning of the string
-      //             const blob = new Blob([pdfRes], { type: 'application/pdf' });
-      // const pdfUrl = URL.createObjectURL(blob);
-      // window.open(pdfUrl, '_blank');
-      // setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-
-      // console.log("PDF content type is",typeof pdfRes);
-      // const encoder = new TextEncoder();
-      // const binaryData = encoder.encode(pdfRes);
-
-      // // Create a Blob and open the PDF
-      // const blob = new Blob([binaryData], { type: 'application/pdf' });
-      // const pdfUrl = URL.createObjectURL(blob);
-      // window.open(pdfUrl, '_blank');
-
-      // Optional cleanup
-      //setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-
-      //             console.log("PDF content type is",typeof pdfRes);
-      // console.log(pdfRes);
-      // console.log("first few characters", pdfRes.slice(0, 100)); // Check the beginning of the string
-
-      //             const byteArray = Uint8Array.from(atob(pdfRes), char => char.charCodeAt(0));
-      // const blob = new Blob([byteArray], { type: "application/pdf" });
-      // const pdfUrl = URL.createObjectURL(blob);
-      // window.open(pdfUrl, "_blank");
-
-      // // Get the byte array from the response
-      // //const byteArray = await pdfRes.arrayBuffer(); // Ensure you fetch the response as binary data
-
-      // // Create a Blob from the byte array
-      // const blob = new Blob([pdfRes], { type: "application/pdf" });
-
-      // // Generate a URL for the Blob
-      // const pdfUrl = URL.createObjectURL(blob);
-
-      // // Open the PDF in a new tab
-      // window.open(pdfUrl, "_blank");
-
-      // // Optional cleanup
-      // setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+      a.href = `${getApiBaseUrl()}/assessment/get-assessment-documents?docId=${id}`;
+      a.download = "downloaded-file.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } catch (error) {
       console.error("Error displaying PDF:", error);
     }
@@ -118,7 +125,7 @@ const TrackApplicationTable = ({ data, handleBackClick }) => {
   };
 
   return (
-    <Grid>
+    <Box sx={{ p: 2 }}>
       {loading && <Loader />}
       {error && (
         <AlertMsg
@@ -135,187 +142,179 @@ const TrackApplicationTable = ({ data, handleBackClick }) => {
           assessmentId={openWorkflowModalId}
         />
       )}
-      <Grid sx={{ margin: 2 }}>
-        <Button variant="contained" color="primary" onClick={handleBackClick} startIcon={<ArrowBack />}>
-          Back
-        </Button>
-      </Grid>
-      {/* <Paper sx={{ marginTop: "15px" }}> */}
-      <Grid>
-        <TableContainer component={Paper}>
-          <Table
-            sx={{ minWidth: 600, border: 1, borderColor: "grey.300" }}
-            size="small"
-            aria-label="a dense table"
-          >
-            <RenderTableHead
-              thSx={{ bgcolor: "#abd9e3", fontWeight: 600 }}
-              trSx={{
-                "& th": {
-                  border: "1px solid grey",
-                  padding: 0,
-                  margin: 0,
-                },
-              }}
-              cells={[
-                labels.SrNo[lang],
-                labels.MalakName[lang],
-                labels.MalakAddress[lang],
-                labels.MobileNo[lang],
-                labels.ApplicationStatus[lang],
-                labels.SRNumber[lang],
-                labels.SRDate[lang],
-                labels.SRDocuemnts[lang],
-                "",
-                labels.Workflow[lang],
-                "",
-              ]}
+
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleBackClick}
+        startIcon={<ArrowBack />}
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          borderRadius: 2,
+          bgcolor: NAVY,
+          "&:hover": { bgcolor: NAVY_LIGHT },
+        }}
+      >
+        Back
+      </Button>
+
+      <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
+        <ResultsHeader
+          title="Tracked application details"
+          right={
+            <Chip
+              label={`${pendingAppsData.assessmentFormVOLst.length} record${
+                pendingAppsData.assessmentFormVOLst.length === 1 ? "" : "s"
+              }`}
+              sx={{ bgcolor: MINT_BG, color: MINT, fontWeight: 600 }}
             />
-            <TableBody>
-              {pendingAppsData.assessmentFormVOLst.map((item, index) => {
-                return (
-                  <TableRow
-                    key={item.assessmentId}
-                    sx={{
-                      "& td": { border: "1px solid grey" },
-                      padding: 0,
-                      margin: 0,
-                    }}
-                  >
-                    {" "}
+          }
+        />
+
+        <Box sx={{ p: 2 }}>
+          <TableContainer component={Paper} elevation={0} sx={{ overflowX: "auto" }}>
+            <Table sx={{ minWidth: 900 }} size="small" aria-label="track application details">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center" sx={headCellSx}>{labels.SrNo[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.MalakName[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.MalakAddress[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.MobileNo[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.ApplicationStatus[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.SRNumber[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.SRDate[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.SRDocuemnts[lang]}</TableCell>
+                  <TableCell align="center" sx={headCellSx}></TableCell>
+                  <TableCell align="center" sx={headCellSx}>{labels.Workflow[lang]}</TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {pendingAppsData.assessmentFormVOLst.map((item, index) => (
+                  <TableRow key={item.assessmentId} hover sx={{ "& td": { padding: "8px 10px", fontSize: "13px", verticalAlign: "top" } }}>
                     <TableCell align="center">{index + 1}</TableCell>
-                    <TableCell align="center">
-                      <>
-                        {item.ownerName}
-                        <Divider />
-                        <b>
-                          {labels.ApplicationNo[lang]} - {item.applicationId}
-                        </b>
-                        <Divider />
-                        <b>
-                          {labels.PropertyNumber[lang]} - {item.propertyCode}
-                        </b>
-                        <Divider />
-                      </>
+
+                    {/* Owner / application / property summary */}
+                    <TableCell align="left">
+                      <Stack spacing={0.5}>
+                        <Typography sx={{ fontWeight: 600, fontSize: 13, color: NAVY }}>
+                          {item.ownerName}
+                        </Typography>
+                        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                          {labels.ApplicationNo[lang]}: <b>{item.applicationId}</b>
+                        </Typography>
+                        <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                          {labels.PropertyNumber[lang]}: <b>{item.propertyCode}</b>
+                        </Typography>
+                      </Stack>
                     </TableCell>
+
                     <TableCell align="center">{item.propertyAddressMarathi}</TableCell>
                     <TableCell align="center">{item.mobileNo}</TableCell>
-                    <TableCell align="center">{item.formStatus}</TableCell>
+
+                    <TableCell align="center">
+                      <Chip
+                        size="small"
+                        label={item.formStatus}
+                        sx={{ fontWeight: 600, ...statusChipSx(item.formStatus) }}
+                      />
+                    </TableCell>
+
                     <TableCell align="center">{item.srNumber}</TableCell>
                     <TableCell align="center">{item.srDate}</TableCell>
+
+                    {/* Documents — inner list */}
                     <TableCell>
-                      <Table size="small" aria-label="inner-table" sx={{ margin: "4px" }}>
-                        <RenderTableHead
-                          thSx={{ bgcolor: "#cbd5d7", fontWeight: 600 }}
-                          trSx={{
-                            "& th": {
-                              border: "1px solid black",
-                              padding: 0,
-                              margin: 0,
-                            },
-                          }}
-                          cells={
-                            [
-                              // labels.DocName[lang],
-                            ]
-                          }
-                        />
-                        <TableBody>
-                          {item.lstAssessmentDocVO.length ? (
-                            <>
-                              {item.lstAssessmentDocVO.map((innerItem1, innerIndex1) => {
-                                return (
-                                  <TableRow key={innerItem1.docId}>
-                                    <TableCell align="center" style={{ border: "none" }}>
-                                      <Link
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          handleDisplayPDF(innerItem1.docId);
-                                        }}
-                                        href="#"
-                                        underline="none"
-                                      >
-                                        {innerItem1.docName}
-                                      </Link>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </>
-                          ) : (
-                            <>
-                              <TableRow>
-                                <TableCell align="center" style={{ border: "none" }}>
-                                  {labels.NoRecordFound[lang]}
+                      {item.lstAssessmentDocVO.length ? (
+                        <Stack spacing={0.5}>
+                          {item.lstAssessmentDocVO.map((doc) => (
+                            <Link
+                              key={doc.docId}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleDisplayPDF(doc.docId);
+                              }}
+                              href="#"
+                              underline="none"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: MINT,
+                              }}
+                            >
+                              <DescriptionOutlined sx={{ fontSize: 15 }} />
+                              {doc.docName}
+                            </Link>
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Typography sx={{ fontSize: 12, color: "text.secondary", textAlign: "center" }}>
+                          {labels.NoRecordFound[lang]}
+                        </Typography>
+                      )}
+                    </TableCell>
+
+                    {/* Assessment details — inner table */}
+                    <TableCell>
+                      <TableContainer sx={{ border: "1px solid #DDE3EC", borderRadius: 1.5, overflow: "hidden" }}>
+                        <Table size="small" aria-label="inner-table">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={innerHeadCellSx}>{labels.useType[lang]}</TableCell>
+                              <TableCell sx={innerHeadCellSx}>{labels.secUseType[lang]}</TableCell>
+                              <TableCell sx={innerHeadCellSx}>{labels.constructionType[lang]}</TableCell>
+                              <TableCell sx={innerHeadCellSx}>{labels.aakarniDate[lang]}</TableCell>
+                              <TableCell sx={innerHeadCellSx}>{labels.areaInMeter[lang]}</TableCell>
+                              <TableCell sx={innerHeadCellSx}>{labels.taxAmount[lang]}</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {item.assessmentFormDetailsVOLst.map((innerItem, innerIndex) => (
+                              <TableRow key={`${item.assessmentId}-${innerIndex}`} hover>
+                                <TableCell sx={{ fontSize: 12, border: "none", textAlign: "center" }}>{innerItem.usetype}</TableCell>
+                                <TableCell sx={{ fontSize: 12, border: "none", textAlign: "center" }}>{innerItem.subusetype}</TableCell>
+                                <TableCell sx={{ fontSize: 12, border: "none", textAlign: "center" }}>{innerItem.constructionType}</TableCell>
+                                <TableCell sx={{ fontSize: 12, border: "none", textAlign: "center" }}>{innerItem.assessmentDate}</TableCell>
+                                <TableCell sx={{ fontSize: 12, border: "none", textAlign: "center" }}>{innerItem.areaInSqmt}</TableCell>
+                                <TableCell sx={{ fontSize: 12, border: "none", fontWeight: 600, textAlign: "center" }}>
+                                  {innerItem.ratableValue}
                                 </TableCell>
                               </TableRow>
-                            </>
-                          )}
-                        </TableBody>
-                      </Table>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
                     </TableCell>
-                    <TableCell>
-                      <Table size="small" aria-label="inner-table" sx={{ margin: "4px" }}>
-                        <RenderTableHead
-                          thSx={{ bgcolor: "#cbd5d7", fontWeight: 600 }}
-                          trSx={{
-                            "& th": {
-                              border: "1px solid black",
-                              padding: 0,
-                              margin: 0,
-                            },
-                          }}
-                          cells={[
-                            labels.useType[lang],
-                            labels.secUseType[lang],
-                            labels.constructionType[lang],
-                            labels.aakarniDate[lang],
-                            labels.areaInMeter[lang],
-                            labels.taxAmount[lang],
-                          ]}
-                        />
-                        <TableBody>
-                          
-                          
-                          {item.assessmentFormDetailsVOLst.map((innerItem, innerIndex) => {
-                            return (
-                              <TableRow key={item.assessmentDetailId}>
-                                <TableCell>{innerItem.usetype}</TableCell>
-                                <TableCell>{innerItem.subusetype}</TableCell>
-                                <TableCell>{innerItem.constructionType}</TableCell>
-                                <TableCell>{innerItem.assessmentDate}</TableCell>
-                                <TableCell>{innerItem.areaInSqmt}</TableCell>
-                                <TableCell>{innerItem.ratableValue}</TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </TableCell>
-                    <TableCell>
+
+                    <TableCell align="center">
                       <Button
-                        onClick={() => {
-                          handleOpenWorkflowModal(item.assessmentId);
-                        }}
+                        onClick={() => handleOpenWorkflowModal(item.assessmentId)}
                         endIcon={<Schema />}
-                        disabled={false}
-                        sx={{
-                          marginTop: "8px",
-                        }}
                         variant="outlined"
+                        size="small"
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: 1.5,
+                          borderColor: NAVY,
+                          color: NAVY,
+                          "&:hover": { borderColor: NAVY_LIGHT, bgcolor: "rgba(18,35,63,0.04)" },
+                        }}
                       >
                         Workflow
                       </Button>
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Grid>
-      {/* </Paper> */}
-    </Grid>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 
