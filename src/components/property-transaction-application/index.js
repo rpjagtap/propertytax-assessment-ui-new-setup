@@ -232,7 +232,7 @@ const PropertyTranApplication = () => {
             <ScrollTop />
             <Box
                 sx={{
-                    backgroundColor: "rgb(204, 234, 244)",
+                    backgroundColor: "#EEF2FA",
                     display: "flex",
                     flexDirection: "column",
                     padding: 4,
@@ -246,67 +246,77 @@ const PropertyTranApplication = () => {
                         sx={{
                             maxWidth: "1400px",
                             margin: "0 auto",
-                            padding: 5,
+                            padding: 0,
                             borderRadius: 5,
+                            overflow: "hidden",
                         }}
                     >
-                        <Typography
-                            variant="h5"
-                            fontWeight="bolder"
-                            align="center"
-                            paddingBottom={2}
-                            paddingTop={2}
+                        <Box
+                            sx={{
+                                background: "linear-gradient(90deg, #12233F 0%, #1B3A63 100%)",
+                                py: 2.5,
+                                px: 3,
+                            }}
                         >
-                            {labels?.PropertyTransactionApplication?.[lang] || ""}
-                        </Typography>
-                        <Grid container alignItems="flex-start" justifyContent="flex-start" sx={{ width: "100%" }}>
-                            <FormikProvider value={formik}>
-                                <Form style={{ width: "100%" }}>
-                                    <GridRow>
-                                        <FormLabel label={labels.Type[lang]} required />
-                                        <FormValue component={<SelectInput name="transactionTypeId" options={transactionsOptions} variant="standard" />} />
-                                        <FormLabel label={labels.PropertyNumber[lang]} />
-                                        <FormValue component={<TextInput name="propertyCode" disabled={isPropertyCodeDisabled} onBlur={handlePropertyCodeBlur} variant="standard" />} />
-                                    </GridRow>
-                                    <GridRow>
-                                        <FormLabel label={labels.Zone[lang]} />
-                                        <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} variant="standard" />} />
-                                        <FormLabel label={labels.Gat[lang]} />
-                                        <FormValue component={<SelectInput name="gatKey" options={gatKeys} variant="standard" />} />
-                                    </GridRow>
-                                    <GridRow>
-                                        <FormLabel label={labels.applicantName[lang]} required />
-                                        <FormValue component={<TextInput name="applicantName" variant="standard" />} />
-                                        <FormLabel label={labels.MobileNo[lang]} required />
-                                        <FormValue component={<NumericTextInput name="applicantMobile" required maxLength={10} variant="standard" />} />
-                                    </GridRow>
-                                    <GridRow>
-                                        <FormLabel label={labels.emailId[lang]} />
-                                        <FormValue component={<TextInput name="applicantEmail" variant="standard" />} />
-                                    </GridRow>
+                            <Typography
+                                variant="h5"
+                                fontWeight="bolder"
+                                align="center"
+                                sx={{ color: "#fff" }}
+                            >
+                                {labels?.PropertyTransactionApplication?.[lang] || ""}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ padding: 5 }}>
+                            <Grid container alignItems="flex-start" justifyContent="flex-start" sx={{ width: "100%" }}>
+                                <FormikProvider value={formik}>
+                                    <Form style={{ width: "100%" }}>
+                                        <GridRow>
+                                            <FormLabel label={labels.Type[lang]} required />
+                                            <FormValue component={<SelectInput name="transactionTypeId" options={transactionsOptions} variant="standard" />} />
+                                            <FormLabel label={labels.PropertyNumber[lang]} />
+                                            <FormValue component={<TextInput name="propertyCode" disabled={isPropertyCodeDisabled} onBlur={handlePropertyCodeBlur} variant="standard" />} />
+                                        </GridRow>
+                                        <GridRow>
+                                            <FormLabel label={labels.Zone[lang]} />
+                                            <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} variant="standard" />} />
+                                            <FormLabel label={labels.Gat[lang]} />
+                                            <FormValue component={<SelectInput name="gatKey" options={gatKeys} variant="standard" />} />
+                                        </GridRow>
+                                        <GridRow>
+                                            <FormLabel label={labels.applicantName[lang]} required />
+                                            <FormValue component={<TextInput name="applicantName" variant="standard" />} />
+                                            <FormLabel label={labels.MobileNo[lang]} required />
+                                            <FormValue component={<NumericTextInput name="applicantMobile" required maxLength={10} variant="standard" />} />
+                                        </GridRow>
+                                        <GridRow>
+                                            <FormLabel label={labels.emailId[lang]} />
+                                            <FormValue component={<TextInput name="applicantEmail" variant="standard" />} />
+                                        </GridRow>
 
-                                    <Grid container justifyContent="center" alignItems="center">
-                                        <Grid
-                                            item
-                                            md={3}
-                                            container
-                                            justifyContent={{ md: "flex-end" }}
-                                            alignItems="center"
-                                            p={2}
-                                        >
-                                            <FormButtons
-                                                isValid={!(formik.isValid && formik.dirty) || (formik.values.transactionTypeId !== 1 && !isPropertyCodeValid)}
-                                                handleSubmitButtonClick={handleSubmit}
-                                                resetForm={() => { window.location.reload(); }}
-                                                submitBtnLabel="Submit"
-                                                isSubmitIcon={false}
-                                                cancelRedirect="/PropertyTransactionsDashBoard"
-                                            />
+                                        <Grid container justifyContent="center" alignItems="center">
+                                            <Grid
+                                                item
+                                                md={3}
+                                                container
+                                                justifyContent={{ md: "flex-end" }}
+                                                alignItems="center"
+                                                p={2}
+                                            >
+                                                <FormButtons
+                                                    isValid={!(formik.isValid && formik.dirty) || (formik.values.transactionTypeId !== 1 && !isPropertyCodeValid)}
+                                                    handleSubmitButtonClick={handleSubmit}
+                                                    resetForm={() => { window.location.reload(); }}
+                                                    submitBtnLabel="Submit"
+                                                    isSubmitIcon={false}
+                                                    cancelRedirect="/PropertyTransactionsDashBoard"
+                                                />
+                                            </Grid>
                                         </Grid>
-                                    </Grid>
-                                </Form>
-                            </FormikProvider>
-                        </Grid>
+                                    </Form>
+                                </FormikProvider>
+                            </Grid>
+                        </Box>
                     </Paper>
                 </Box>
             </Box>

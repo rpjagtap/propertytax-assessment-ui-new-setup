@@ -812,6 +812,11 @@ export const saveProfileInterface = async (body) => {
   return response.data;
 };
 
+export const deactivateUserApi = async(body) => {
+  const response = await apiClient.post(`userdetails/deactivate-user` ,body);
+  return response.data;
+}
+
 
 
 

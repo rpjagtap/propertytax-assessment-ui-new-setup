@@ -28,6 +28,11 @@ import {
   Autocomplete,
   TextField,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
   LockOutlined,
@@ -41,6 +46,7 @@ import {
   Cancel,
   PersonAddAlt1Outlined,
   ManageAccountsOutlined,
+  PersonOffOutlined,
 } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
@@ -54,14 +60,10 @@ import {
   getAllZone,
   getAllGatByZoneKey,
   getAddUser,
-  // NOTE: add this to assessment-services.js if it isn't there yet.
-  // Expected to accept { userCode } (a partial/prefix match is fine) and
-  // return either an array of users or { lst: [...] } / { data: [...] },
-  // where each item has at least { userCode, userName, ...same shape
-  // editUserApi returns for a single user }.
   getAllUserByUserCode,
   editUserApi,
   validateUserApi,
+  deactivateUserApi,
 } from "../../services/assessment-services";
 import useApiState from "../common/useApiState";
 import { trackApplicationSchema } from "../../utils/validation-schema";
@@ -94,6 +96,10 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
      - "Edit User Detail" -> admin searches an existing user by userCode
         (getAllUserByUserCode), picks one from the results, and the same
         form below gets populated (editUserApi) so it can be updated.
+        The password field is NOT shown on this tab.
+        A "Deactivate User" button is also available here, used
+        when a user is transferred out of the department. The header
+        shows an Active / Inactive chip on the right for the loaded user.
 --------------------------------------------------------- */
 const ROLE_ADMIN = "admin"; // Prashashan Adhikari
 const ROLE_ZONE_OFFICER = "zoneofficer";
@@ -116,6 +122,43 @@ const CASH_COUNTER_OPTIONS = [
   { label: "Counter 1", value: "1" },
   { label: "Counter 2", value: "2" },
 ];
+
+// Inactive ONLY when the API clearly says so. Missing/unknown = active.
+// Handles "Y"/"N", true/false, 1/0, "active"/"inactive".
+const toActiveBool = (v) => {
+  if (v === undefined || v === null || v === "") return true;
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v === 1;
+  return !["n", "no", "false", "0", "inactive", "deactive", "deactivated", "disabled", "i", "d"].includes(
+    String(v).trim().toLowerCase()
+  );
+};
+
+// The edit API may send the status flag under different key names, and the
+// user search list may carry it too. Look through every source object for
+// any known key (case-insensitive) and use the first one found.
+const ACTIVE_KEYS = [
+  "isactive",
+  "activeflag",
+  "isactiveflag",
+  "active",
+  "status",
+  "userstatus",
+  "activestatus",
+  "is_active",
+  "useractive",
+  "enabled",
+  "isenabled",
+];
+
+const resolveActive = (...sources) => {
+  for (const src of sources) {
+    if (!src || typeof src !== "object") continue;
+    const foundKey = Object.keys(src).find((k) => ACTIVE_KEYS.includes(k.toLowerCase()));
+    if (foundKey !== undefined) return toActiveBool(src[foundKey]);
+  }
+  return undefined; // no status key found anywhere
+};
 
 // Normalizes the gat API response — some endpoints return the array
 // directly, others wrap it as { gatLst: [...] }. Handle both so a
@@ -175,6 +218,10 @@ const AddUser = () => {
   // Duplicate user-code check (Add New User tab)
   const [userCodeExists, setUserCodeExists] = useState(false);
   const [checkingUserCode, setCheckingUserCode] = useState(false);
+
+  // Deactivate user (Edit User Detail tab)
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [deactivateReason, setDeactivateReason] = useState("");
 
   const initialState = {
     userCode: "",
@@ -294,6 +341,9 @@ const AddUser = () => {
     setUserSearchInput("");
     setUserOptions([]);
     setUserCodeExists(false);
+    setDeactivateDialogOpen(false);
+    setDeactivateReason("");
+    setShowPassword(false);
   };
 
   /* -------------------------------------------------------
@@ -440,21 +490,25 @@ const AddUser = () => {
         userName: values.userName,
         employeeId: Number(values.employeeId),
         userCode: values.userCode,
-        password: values.password,
         profileId: values.profileId,
         emailAddress: values.emailAddress,
         mobileNumber: values.mobileNumber,
         userZoneGatVO: buildUserZoneGatVO(values),
       };
 
+      // Password is only entered on the Add tab. On Edit it is not shown
+      // and not sent, so the existing password stays unchanged.
+      if (activeTab === TAB_ADD && values.password) {
+        body.password = values.password;
+      }
+
       // counterKey only applies to the Cashier role
       if (isCashierRole && values.cashCounter) {
         body.counterKey = Number(values.cashCounter);
       }
 
-      // NOTE: isActive wasn't present in the sample Postman payload.
-      // Uncomment if the backend still expects it:
-      // body.isActive = values.isActive ? "Y" : "N";
+      // NOTE: isActive is intentionally not sent. Status is changed only
+      // through the Deactivate User button (deactivateUserApi).
 
       await getAddUser(body);
       saveSucceeded = true;
@@ -504,6 +558,30 @@ const AddUser = () => {
   };
 
   /* -------------------------------------------------------
+     Deactivate the currently loaded user (Edit tab only).
+     Used when a user is transferred out of the department.
+     If the API also needs a reason, uncomment the line below.
+  ------------------------------------------------------- */
+  const handleDeactivate = async () => {
+    const userCode = formik.values.userCode;
+    if (!userCode) return;
+    try {
+      setLoading(true);
+      const body = { userCode };
+      // body.reason = deactivateReason.trim();
+      await deactivateUserApi(body);
+      showToastSuccess("User deactivated successfully!");
+      // closes the dialog and clears the loaded record so the admin
+      // has to pick a user again
+      resetForm();
+    } catch (err) {
+      showToastError(getErrorMsg(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* -------------------------------------------------------
      Debounced search-as-you-type against getAllUserByUserCode.
      Only runs while the "Edit User Detail" tab is active.
   ------------------------------------------------------- */
@@ -537,6 +615,8 @@ const AddUser = () => {
 
       const body = { userCode: item.userCode };
       const res = await editUserApi(body);
+      // Uncomment to inspect the real response keys (status flag, profile, etc.)
+      // console.log("EDIT RESPONSE:", JSON.stringify(res, null, 2));
       seteditProfile(res);
 
       // normalize the userZoneGatVO shape coming back from the API into
@@ -549,8 +629,21 @@ const AddUser = () => {
           : []
       );
 
+      const activeFromApi = resolveActive(res, item);
+      if (activeFromApi === undefined) {
+        console.warn(
+          "No active/inactive key found. Edit response keys:",
+          Object.keys(res || {}),
+          "Search row keys:",
+          Object.keys(item || {})
+        );
+      }
+
+      // profile id may come under a different key depending on the API
+      const editProfileId = res.profileId ?? res.profileKey ?? res.profile ?? "";
+
       const editRoleKey = getRoleKey(
-        profiles.find((p) => String(p.value) === String(res.profileId))?.label
+        profiles.find((p) => String(p.value) === String(editProfileId))?.label
       );
       if (editRoleKey === ROLE_GAT) {
         await loadGatOptionsForZones(editZoneKeys);
@@ -558,20 +651,20 @@ const AddUser = () => {
         setGatKeys([]);
       }
 
-      // NOTE: loads the real password so it can be edited manually.
-      // If your backend doesn't return the real password on edit for
-      // security reasons, switch this back to a masked value and add
-      // a "leave blank to keep current password" pattern in handleSave.
+      // Password is NOT loaded on Edit: the field is hidden and the
+      // existing password stays unchanged when the admin updates.
       formik.setValues({
         userName: res.userName || "",
         employeeId: res.employeeId ? String(res.employeeId) : "",
         userCode: res.userCode || "",
-        password: res.password || "",
-        isActive: res.isActive === "Y" ? true : false,
+        password: "",
+        // Checks the edit response first, then the search-list row.
+        // If no status key exists anywhere, falls back to active.
+        isActive: activeFromApi === undefined ? true : activeFromApi,
         zoneKey: editZoneKeys,
         gatKey: editGatKeys,
         cashCounter: res.counterKey ? String(res.counterKey) : "",
-        profileId: String(res.profileId) || "",
+        profileId: editProfileId !== "" ? String(editProfileId) : "",
         emailAddress: res.emailAddress || "",
         mobileNumber: res.mobileNumber || "",
       });
@@ -790,6 +883,7 @@ const AddUser = () => {
                   sx={{ bgcolor: "#E1F5EE", color: "#0F6E56", fontWeight: 600 }}
                 />
               )}
+              {/* Status chip on the right: Active / Inactive */}
               <Chip
                 icon={
                   formik.values.isActive ? (
@@ -850,7 +944,11 @@ const AddUser = () => {
                       avatar={<LockOutlined sx={{ color: "text.secondary" }} />}
                       title="Login credentials"
                       titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                      subheader="Enter the login code and password for this user"
+                      subheader={
+                        activeTab === TAB_ADD
+                          ? "Enter the login code and password for this user"
+                          : "Login code of this user"
+                      }
                       sx={{ pb: 0 }}
                     />
                     <CardContent>
@@ -876,35 +974,38 @@ const AddUser = () => {
                         />
                       </GridRow>
 
-                      <GridRow>
-                        <FormLabel label={labels.password[lang]} required />
-                        <FormValue
-                          component={
-                            <TextInput
-                              type={showPassword ? "text" : "password"}
-                              name="password"
-                              InputProps={{
-                                endAdornment: (
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setShowPassword((s) => !s)}
-                                  >
-                                    {showPassword ? (
-                                      <VisibilityOff fontSize="small" />
-                                    ) : (
-                                      <Visibility fontSize="small" />
-                                    )}
-                                  </IconButton>
-                                ),
-                              }}
-                            />
-                          }
-                        />
-                      </GridRow>
+                      {/* Password is only shown when adding a new user */}
+                      {activeTab === TAB_ADD && (
+                        <GridRow>
+                          <FormLabel label={labels.password[lang]} required />
+                          <FormValue
+                            component={
+                              <TextInput
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                InputProps={{
+                                  endAdornment: (
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => setShowPassword((s) => !s)}
+                                    >
+                                      {showPassword ? (
+                                        <VisibilityOff fontSize="small" />
+                                      ) : (
+                                        <Visibility fontSize="small" />
+                                      )}
+                                    </IconButton>
+                                  ),
+                                }}
+                              />
+                            }
+                          />
+                        </GridRow>
+                      )}
                       <Typography sx={{ fontSize: 11, color: "text.secondary", mt: 0.5 }}>
-                        Login code and password are entered manually. One login code covers
-                        all selected zones/gats below — access is switched in-app, not via
-                        separate logins.
+                        {activeTab === TAB_ADD
+                          ? "Login code and password are entered manually. One login code covers all selected zones/gats below — access is switched in-app, not via separate logins."
+                          : "One login code covers all selected zones/gats below — access is switched in-app, not via separate logins."}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -1151,7 +1252,7 @@ const AddUser = () => {
 
               <Divider sx={{ my: 3 }} />
 
-              <Grid container justifyContent="center">
+              <Grid container justifyContent="center" alignItems="center" spacing={2}>
                 <Grid item md={4} p={0}>
                   <FormButtons
                     isValid={false}
@@ -1162,11 +1263,67 @@ const AddUser = () => {
                     disabled={loading}
                   />
                 </Grid>
+
+                {/* Deactivate: only on the Edit tab, once a user is loaded.
+                    Active user   -> enabled "Deactivate User" button.
+                    Inactive user -> disabled "Already Inactive" button. */}
+                {activeTab === TAB_EDIT && isEditMode && (
+                  <Grid item>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<PersonOffOutlined />}
+                      disabled={loading || !formik.values.isActive}
+                      onClick={() => setDeactivateDialogOpen(true)}
+                      sx={{ textTransform: "none", fontWeight: 600 }}
+                    >
+                      {formik.values.isActive ? "Deactivate User" : "Already Inactive"}
+                    </Button>
+                  </Grid>
+                )}
               </Grid>
             </CardContent>
           </Card>
         )}
       </FormikProvider>
+
+      {/* Deactivate confirmation dialog */}
+      <Dialog
+        open={deactivateDialogOpen}
+        onClose={() => !loading && setDeactivateDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Deactivate user?</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontSize: 14, mb: 2 }}>
+            <b>{formik.values.userName}</b> ({formik.values.userCode}) will no longer be
+            able to log in. Use this when a user has been transferred out of the
+            department.
+          </DialogContentText>
+          <TextField
+            fullWidth
+            size="small"
+            label="Reason (optional)"
+            placeholder="e.g. Transferred to another department"
+            value={deactivateReason}
+            onChange={(e) => setDeactivateReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeactivateDialogOpen(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeactivate}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={18} color="inherit" /> : "Deactivate"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashBoardContainer>
   );
 };
