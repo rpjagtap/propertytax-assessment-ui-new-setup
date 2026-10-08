@@ -60,6 +60,7 @@ const PropertyNameChangeZo = () => {
                 const response = await getPropertyUpadateDetails({
                     transactionTypeKey: transactionTypeIdFromURL,
                     applicationId: applicationNoFromURL,
+                    
                 });
                 if (response) {
                     setResponseData(response);

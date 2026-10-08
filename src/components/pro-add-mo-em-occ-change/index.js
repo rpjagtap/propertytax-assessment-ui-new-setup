@@ -42,13 +42,12 @@ import {
     ViewProTransactionDoc
 } from "../../services/assessment-services";
 
-// Theme tokens — same values used across the Property Transaction module.
+// Theme tokens
 const NAVY = "#12233F";
 const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
-// A single "label: value/input" row.
 const FieldRow = ({ label, children }) => (
     <Grid item xs={12} md={6}>
         <Box display="flex" alignItems="center">
@@ -62,7 +61,6 @@ const FieldRow = ({ label, children }) => (
     </Grid>
 );
 
-// Section wrapper — icon-badged header + divider + padded body (+ optional footer).
 const SectionCard = ({ icon, title, subtitle, children, footer }) => (
     <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
         <CardHeader
@@ -89,10 +87,31 @@ const SectionCard = ({ icon, title, subtitle, children, footer }) => (
     </Card>
 );
 
+function generateUUID() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const buf = new Uint8Array(16);
+        crypto.getRandomValues(buf);
+        buf[6] = (buf[6] & 0x0f) | 0x40;
+        buf[8] = (buf[8] & 0x3f) | 0x80;
+        return [...buf].map((b, i) =>
+            [4, 6, 8, 10].includes(i) ? "-" + b.toString(16).padStart(2, "0") : b.toString(16).padStart(2, "0")
+        ).join("");
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
 
 const PropertyTranApplication = () => {
     const lang = useSelector((state) => state.userDetails.lang);
     const { setLoading, error, setError } = useApiState();
+    const navigate = useNavigate();
+
     const [allTrsactions, setAllTrsactions] = useState([]);
     const [zoneKeys, setZoneKeys] = useState([]);
     const [gatKeys, setGatKeys] = useState([]);
@@ -100,14 +119,16 @@ const PropertyTranApplication = () => {
     const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
     const propertyCodeFromURL = searchParams.get("propertyCode");
     const applicationNoFromURL = searchParams.get("applicationNo");
-    const [propertyOwnerDetails, setPropertyOwnerDetails] = useState([]);
+    const applicationFromIdFromURL = searchParams.get("applicationFromId");
+
+    // FIX: string instead of [] (it holds a name)
+    const [propertyOwnerDetails, setPropertyOwnerDetails] = useState("");
     const [mobileNo, setMobileNo] = useState("");
     const [occupant, setOccupant] = useState("");
     const [ResponseData, setResponseData] = useState([]);
-    const applicationFromIdFromURL = searchParams.get("applicationFromId");
 
     const initialState = {
-        marPropertyName: propertyOwnerDetails,
+        marPropertyName: "",
         engPropertyName: "",
         marPropertyOccupantName: "",
         engPropertyOccupantName: "",
@@ -119,7 +140,6 @@ const PropertyTranApplication = () => {
         newEngOwnerName: "",
         newMarOccupantName: "",
         newEngOccupantName: "",
-
         documents: [
             {
                 documentId: "",
@@ -130,7 +150,8 @@ const PropertyTranApplication = () => {
 
     const formik = useFormik({
         initialValues: initialState,
-        enableReinitialize: true,
+        // FIX: was true. It reset zoneKey/gatKey every time the API data changed.
+        enableReinitialize: false,
         validationSchema: namChangeApplicationSchema,
         validateOnMount: true,
         onSubmit: (values) => {
@@ -145,76 +166,28 @@ const PropertyTranApplication = () => {
         })), [allTrsactions]
     );
 
+    // Set transaction type from URL
     useEffect(() => {
         if (transactionTypeIdFromURL && transactionsOptions.length > 0) {
             const match = transactionsOptions.find(
                 (item) => String(item.value) === String(transactionTypeIdFromURL)
             );
             if (match) {
-                formik.setFieldValue("transactionTypeId", match.value); // only id if formik expects id
+                formik.setFieldValue("transactionTypeId", match.value);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [transactionTypeIdFromURL, transactionsOptions]);
 
-    useEffect(() => {
-
-        if (!propertyCodeFromURL) return;
-
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const [ownerResponse] = await Promise.all([
-                    getPropertyForUpadate({
-                        propertyCode: propertyCodeFromURL,
-                        transactionTypeKey: transactionTypeIdFromURL,
-                    }),
-                ]);
-                // Owner Details
-                if (ownerResponse) {
-                    setPropertyOwnerDetails(ownerResponse.oldMarOwnerName);
-                    setMobileNo(ownerResponse.propertyMobileNo);
-                    setOccupant(ownerResponse.oldMarOccupantName);
-                    setResponseData(ownerResponse?.documentVOs || []);
-                }
-            } catch (error) {
-                showToastError(getErrorMsg(error));
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [propertyCodeFromURL, transactionTypeIdFromURL, applicationNoFromURL]);
-
-    const documents = ResponseData;
-
-
-    const handleDownload = async (documentName, documentURLbase64) => {
-        try {
-            const response = await ViewProTransactionDoc(documentName, documentURLbase64);
-
-            // Create blob using the response type from headers
-            const contentType = response.type || "application/pdf"; // default PDF
-            const blob = new Blob([response], { type: contentType });
-            const url = window.URL.createObjectURL(blob);
-
-            // Open in new tab
-            const newWindow = window.open(url, "_blank");
-            if (!newWindow) {
-                alert("Please allow popups to view the file.");
-            }
-
-            // Optional: revoke the object URL after a while
-            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-        } catch (error) {
-            console.error("Download failed:", error);
-        }
-    };
-
+    // Load transaction types + zones (once)
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
-                const [allProTransactionsRes, zonesRes] = await Promise.all([getAllProTransactions(), getZoneByProfile()]);
+                const [allProTransactionsRes, zonesRes] = await Promise.all([
+                    getAllProTransactions(),
+                    getZoneByProfile(),
+                ]);
                 setAllTrsactions(allProTransactionsRes);
                 setZoneKeys(zonesRes.zoneLst);
                 if (zonesRes.zoneLst.length === 1) {
@@ -230,6 +203,7 @@ const PropertyTranApplication = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Load gats whenever the zone changes
     useEffect(() => {
         formik.setFieldValue("gatKey", "");
         setGatKeys([]);
@@ -254,50 +228,87 @@ const PropertyTranApplication = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formik.values.zoneKey]);
-    const navigate = useNavigate();
 
+    // FIX: fetch property only when propertyCode, zoneKey AND gatKey are all available
+    useEffect(() => {
+        if (!propertyCodeFromURL || !formik.values.zoneKey || !formik.values.gatKey) {
+            return;
+        }
+
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const ownerResponse = await getPropertyForUpadate({
+                    propertyCode: propertyCodeFromURL,
+                    transactionTypeKey: transactionTypeIdFromURL,
+                    zoneKey: formik.values.zoneKey,
+                    gatKey: formik.values.gatKey,
+                });
+
+                if (ownerResponse) {
+                    setPropertyOwnerDetails(ownerResponse.oldMarOwnerName || "");
+                    // setMobileNo(ownerResponse.propertyMobileNo || "");
+                    setOccupant(ownerResponse.oldMarOccupantName || "");
+                    setResponseData(ownerResponse?.documentVOs || []);
+                }
+            } catch (error) {
+                // clear old details if this zone/gat combination is not valid for the property
+                setPropertyOwnerDetails("");
+                // setMobileNo("");
+                setOccupant("");
+                setResponseData([]);
+                showToastError(getErrorMsg(error));
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        propertyCodeFromURL,
+        transactionTypeIdFromURL,
+        applicationNoFromURL,
+        formik.values.zoneKey,
+        formik.values.gatKey,
+    ]);
+
+    // Prefill the new-name fields with the current names.
+    // resetForm keeps `dirty` false until the user actually edits something.
     useEffect(() => {
         if (propertyOwnerDetails || occupant) {
-            formik.setValues(prev => ({
-                ...prev,
-                marPropertyName: propertyOwnerDetails || prev.marPropertyName,
-                marPropertyOccupantName: occupant || prev.marPropertyOccupantName,
-            }));
+            formik.resetForm({
+                values: {
+                    ...formik.values,
+                    marPropertyName: propertyOwnerDetails || formik.values.marPropertyName,
+                    marPropertyOccupantName: occupant || formik.values.marPropertyOccupantName,
+                },
+            });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [propertyOwnerDetails, occupant]);
 
+    const documents = ResponseData;
 
-    // Safe UUID generator for browsers and Node
-    function generateUUID() {
-        if (typeof crypto !== "undefined" && crypto.randomUUID) {
-            return crypto.randomUUID(); // Native browser / Node support
+    const handleDownload = async (documentName, documentURLbase64) => {
+        try {
+            const response = await ViewProTransactionDoc(documentName, documentURLbase64);
+            const contentType = response.type || "application/pdf";
+            const blob = new Blob([response], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+
+            const newWindow = window.open(url, "_blank");
+            if (!newWindow) {
+                alert("Please allow popups to view the file.");
+            }
+            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+        } catch (error) {
+            console.error("Download failed:", error);
         }
-        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-            // Fallback for browsers without randomUUID
-            const buf = new Uint8Array(16);
-            crypto.getRandomValues(buf);
-
-            // Per RFC 4122 section 4.4
-            buf[6] = (buf[6] & 0x0f) | 0x40;
-            buf[8] = (buf[8] & 0x3f) | 0x80;
-
-            return [...buf].map((b, i) =>
-                [4, 6, 8, 10].includes(i) ? "-" + b.toString(16).padStart(2, "0") : b.toString(16).padStart(2, "0")
-            ).join("");
-        }
-        // Last resort: Math.random-based (less secure)
-        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            const v = c === "x" ? r : (r & 0x3) | 0x8;
-            return v.toString(16);
-        });
-    }
-
+    };
 
     const handleSubmit = async () => {
         const values = formik.values;
         const body = {
-
             requestId: generateUUID(),
             channelName: "PropertyTax",
             propertyUpdateVOs: [
@@ -312,8 +323,8 @@ const PropertyTranApplication = () => {
                     newEngOccupantName: values.engPropertyOccupantName,
                     remark: values.remark,
                     applicationId: applicationNoFromURL,
-                    oldEngOwnerName: values.occupantName,
-                    mobileNo: mobileNo,
+                    oldEngOwnerName: values.occupantName, // NOTE: not a formik field, so this is undefined
+                    // mobileNo: mobileNo,
                     oldMarOwnerName: propertyOwnerDetails,
                     oldMarOccupantName: occupant,
                     documentVOs:
@@ -331,11 +342,10 @@ const PropertyTranApplication = () => {
         };
         try {
             setLoading(true);
-
             const response = await submitPropertyInfoChange(body);
 
-            if (response?.responseStatus === 'Success') {
-                showToastSuccess(`Thank you for your application. You will be redirected in 5 seconds...`);
+            if (response?.responseStatus === "Success") {
+                showToastSuccess("Thank you for your application. You will be redirected in 5 seconds...");
                 setTimeout(() => {
                     navigate("/PropertyTransactionsDashBoard");
                 }, 5000);
@@ -447,6 +457,7 @@ const PropertyTranApplication = () => {
                                         size="small"
                                         name="remark"
                                         required
+                                        value={formik.values.remark}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
                                         sx={{ width: "100%" }}
@@ -481,6 +492,7 @@ const PropertyTranApplication = () => {
                                         size="small"
                                         name="engPropertyName"
                                         required
+                                        value={formik.values.engPropertyName}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
                                         sx={{ width: "100%" }}
@@ -506,6 +518,7 @@ const PropertyTranApplication = () => {
                                         size="small"
                                         name="engPropertyOccupantName"
                                         required
+                                        value={formik.values.engPropertyOccupantName}
                                         onChange={formik.handleChange}
                                         onBlur={formik.handleBlur}
                                         sx={{ width: "100%" }}
@@ -530,7 +543,7 @@ const PropertyTranApplication = () => {
                                 />
                             }
                         >
-                            {applicationFromIdFromURL === '2' ? (
+                            {applicationFromIdFromURL === "2" ? (
                                 <Grid container spacing={3}>
                                     <Grid container item spacing={3} xs={12}>
                                         <PropertyDocumentsForm />

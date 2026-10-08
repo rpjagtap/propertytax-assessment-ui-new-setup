@@ -200,6 +200,8 @@ const PropertyTranApplication = () => {
         try {
             const res = await validatePropertyCode({
                 propertyCode: propertyCode,
+                zoneKey: formik.values.zoneKey,
+                gatKey: formik.values.gatKey,
             });
             if (res?.status?.toLowerCase().includes("zone or gat does not match")) {
                 showToastError(res.status);
