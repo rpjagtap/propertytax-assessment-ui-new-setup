@@ -1,89 +1,82 @@
 import React from "react";
+import { useSelector } from "react-redux";
+import { Avatar, Box, Card, CardContent, Divider, Stack, Typography } from "@mui/material";
+import PeopleOutline from "@mui/icons-material/PeopleOutline";
 import { GridRow, FormLabel, FormValue } from "../common/custom-form-grid";
 import TextInput from "../form-fields/text-input";
 import { labels } from "../../lang/labels";
-import { useSelector } from "react-redux";
-import {
-  Grid,
-  Paper,
-  Box,
-  Typography,
-  TextField
-} from "@mui/material";
+
+// Theme tokens — same values used across the other redesigned pages.
+const NAVY = "#12233F";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+// Small caption that labels a group of related fields inside the card.
+const GroupCaption = ({ children }) => (
+  <Typography
+    sx={{
+      fontSize: 12,
+      fontWeight: 700,
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      color: "text.secondary",
+      mb: 1,
+    }}
+  >
+    {children}
+  </Typography>
+);
 
 const OccupantInfoForm = React.memo(() => {
-  const lang = useSelector((state) => state.userDetails.lang);
-  return (
-    <>
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "rgb(204, 234, 244)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: 4,
-          margin: 5,
-          borderRadius: 4,
-          minHeight: "auto",
-        }}
-      >
-        <Box>
-          <Paper
-            elevation={3}
-            sx={{
-              // width: "200%",
-              padding: 5,
-              marginLeft: "1.5%",
-              borderRadius: 5,
-              textAlign: "left",
-            }}
-          >
-            <Typography
-              variant="h5"
-              fontWeight="bolder"
-              align="center"
-              paddingBottom={2}
-              paddingTop={2}
-            >
-              {labels?.OccupantDetails?.[lang] || ""}
-            </Typography>
-            <Grid container alignItems="flex-start" justifyContent="flex-start">
-              <GridRow>
-                <FormLabel label={labels.NameMarathi[lang]} required />
-                <FormValue component={<TextInput name="marFirstOccupantName" variant="standard" />} />
-                <FormLabel label={labels.NameEnglish[lang]} required />
-                <FormValue component={<TextInput name="engFirstOccupantName" variant="standard" />} />
-              </GridRow>
-              <GridRow>
-                <FormLabel label={labels.OccupantMobileNo[lang]} required />
-                <FormValue component={<TextInput name="occupantMobile" required variant="standard" />} />
-                <FormLabel label={labels.OccupantEmailId[lang]} />
-                <FormValue component={<TextInput name="occupantEmail" variant="standard" />} />
-              </GridRow>
-              <GridRow>
-                <FormLabel label={labels.OccupantAadhaarNo[lang]} required />
-                <FormValue component={<TextInput name="occupantAdharNo" variant="standard" />} />
-              </GridRow>
+  const lang = useSelector((state) => state.userDetails?.lang);
 
-              {/* <GridRow>
-                <FormLabel label={labels.OccupantLastName[lang]} required />
-                <FormValue component={<TextInput name="engLastOccupantName" />} />
-                <FormLabel label={labels.OccupantFirstNameEnglish[lang]} required />
-                <FormValue component={<TextInput name="marFirstOccupantName" />} />
-              </GridRow>
-              <GridRow>
-                <FormLabel label={labels.OccupantMiddleNameEnglish[lang]} required />
-                <FormValue component={<TextInput name="marMiddleOccupantName" />} />
-                <FormLabel label={labels.OccupantLastNameEnglish[lang]} required />
-                <FormValue component={<TextInput name="marLastOccupantName" />} />
-              </GridRow> */}
-              
-            </Grid>
-          </Paper>
+  return (
+    <Box>
+      {/* Section header */}
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+        <Avatar sx={{ width: 36, height: 36, bgcolor: MINT_BG, color: MINT }}>
+          <PeopleOutline fontSize="small" />
+        </Avatar>
+        <Box>
+          <Typography sx={{ fontWeight: 700, fontSize: 16, color: NAVY }}>
+            {labels?.OccupantDetails?.[lang] || "Occupant Details"}
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+            Occupant name in both languages, contact details and Aadhaar number
+          </Typography>
         </Box>
-      </Box>
-    </>
+      </Stack>
+
+      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <GroupCaption>Name</GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.NameMarathi[lang]} required />
+            <FormValue component={<TextInput name="marFirstOccupantName" />} />
+            <FormLabel label={labels.NameEnglish[lang]} required />
+            <FormValue component={<TextInput name="engFirstOccupantName" />} />
+          </GridRow>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <GroupCaption>Contact</GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.OccupantMobileNo[lang]} required />
+            <FormValue component={<TextInput name="occupantMobile" required />} />
+            <FormLabel label={labels.OccupantEmailId[lang]} />
+            <FormValue component={<TextInput name="occupantEmail" />} />
+          </GridRow>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <GroupCaption>Identity</GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.OccupantAadhaarNo[lang]} required />
+            <FormValue component={<TextInput name="occupantAdharNo" />} />
+          </GridRow>
+        </CardContent>
+      </Card>
+    </Box>
   );
 });
 

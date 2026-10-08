@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, Button } from "@mui/material";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Button,
+  Grid,
+  Paper,
+  Box,
+} from "@mui/material";
 import { Add, RemoveCircleTwoTone } from "@mui/icons-material";
-import { DateComponent, SelectComponent, TextComponent } from "../assessment-dashboard/inputs";
+import {
+  DateComponent,
+  SelectComponent,
+  TextComponent,
+} from "../assessment-dashboard/inputs";
 import CheckBoxInput from "../form-fields/checkbox-input";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
 import TextInput from "../form-fields/text-input";
@@ -18,22 +32,22 @@ import {
   getSpecialOccupant,
   getRatebaleValueCalculation,
   getConstructiontypes,
-  getUsetypeSubusetypeData
+  getUsetypeSubusetypeData,
 } from "../../services/assessment-services";
 import { showToastError } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
-import {
-  Grid,
-  Paper,
-  Box,
-  Typography,
-} from "@mui/material";
 import TableContainer from "@mui/material/TableContainer";
 
-const AssessmentTable = ({ zoneKey, initialRows = [], disableAddButton = false }) => {
-
-  const lang = useSelector((state) => state.userDetails.lang);
+const AssessmentTable = ({
+  zoneKey,
+  gatKey,
+  initialRows = [],
+  disableAddButton = false,
+}) => {
+  const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading } = useApiState();
+  const { setFieldValue, values } = useFormikContext();
+
   const [zoneKeys, setZoneKeys] = useState([]);
   const [financialYear, setFinancialYear] = useState([]);
   const [specialOwnershipRes, setSpecialOwnershipRes] = useState([]);
@@ -43,492 +57,834 @@ const AssessmentTable = ({ zoneKey, initialRows = [], disableAddButton = false }
   const [constructionTypes, setConstructionTypes] = useState([]);
   const [occupancyTypes, setOccupancyTypes] = useState([]);
   const [specialOccupancyTypes, setSpecialOccupancyTypes] = useState([]);
-  const [totalArea, setTotalArea] = useState(0);
-  const [totalTaxAmount, setTotalTaxAmount] = useState(0);
+
+  /*
+   * Keep old/new setup compatible.
+   * Some new labels may not exist in an older labels file, so never access
+   * labels.X[lang] directly for newly introduced labels.
+   */
+  const getLabel = (key, fallback = "") => {
+    const labelObj = labels?.[key];
+
+    if (labelObj && typeof labelObj === "object") {
+      return labelObj?.[lang] ?? labelObj?.en ?? fallback;
+    }
+
+    if (typeof labelObj === "string") {
+      return labelObj;
+    }
+
+    return fallback;
+  };
 
   useEffect(() => {
     let mounted = true;
+
     const loadData = async () => {
       try {
         setLoading(true);
-        const
-          [
-            zonesRes,
-            useTypesRes,
-            financialYearRes,
-            constructionTypesRes,
-            specialOccupantRes,
-            specialOwnershipRes,
-            occupancyTypesRes,
-          ] = await Promise.all([
-            getZoneByProfile(),
-            getUsetypeSubusetypeData(),
-            getFinancialYear(),
-            getConstructiontypes(),
-            getSpecialOccupant(),
-            getSpecialOwnership(),
-            getOccupancy(),
-          ]);
-        setZoneKeys(zonesRes.zoneLst || []);
-        setUseTypes(useTypesRes || []);
+
+        const [
+          zonesRes,
+          useTypesRes,
+          financialYearRes,
+          constructionTypesRes,
+          specialOccupantRes,
+          specialOwnershipResponse,
+          occupancyTypesRes,
+        ] = await Promise.all([
+          getZoneByProfile(),
+          getUsetypeSubusetypeData(),
+          getFinancialYear(),
+          getConstructiontypes(),
+          getSpecialOccupant(),
+          getSpecialOwnership(),
+          getOccupancy(),
+        ]);
+
+        if (!mounted) return;
+
+        setZoneKeys(zonesRes?.zoneLst || []);
+        setUseTypes(Array.isArray(useTypesRes) ? useTypesRes : []);
         setFinancialYear(financialYearRes || []);
-        setConstructionTypes(constructionTypesRes.constructionTypeLst || []);
-        setSpecialOccupancyTypes(specialOccupantRes.lstSpecialOccupant || []);
-        setSpecialOwnershipRes(specialOwnershipRes.lstSpecialOccupant || []);
-        setOccupancyTypes(occupancyTypesRes.lstOccupancy);
+        setConstructionTypes(
+          constructionTypesRes?.constructionTypeLst || []
+        );
+        setSpecialOccupancyTypes(
+          specialOccupantRes?.lstSpecialOccupant || []
+        );
+        setSpecialOwnershipRes(
+          specialOwnershipResponse?.lstSpecialOccupant || []
+        );
+        setOccupancyTypes(occupancyTypesRes?.lstOccupancy || []);
       } catch (err) {
-        showToastError(getErrorMsg(err));
+        if (mounted) {
+          showToastError(getErrorMsg(err));
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
+
     loadData();
+
     return () => {
       mounted = false;
     };
   }, [setLoading]);
 
-  const { setFieldValue, values } = useFormikContext();
-
-  // initial empty row
-  const emptyRow = {
+  const createEmptyRow = () => ({
     id: uuidv4(),
     useType: "",
     subUseType: "",
     constructionType: "",
     occupancy: "",
-    specialOccupant: "",
+    specialResidents: "",
     assessmentDate: "",
+    areaType: "",
     areaInSqmt: "",
     rateableValue: "",
+    rVValue: "",
     taxAmount: "",
+    billRate: "",
     isToilet: false,
-    isIllegal: false,
-  };
+    isIllegal: "Y",
+    propertyDetailsKey: "",
+    floor: "",
+  });
 
-  const [rows, setRows] = useState([emptyRow]);
+  const [rows, setRows] = useState([createEmptyRow()]);
 
-  const mapUseType = (name) => useTypes.find((opt) => opt.label === name)?.value || "";
+  const mapUseType = (name) =>
+    useTypes.find((opt) => opt?.label === name)?.value || "";
+
   const mapSubUseType = (name) => {
-    for (let u of useTypes) {
-      const sub = u.subUseTypeLst.find((s) => s.label === name);
-      if (sub) return sub.value;
+    for (const useType of useTypes) {
+      const subList = Array.isArray(useType?.subUseTypeLst)
+        ? useType.subUseTypeLst
+        : [];
+
+      const sub = subList.find((item) => item?.label === name);
+
+      if (sub) {
+        return sub.value;
+      }
     }
+
     return "";
   };
+
   const mapConstructionType = (name) =>
-    constructionTypes.find((opt) => opt.label === name)?.value || "";
+    constructionTypes.find((opt) => opt?.label === name)?.value || "";
+
+  const mapOccupancy = (name) =>
+    occupancyTypes.find((opt) => opt?.label === name)?.value || "";
+
+  const mapSpecialOccupant = (name) =>
+    specialOccupancyTypes.find((opt) => opt?.label === name)?.value || "";
 
   const formatApiDate = (dateStr) => {
     if (!dateStr) return "";
-    const parts = dateStr.split("/");
+
+    const parts = String(dateStr).split("/");
+
     if (parts.length === 3) {
       const [dd, mm, yyyy] = parts;
       return `${dd}/${mm}/${yyyy}`;
     }
+
     return dateStr;
   };
 
-  const mapOccupancy = (name) => occupancyTypes.find((opt) => opt.label === name)?.value || "";
-  const mapSpecialOccupant = (name) => specialOccupancyTypes.find((opt) => opt.label === name)?.value || "";
-
-
-  const mapApiToRow = (item) => ({
+  const mapApiToRow = (item = {}) => ({
     id: item.propertyDetailsKey || uuidv4(),
     useType: mapUseType(item.useTypeName),
     subUseType: mapSubUseType(item.subuseTypeName),
     constructionType: mapConstructionType(item.constructionTypeName),
     occupancy: mapOccupancy(item.occupancyName),
     specialResidents: mapSpecialOccupant(item.specialOccupantName),
-    assessmentDate: formatApiDate(item.assessmentDate) || "",
-    areaInSqmt: item.area || "",
+    assessmentDate: formatApiDate(item.assessmentDate),
+    areaType: item.areaType || "",
+    areaInSqmt: item.area ?? "",
     propertyDetailsKey: item.propertyDetailsKey || "",
-    rVValue: item.ratableValue || "",
-    taxAmount: item.ratableValue || "",
+    rVValue: item.ratableValue ?? "",
+    rateableValue: item.ratableValue ?? "",
+    taxAmount: item.ratableValue ?? "",
+    billRate: item.billRate ?? item.rate ?? "",
     isToilet: item.toilet === "Y",
-    isIllegal: item.permission === "Y",
+    isIllegal: item.permission || "Y",
+    floor: item.floor || "",
   });
 
-  // useEffect(() => {
-  //   console.log("Mapping API Item:", initialRows);
-  //   // if (
-  //   //   initialRows.length > 0 &&
-  //   //   useTypes.length &&
-  //   //   constructionTypes.length &&
-  //   //   occupancyTypes.length
-  //   // ) {
-  //   //   setRows(initialRows.map(mapApiToRow));
-  //   // } else if (!initialRows.length && rows.length === 0) {
-  //   //   setRows([emptyRow]);
-  //   // }
-  //   if (initialRows.length > 0) {
-  //     setRows(initialRows.map(mapApiToRow));
-  //   } else if (!initialRows.length && rows.length === 0) {
-  //     setRows([emptyRow]);
-  //   }
-  // }, [initialRows, useTypes, constructionTypes, occupancyTypes]);
+  const floorOptions = [
+    { value: "G", label: "G" },
+    ...Array.from({ length: 50 }, (_, index) => ({
+      value: String(index + 1),
+      label: String(index + 1),
+    })),
+  ];
+
+  const legalStatusOptions = [
+    { value: "Y", label: "Legal" },
+    { value: "N", label: "Illegal" },
+  ];
+
+  const areaOptions = [
+    { value: "चटई क्षेत्रफळ", label: "चटई क्षेत्रफळ" },
+    { value: "बांधकाम क्षेत्रफळ", label: "बांधकाम क्षेत्रफळ" },
+  ];
 
   useEffect(() => {
-    if (initialRows.length > 0) {
-      const mapped = initialRows.map(mapApiToRow);
-      setRows(mapped);
-    } else if (!initialRows.length && rows.length === 0) {
-      setRows([emptyRow]);
+    if (initialRows?.length > 0) {
+      setRows(initialRows.map(mapApiToRow));
+    } else {
+      setRows((currentRows) =>
+        currentRows?.length > 0 ? currentRows : [createEmptyRow()]
+      );
     }
-  }, [initialRows, useTypes, constructionTypes, occupancyTypes]);
+    // Mapping functions intentionally use the latest API option lists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRows, useTypes, constructionTypes, occupancyTypes, specialOccupancyTypes]);
 
-  // keep Formik in sync
+  // Keep Formik in sync with the complete row state.
   useEffect(() => {
     setFieldValue("propertyTransactionDetailsVO", rows);
   }, [rows, setFieldValue]);
 
   const getSubusetypes = (useType) => {
-    const subUseTypeList = useTypes
-      .filter((item) => item.value === useType)
-      .map((item) => item.subUseTypeLst);
+    const selectedUseType = useTypes.find(
+      (item) => String(item?.value) === String(useType)
+    );
 
-    if (subUseTypeList.length === 0) {
-      return []; // Or return a more informative default value
-    }
-    return subUseTypeList[0];
+    return Array.isArray(selectedUseType?.subUseTypeLst)
+      ? selectedUseType.subUseTypeLst
+      : [];
   };
 
-  // Function to remove a row
   const handleRemoveRow = (id) => {
-    const updatedRows = rows.filter((row) => row.id !== id);
-    setRows(updatedRows);
+    setRows((currentRows) => currentRows.filter((row) => row.id !== id));
   };
-  // Add a new row
+
   const handleAddRow = () => {
-    setRows([
-      ...rows,
-      {
-        id: uuidv4(),
-        useType: "",
-        subUseType: "",
-        constructionType: "",
-        occupancy: "",
-        specialOccupant: "",
-        assessmentDate: "",
-        areaInSqmt: "",
-        rateableValue: "",
-        taxAmount: "",
-        isToilet: false,
-        isIllegal: false,
-      },
-    ]);
+    setRows((currentRows) => [...currentRows, createEmptyRow()]);
   };
 
   const handleAssessmentDetailsInputChange = async (id, field, value) => {
-    if (["useType"].includes(field)) {
-      setRows((prevRows) => prevRows.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
-    }
     await handleFieldChange(id, field, value);
   };
 
-  const handleCheckboxChange = (id, name, value) => {
-    const updatedRows = rows.map((row) =>
-      row.id === id ? { ...row, [name]: value } : row
-    );
-    setRows(updatedRows);
-  };
-
-  const handleFieldChange = async (id, field, value) => {
-    // Update the row with the new field value
-    const updatedRows = rows.map((row) =>
-      row.id === id ? { ...row, [field]: value || "" } : row
-    );
-    setRows(updatedRows);
-
-    // Trigger API call if relevant fields change
-    if (["useType", "constructionType", "areaInSqmt"].includes(field)) {
-      const updatedRow = updatedRows.find((row) => row.id === id);
-      // Ensure all required fields are available for the API call
-      if (updatedRow.useType && updatedRow.constructionType && updatedRow.areaInSqmt && zoneKey) {
-        try {
-          const taxAmount = await fetchTaxAmount(
-            updatedRow.useType,
-            updatedRow.constructionType,
-            updatedRow.areaInSqmt,
-            zoneKey,
-          );
-
-          const finalRows = updatedRows.map((row) =>
-            row.id === id ? { ...row, rVValue: taxAmount } : row
-          );
-          setRows(finalRows);
-        } catch (error) {
-          console.error("Error fetching tax amount:", error);
-        }
-      }
-      calculateTotals();
-    }
-  };
-
-  // Function to make the API call with POST method
-  const fetchTaxAmount = async (useType, constructionType, areaInSqmt, zoneKey) => {
+  const fetchTaxAmount = async (
+    useType,
+    subUseType,
+    constructionType,
+    areaInSqmt,
+    currentZoneKey,
+    currentGatKey
+  ) => {
     try {
       const body = {
-        usetype: useType,
-        constructionType: constructionType,
-        areaInSqmt: areaInSqmt,
-        zoneKey: zoneKey,
+        useTypeId: Number(useType),
+        subUseTypeId: Number(subUseType),
+        connstructionTypeId: Number(constructionType),
+        areaInSqmt: Number(areaInSqmt),
+        zoneKey: Number(zoneKey),
+        gatKey: Number(gatKey),
       };
+
+      console.log("RATE API REQUEST BODY:", body);
+
       const response = await getRatebaleValueCalculation(body);
-      return response.ratableValue;
+
+      console.log("RATE API RESPONSE:", response);
+
+      return {
+        ratableValue: response?.ratableValue ?? 0,
+        billRate: response?.rate ?? response?.billRate ?? 0,
+      };
     } catch (error) {
-      return 0;
+      console.error("Error fetching ratable value:", error);
+
+      return {
+        ratableValue: 0,
+        billRate: 0,
+      };
     }
   };
 
-  const calculateTotals = () => {
-    const areaTotal = rows.reduce((sum, row) => sum + (parseFloat(row.areaInSqmt) || 0), 0);
-    const taxTotal = rows.reduce((sum, row) => sum + (parseFloat(row.rVValue) || 0), 0);
-    // setTotalArea(areaTotal);
-    // setTotalTaxAmount(taxTotal);
+  const calculateTotals = (sourceRows = rows) => {
+    const areaTotal = sourceRows.reduce(
+      (sum, row) => sum + (parseFloat(row?.areaInSqmt) || 0),
+      0
+    );
+
+    const taxTotal = sourceRows.reduce(
+      (sum, row) => sum + (parseFloat(row?.rVValue) || 0),
+      0
+    );
+
     setFieldValue("totalArea", areaTotal);
     setFieldValue("totalTaxAmount", taxTotal);
   };
 
-  useEffect(() => {
-    calculateTotals();
-  }, [rows, setFieldValue]);
+  const handleFieldChange = async (id, field, value) => {
+    let updatedRows = rows.map((row) => {
+      if (row.id !== id) return row;
 
-  useEffect(() => {
-    if (rows.length > 0) {
-      // Final UseType logic
-      const useTypeValues = [...new Set(rows.map(r => r.useType).filter(Boolean))];
-      if (useTypeValues.length === 1) {
-        const useType = useTypes.find(u => u.value === useTypeValues[0]);
-        const label = useType ? useType.label : "";
-        setFinalUseType(label);
-        setFieldValue("finalUseType", label);
-      } else if (useTypeValues.length > 1) {
-        setFinalUseType("मिश्र");
-        setFieldValue("finalUseType", "मिश्र");
-      } else {
-        setFinalUseType("");
-        setFieldValue("finalUseType", "");
+      const updatedRow = {
+        ...row,
+        [field]: value ?? "",
+      };
+
+      /*
+       * When Use Type changes, the old Sub Use Type may no longer belong
+       * to the selected Use Type. Clear it to avoid sending an invalid
+       * combination to the rate API.
+       */
+      if (field === "useType" && String(row.useType) !== String(value)) {
+        updatedRow.subUseType = "";
+        updatedRow.rVValue = "";
+        updatedRow.billRate = "";
       }
 
-      // Final ConstructionType logic
-      const constructionValues = [...new Set(rows.map(r => r.constructionType).filter(Boolean))];
-      if (constructionValues.length === 1) {
-        const constructionType = constructionTypes.find(c => c.value === constructionValues[0]);
-        const label = constructionType ? constructionType.label : "";
-        setFinalConstructionType(label);
-        setFieldValue("finalConstructionType", label);
-      } else if (constructionValues.length > 1) {
-        setFinalConstructionType("मिश्र");
-        setFieldValue("finalConstructionType", "मिश्र");
-      } else {
-        setFinalConstructionType("");
-        setFieldValue("finalConstructionType", "");
+      return updatedRow;
+    });
+
+    /*
+     * Important:
+     * subUseType is also an API dependency. The old new-development code
+     * did not trigger the API when subUseType changed.
+     */
+    const rateFields = [
+      "useType",
+      "subUseType",
+      "constructionType",
+      "areaInSqmt",
+    ];
+
+    if (rateFields.includes(field)) {
+      const updatedRow = updatedRows.find((row) => row.id === id);
+
+      const hasValidRateInputs =
+        updatedRow?.useType &&
+        updatedRow?.subUseType &&
+        updatedRow?.constructionType &&
+        updatedRow?.areaInSqmt !== "" &&
+        updatedRow?.areaInSqmt !== null &&
+        updatedRow?.areaInSqmt !== undefined &&
+        zoneKey !== "" &&
+        zoneKey !== null &&
+        zoneKey !== undefined &&
+        gatKey !== "" &&
+        gatKey !== null &&
+        gatKey !== undefined &&
+        Number(updatedRow.areaInSqmt) > 0;
+
+      if (hasValidRateInputs) {
+        try {
+          const rateData = await fetchTaxAmount(
+            updatedRow.useType,
+            updatedRow.subUseType,
+            updatedRow.constructionType,
+            updatedRow.areaInSqmt,
+            zoneKey,
+            gatKey
+          );
+
+          updatedRows = updatedRows.map((row) =>
+            row.id === id
+              ? {
+                ...row,
+                rVValue: rateData.ratableValue,
+                rateableValue: rateData.ratableValue,
+                taxAmount: rateData.ratableValue,
+                billRate: rateData.billRate,
+              }
+              : row
+          );
+        } catch (error) {
+          console.error("Error while calculating rate:", error);
+        }
       }
+    }
+
+    setRows(updatedRows);
+    calculateTotals(updatedRows);
+  };
+
+  useEffect(() => {
+    calculateTotals(rows);
+    // calculateTotals itself uses setFieldValue and rows is the intended trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
+
+  useEffect(() => {
+    if (!rows.length) {
+      setFinalUseType("");
+      setFinalConstructionType("");
+      setFieldValue("finalUseType", "");
+      setFieldValue("finalConstructionType", "");
+      return;
+    }
+
+    const useTypeValues = [
+      ...new Set(rows.map((row) => row?.useType).filter(Boolean)),
+    ];
+
+    if (useTypeValues.length === 1) {
+      const useType = useTypes.find(
+        (item) => String(item?.value) === String(useTypeValues[0])
+      );
+      const label = useType?.label || "";
+
+      setFinalUseType(label);
+      setFieldValue("finalUseType", label);
+    } else if (useTypeValues.length > 1) {
+      setFinalUseType("मिश्र");
+      setFieldValue("finalUseType", "मिश्र");
+    } else {
+      setFinalUseType("");
+      setFieldValue("finalUseType", "");
+    }
+
+    const constructionValues = [
+      ...new Set(rows.map((row) => row?.constructionType).filter(Boolean)),
+    ];
+
+    if (constructionValues.length === 1) {
+      const constructionType = constructionTypes.find(
+        (item) =>
+          String(item?.value) === String(constructionValues[0])
+      );
+      const label = constructionType?.label || "";
+
+      setFinalConstructionType(label);
+      setFieldValue("finalConstructionType", label);
+    } else if (constructionValues.length > 1) {
+      setFinalConstructionType("मिश्र");
+      setFieldValue("finalConstructionType", "मिश्र");
+    } else {
+      setFinalConstructionType("");
+      setFieldValue("finalConstructionType", "");
     }
   }, [rows, useTypes, constructionTypes, setFieldValue]);
 
   return (
-    <>
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "rgb(204, 234, 244)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          p: { xs: 1, md: 3 },
-          m: { xs: 1, md: 3 },
-          borderRadius: 4,
-          minHeight: "auto",
-          width: "100%",
-        }}
-      >
-        <Box sx={{ width: "100%" }}>
-          <Paper
-            elevation={3}
-            sx={{
-              width: "100%",
-              p: { xs: 2, md: 4 },
-              borderRadius: 4,
-              textAlign: "left",
-            }}
+    <Box
+      sx={{
+        backgroundColor: "rgb(204, 234, 244)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        p: { xs: 1, md: 3 },
+        m: { xs: 1, md: 3 },
+        borderRadius: 4,
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      <Box sx={{ width: "100%" }}>
+        <Paper
+          elevation={3}
+          sx={{
+            width: "100%",
+            p: { xs: 2, md: 4 },
+            borderRadius: 4,
+            textAlign: "left",
+            boxSizing: "border-box",
+          }}
+        >
+          <Grid
+            container
+            alignItems="flex-start"
+            justifyContent="flex-start"
           >
+            <GridRow>
+              <FormLabel label={getLabel("TotalArea", "Total Area")} />
+              <FormValue
+                component={
+                  <TextInput
+                    name="totalArea"
+                    value={values?.totalArea ?? ""}
+                    InputProps={{ readOnly: true }}
+                    variant="standard"
+                  />
+                }
+              />
 
-            <Grid container alignItems="flex-start" justifyContent="flex-start">
-              <GridRow>
-                <FormLabel label={labels.TotalArea[lang]} />
-                {/* <FormValue component={<TextInput name="totalArea" value={totalArea} disabled={true} />} /> */}
-                <FormValue component={<TextInput name="totalArea" value={values.totalArea} InputProps={{ readOnly: true }} variant="standard" />} />
-                <FormLabel label={labels.TotalTaxAmount[lang]} />
-                {/* <FormValue component={<TextInput name="totalTaxAmount" value={totalTaxAmount} disabled={true} />} /> */}
-                <FormValue component={<TextInput name="totalTaxAmount" value={values.totalTaxAmount} InputProps={{ readOnly: true }} variant="standard" />} />
-              </GridRow>
-              <GridRow>
-                <FormLabel label={labels.FinalUseType[lang]} />
-                <FormValue component={<TextInput name="finalUseType" value={finalUseType} disabled={true} variant="standard" />} />
-                <FormLabel label={labels.FinalConstructionType[lang]} />
-                <FormValue component={<TextInput name="finalConstructionType" value={finalConstructionType} disabled={true} variant="standard" />} />
-              </GridRow>
-              <TableContainer
+              <FormLabel
+                label={getLabel("TotalTaxAmount", "Total Tax Amount")}
+              />
+              <FormValue
+                component={
+                  <TextInput
+                    name="totalTaxAmount"
+                    value={values?.totalTaxAmount ?? ""}
+                    InputProps={{ readOnly: true }}
+                    variant="standard"
+                  />
+                }
+              />
+            </GridRow>
+
+            <GridRow>
+              <FormLabel label={getLabel("FinalUseType", "Final Use Type")} />
+              <FormValue
+                component={
+                  <TextInput
+                    name="finalUseType"
+                    value={finalUseType}
+                    disabled
+                    variant="standard"
+                  />
+                }
+              />
+
+              <FormLabel
+                label={getLabel(
+                  "FinalConstructionType",
+                  "Final Construction Type"
+                )}
+              />
+              <FormValue
+                component={
+                  <TextInput
+                    name="finalConstructionType"
+                    value={finalConstructionType}
+                    disabled
+                    variant="standard"
+                  />
+                }
+              />
+            </GridRow>
+
+            <TableContainer
+              sx={{
+                width: "100%",
+                overflowX: "auto",
+              }}
+            >
+              <Table
                 sx={{
+                  minWidth: 1400,
+                  border: 1,
+                  borderColor: "grey.300",
+                  margin: "auto",
                   width: "100%",
-                  overflowX: "auto",
                 }}
+                size="small"
+                aria-label="assessment details table"
               >
-                <Table
-                  sx={{
-                    minWidth: "100%",
-                    border: 1,
-                    borderColor: "grey.300",
-                    margin: "auto",
-                    width: "90%",
-                  }}
-                  size="small"
-                  aria-label="a dense table"
-                >
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: "#abd9e3", fontWeight: 600 }}>
-                      <TableCell>{labels.useType[lang]}</TableCell>
-                      <TableCell>{labels.secUseType[lang]}</TableCell>
-                      <TableCell align="center">{labels.constructionType[lang]}</TableCell>
-                      <TableCell align="center">{labels.Occupancy[lang]}</TableCell>
-                      <TableCell align="center">{labels.SpecialResidents[lang]}</TableCell>
-                      <TableCell align="center">{labels.aakarniDate[lang]}</TableCell>
-                      <TableCell align="center">{labels.areaInMeter[lang]}</TableCell>
-                      <TableCell align="center">{labels.taxAmount[lang]}</TableCell>
-                      <TableCell align="center">{labels.Toilet[lang]}</TableCell>
-                      <TableCell align="center">{labels.Illegal[lang]}</TableCell>
-                      <TableCell align="center">{labels.Action[lang]}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {rows.map((row, index) => (
-                      <TableRow
-                        key={row.id}
-                        sx={{
-                          "& td": { border: "1px solid grey" },
-                          padding: 0,
-                          margin: 0,
-                        }}
-                      >
-                        <TableCell>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "#abd9e3", fontWeight: 600 }}>
+                    <TableCell align="center">Floor</TableCell>
+                    <TableCell>{getLabel("useType", "Use Type")}</TableCell>
+                    <TableCell>
+                      {getLabel("secUseType", "Sub Use Type")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("constructionType", "Construction Type")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("Occupancy", "Occupancy")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("SpecialResidents", "Special Residents")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("aakarniDate", "Assessment Date")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("AreaType", "Area Type")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("areaInMeter", "Area")}
+                    </TableCell>
+                    <TableCell align="center">Bill Rate</TableCell>
+                    <TableCell align="center">
+                      {getLabel("taxAmount", "Tax Amount")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("Toilet", "Toilet")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("ConstructionStatus", "Construction Status")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getLabel("Action", "Action")}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {rows.map((row, index) => (
+                    <TableRow
+                      key={row.id}
+                      sx={{
+                        "& td": { border: "1px solid grey" },
+                        padding: 0,
+                        margin: 0,
+                      }}
+                    >
+                      <TableCell align="center">
+                        <SelectComponent
+                          id={row.id}
+                          name="floor"
+                          options={floorOptions}
+                          value={row.floor || ""}
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "floor",
+                              value
+                            )
+                          }
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell>
+                        <SelectComponent
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "useType",
+                              value
+                            )
+                          }
+                          id={row.id}
+                          name="useType"
+                          options={useTypes}
+                          value={row.useType || ""}
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell>
+                        {useTypes.length > 0 ? (
                           <SelectComponent
-                            handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "useType", value)}
-                            id={row.id}
-                            name={`useType`}
-                            options={useTypes}
-                            value={row.useType || ""}
-                            variant="standard"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {useTypes.length ? (
-                            <SelectComponent
-                              handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "subUseType", value)}
-                              id={row.id}
-                              name={`subUseType`}
-                              options={getSubusetypes(row.useType)}
-                              value={row.subUseType || ""}
-                              variant="standard"
-                            />
-                          ) : (
-                            <></>
-                          )}
-                        </TableCell>
-                        <TableCell align="center">
-                          <SelectComponent
-                            handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "constructionType", value)}
-                            id={row.id}
-                            name={`constructionType`}
-                            options={constructionTypes}
-                            value={row.constructionType || ""}
-                            variant="standard"
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <SelectComponent variant="standard"
-                            handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "occupancy", value)}
-                            id={row.id}
-                            name={`occupancy`}
-                            options={occupancyTypes}
-                            value={row.occupancy || ""}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <SelectComponent
-                            handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "specialResidents", value)}
-                            id={row.id}
-                            name={`specialResidents`}
-                            options={specialOccupancyTypes}
-                            value={row.specialResidents || ""}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <DateComponent
-                            id={row.id}
-                            name={`assessmentDate`}
-                            value={row.assessmentDate || ""}   // 👈 add this line
                             handleInputChange={(id, name, value) =>
-                              handleAssessmentDetailsInputChange(row.id, "assessmentDate", value)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <TextComponent id={row.id} name={`areaInSqmt`} value={row.areaInSqmt} handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "areaInSqmt", value)} variant="standard" />
-                        </TableCell>
-                        <TableCell align="center">
-                          <TextComponent id={row.id} name={`taxAmount`} value={row.rVValue || ""} handleInputChange={(id, name, value) => handleAssessmentDetailsInputChange(row.id, "rVValue", value)} variant="standard" />
-                        </TableCell>
-                        <TableCell align="center">
-                          <CheckBoxInput
-                            id={row.id}
-                            name={`propertyTransactionDetailsVO[${index}].isToilet`}
-                            checked={rows[index].isToilet}
-                            onChange={(e) =>
-                              setFieldValue(
-                                `propertyTransactionDetailsVO[${index}].isToilet`,
-                                e.target.checked
+                              handleAssessmentDetailsInputChange(
+                                row.id,
+                                "subUseType",
+                                value
                               )
                             }
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <CheckBoxInput
                             id={row.id}
-                            name={`propertyTransactionDetailsVO[${index}].isIllegal`}
-                            checked={rows[index].isIllegal}
-                            onChange={(e) =>
-                              setFieldValue(
-                                `propertyTransactionDetailsVO[${index}].isIllegal`,
-                                e.target.checked
-                              )
-                            }
+                            name="subUseType"
+                            options={getSubusetypes(row.useType)}
+                            value={row.subUseType || ""}
+                            variant="standard"
                           />
-                        </TableCell>
-                        <TableCell align="center" style={{ display: "none" }}>
-                          <TextComponent id={row.id} name={`propertyDetailsKey`} value={row.propertyDetailsKey} />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Button onClick={() => handleRemoveRow(row.id)} endIcon={<RemoveCircleTwoTone />}>Remove</Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {!disableAddButton && (
-                      <TableRow>
-                        <TableCell colSpan={12} align="left">
-                          <Button onClick={handleAddRow} startIcon={<Add />} variant="contained" color="primary">Add More</Button>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Grid>
-          </Paper>
-        </Box>
+                        ) : null}
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <SelectComponent
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "constructionType",
+                              value
+                            )
+                          }
+                          id={row.id}
+                          name="constructionType"
+                          options={constructionTypes}
+                          value={row.constructionType || ""}
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <SelectComponent
+                          variant="standard"
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "occupancy",
+                              value
+                            )
+                          }
+                          id={row.id}
+                          name="occupancy"
+                          options={occupancyTypes}
+                          value={row.occupancy || ""}
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <SelectComponent
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "specialResidents",
+                              value
+                            )
+                          }
+                          id={row.id}
+                          name="specialResidents"
+                          options={specialOccupancyTypes}
+                          value={row.specialResidents || ""}
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <DateComponent
+                          id={row.id}
+                          name="assessmentDate"
+                          value={row.assessmentDate || ""}
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "assessmentDate",
+                              value
+                            )
+                          }
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <SelectComponent
+                          id={row.id}
+                          name="areaType"
+                          options={areaOptions}
+                          value={row.areaType || ""}
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "areaType",
+                              value
+                            )
+                          }
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <TextComponent
+                          id={row.id}
+                          name="areaInSqmt"
+                          value={row.areaInSqmt ?? ""}
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "areaInSqmt",
+                              value
+                            )
+                          }
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <TextInput
+                          name={`billRate_${row.id}`}
+                          value={row.billRate ?? ""}
+                          InputProps={{ readOnly: true }}
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <TextComponent
+                          id={row.id}
+                          name="taxAmount"
+                          value={row.rVValue ?? ""}
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "rVValue",
+                              value
+                            )
+                          }
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <CheckBoxInput
+                          id={row.id}
+                          name={`propertyTransactionDetailsVO[${index}].isToilet`}
+                          checked={Boolean(row.isToilet)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+
+                            setRows((currentRows) =>
+                              currentRows.map((currentRow) =>
+                                currentRow.id === row.id
+                                  ? {
+                                    ...currentRow,
+                                    isToilet: checked,
+                                  }
+                                  : currentRow
+                              )
+                            );
+                          }}
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <SelectComponent
+                          id={row.id}
+                          name="isIllegal"
+                          options={legalStatusOptions}
+                          value={row.isIllegal ?? "Y"}
+                          handleInputChange={(id, name, value) =>
+                            handleAssessmentDetailsInputChange(
+                              row.id,
+                              "isIllegal",
+                              value
+                            )
+                          }
+                          variant="standard"
+                        />
+                      </TableCell>
+
+                      <TableCell
+                        align="center"
+                        style={{ display: "none" }}
+                      >
+                        <TextComponent
+                          id={row.id}
+                          name="propertyDetailsKey"
+                          value={row.propertyDetailsKey || ""}
+                        />
+                      </TableCell>
+
+                      <TableCell align="center">
+                        <Button
+                          onClick={() => handleRemoveRow(row.id)}
+                          endIcon={<RemoveCircleTwoTone />}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {!disableAddButton && (
+                    <TableRow>
+                      <TableCell colSpan={15} align="left">
+                        <Button
+                          onClick={handleAddRow}
+                          startIcon={<Add />}
+                          variant="contained"
+                          color="primary"
+                        >
+                          Add More
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Grid>
+        </Paper>
       </Box>
-    </>
+    </Box>
   );
 };
 

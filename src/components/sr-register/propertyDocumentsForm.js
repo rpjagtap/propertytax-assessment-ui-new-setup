@@ -1,51 +1,63 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { GridRow, FormLabel, FormValue } from "../common/custom-form-grid";
-import { Table, TableBody, TableCell, TableHead, TableRow, Button } from "@mui/material";
+import { useSelector } from "react-redux";
+import { useFormikContext, FieldArray } from "formik";
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
+import AddCircleOutline from "@mui/icons-material/AddCircleOutline";
+import RemoveCircleOutline from "@mui/icons-material/RemoveCircleOutline";
+import CloudUploadOutlined from "@mui/icons-material/CloudUploadOutlined";
+import AttachFileOutlined from "@mui/icons-material/AttachFileOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import SelectInput from "../form-fields/select-input";
 import useApiState from "../common/useApiState";
 import { showToastError } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
 import { labels } from "../../lang/labels";
-import { useSelector } from "react-redux";
-import { useFormikContext, FieldArray } from "formik";
 import { getAssessmentDocuments } from "../../services/assessment-services";
-import { Add, RemoveCircleTwoTone } from "@mui/icons-material";
-import FormTitle from "../form-fields/form-title";
-import {
-  Grid,
-  Paper,
-  Box,
-  Typography,
-  TextField
-} from "@mui/material";
-import TableContainer from "@mui/material/TableContainer";
 
-const PropertyDocumentsForm = () => {
+// Theme tokens — same values used across the other redesigned pages.
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+const headCellSx = {
+  bgcolor: NAVY,
+  color: "#fff",
+  fontWeight: 600,
+  fontSize: "13px",
+  padding: "10px 12px",
+  whiteSpace: "nowrap",
+};
+
+/**
+ * `showHeader` — set to false when this form is already rendered inside a
+ * card that has its own "Document details" header (e.g. the address-change
+ * application page), so the title isn't shown twice.
+ */
+const PropertyDocumentsForm = ({ showHeader = true }) => {
   const formik = useFormikContext();
-  const lang = useSelector((state) => state.userDetails.lang);
+  const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading } = useApiState();
   const [documents, setDocuments] = useState([]);
-  const { setFieldValue } = useFormikContext();
-  const [rows, setRows] = useState([
-    {
-      useType: "",
-      subUseType: "",
-      constructionType: "",
-      occuapncy: "",
-      specialOccupant: "",
-      assessmentDate: "",
-      area: "",
-      rateableValue: "",
-      toiletFlag: false,
-      permission: false,
-    },
-  ]);
 
-  useEffect(() => {
-    // Every time rows change, sync to Formik
-    setFieldValue("propertyTransactionDetailsVO", rows);
-  }, [rows, setFieldValue]);
-
+  // File names are kept locally (keyed by row index) rather than in
+  // Formik, so no extra field ends up inside the `documents` objects that
+  // are sent to the backend as `documentVOs`.
+  const [fileNames, setFileNames] = useState({});
 
   const documentOptions = useMemo(
     () =>
@@ -61,7 +73,7 @@ const PropertyDocumentsForm = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [documentRes] = await Promise.all([getAssessmentDocuments()]);
+        const documentRes = await getAssessmentDocuments();
         if (!mounted) return;
         setDocuments(documentRes || []);
       } catch (err) {
@@ -76,161 +88,199 @@ const PropertyDocumentsForm = () => {
     };
   }, [setLoading]);
 
-  return (
-    <>
-      {/* <b>Documents Details</b> */}
-      {/* <FormTitle title={labels.DocumentDetails[lang]} /> */}
+  const handleFileChange = (e, index) => {
+    const file = e.target.files[0];
 
-      <Box
-        sx={{
-          //minHeight: "100vh",
-          backgroundColor: "rgb(204, 234, 244)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: 4,
-          margin: 5,
-          borderRadius: 4,
-          minHeight: "auto",
-          width: "100%",
-          p: { xs: 1, md: 3 },
-          mt: 2,
-        }}
-      >
-        <Box sx={{ "width": "100%" }}>
-          <Paper
+    if (!file) {
+      // File picker was cancelled/cleared — drop any previously stored file.
+      formik.setFieldValue(`documents[${index}].documentURLbase64`, "");
+      setFileNames((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result.split(",")[1]; // remove data-URL prefix
+      formik.setFieldValue(`documents[${index}].documentURLbase64`, base64String);
+      setFileNames((prev) => ({ ...prev, [index]: file.name }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Removes a row and shifts the stored file names down so each name still
+  // lines up with the right row.
+  const handleRemove = (index, remove) => {
+    remove(index);
+    setFileNames((prev) => {
+      const next = {};
+      Object.keys(prev).forEach((key) => {
+        const i = Number(key);
+        if (i < index) next[i] = prev[i];
+        else if (i > index) next[i - 1] = prev[i];
+      });
+      return next;
+    });
+  };
+
+  return (
+    <Box sx={{ width: "100%" }}>
+      {showHeader && (
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: MINT_BG, color: MINT }}>
+            <DescriptionOutlined fontSize="small" />
+          </Avatar>
+          <Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 16, color: NAVY }}>
+              {labels?.DocumentDetails?.[lang] || "Document Details"}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+              Choose a document type and attach the file (PDF, JPG or PNG)
+            </Typography>
+          </Box>
+        </Stack>
+      )}
+
+      <FieldArray name="documents">
+        {({ push, remove }) => (
+          <TableContainer
+            component={Paper}
+            elevation={0}
             sx={{
               width: "100%",
-              p: { xs: 2, md: 4 },
-              borderRadius: 4,
+              overflowX: "auto",
+              border: "1px solid #DDE3EC",
+              borderRadius: 2,
             }}
           >
-            {/* <Typography
-              variant="h5"
-              fontWeight="bolder"
-              align="center"
-              paddingBottom={2}
-              paddingTop={2}
-            >
-              {labels?.DocumentDetails?.[lang] || ""}
-            </Typography> */}
-            <Grid alignItems="flex-start" justifyContent="flex-start">
+            <Table sx={{ width: "100%", minWidth: 560 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ ...headCellSx, width: "40%" }}>
+                    {labels?.DocumentDetails?.[lang] || "Document"}
+                  </TableCell>
+                  <TableCell sx={{ ...headCellSx, width: "40%" }}>File</TableCell>
+                  <TableCell align="center" sx={{ ...headCellSx, width: "20%" }}>
+                    Action
+                  </TableCell>
+                </TableRow>
+              </TableHead>
 
-              <FieldArray name="documents">
-                {({ push, remove }) => (
-                  <TableContainer
-                    component={Paper}
-                    sx={{
-                      width: "100%",
-                      overflowX: "auto",
-                    }}
-                  >
+              <TableBody>
+                {formik.values.documents.map((doc, index) => {
+                  const hasFile = Boolean(doc.documentURLbase64);
+                  const fileLabel = fileNames[index] || (hasFile ? "File attached" : "");
 
-
-                    <Table
-                      sx={{
-                        width: "100%",
-                        tableLayout: "fixed",
-                        border: 1,
-                        borderColor: "grey.300",
-                        mt: 2,
-                      }}
+                  return (
+                    <TableRow
+                      key={index}
+                      hover
+                      sx={{ "& td": { padding: "10px 12px", verticalAlign: "middle" } }}
                     >
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: "#abd9e3", fontWeight: 600 }}>
-                          <TableCell>{labels.DocumentDetails[lang]}</TableCell>
-                          <TableCell align="center">&nbsp;</TableCell>
-                          <TableCell align="center">&nbsp;</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {formik.values.documents.map((doc, index) => (
-                          <TableRow
-                            key={index}
+                      {/* Document type */}
+                      <TableCell>
+                        <SelectInput
+                          name={`documents[${index}].documentId`}
+                          options={documentOptions}
+                        />
+                      </TableCell>
+
+                      {/* File upload */}
+                      <TableCell>
+                        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CloudUploadOutlined />}
                             sx={{
-                              "& td": { border: "1px solid grey" },
-                              padding: 0,
-                              margin: 0,
+                              textTransform: "none",
+                              borderRadius: 2,
+                              borderColor: NAVY,
+                              color: NAVY,
+                              "&:hover": { borderColor: NAVY_LIGHT, bgcolor: "rgba(18,35,63,0.04)" },
                             }}
                           >
-                            {/* Document Dropdown */}
-                            <TableCell>
-                              <SelectInput
-                                name={`documents[${index}].documentId`}
-                                options={documentOptions}
-                                variant="standard"
-                              />
-                            </TableCell>
+                            {hasFile ? "Change file" : "Choose file"}
+                            <input
+                              type="file"
+                              hidden
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              onChange={(e) => handleFileChange(e, index)}
+                            />
+                          </Button>
 
-                            {/* File Upload */}
-                            <TableCell align="center">
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                style={{
-                                  width: "100%",
-                                  maxWidth: "220px",
-                                }}
-                                onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (file) {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => {
-                                      const base64String = reader.result.split(",")[1]; // 👈 remove prefix
-                                      formik.setFieldValue(
-                                        `documents[${index}].documentURLbase64`,
-                                        base64String
-                                      );
-                                    };
-                                    reader.readAsDataURL(file);
-                                  }
-                                }}
-                              />
-                            </TableCell>
+                          {hasFile ? (
+                            <Chip
+                              size="small"
+                              icon={<AttachFileOutlined sx={{ color: `${MINT} !important` }} />}
+                              label={fileLabel}
+                              sx={{
+                                bgcolor: MINT_BG,
+                                color: MINT,
+                                fontWeight: 600,
+                                maxWidth: 200,
+                              }}
+                            />
+                          ) : (
+                            <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+                              No file chosen
+                            </Typography>
+                          )}
+                        </Stack>
+                      </TableCell>
 
-                            {/* Remove Button */}
-                            <TableCell align="center">
-                              {formik.values.documents.length > 1 && (
-                                <Button
-                                  onClick={() => remove(index)}
-                                  color="error"
-                                  endIcon={<RemoveCircleTwoTone />}
-                                >
-                                  Remove
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                      {/* Remove */}
+                      <TableCell align="center">
+                        {formik.values.documents.length > 1 && (
+                          <Button
+                            onClick={() => handleRemove(index, remove)}
+                            color="error"
+                            size="small"
+                            startIcon={<RemoveCircleOutline />}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
 
-                        {/* Add More Row */}
-                        <TableRow>
-                          <TableCell colSpan={3} align="left">
-                            <Button
-                              onClick={() =>
-                                push({
-                                  documentId: "",
-                                  documentURLbase64: "",
-                                })
-                              }
-                              startIcon={<Add />}
-                              variant="contained"
-                              color="primary"
-                            >
-                              Add More
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-              </FieldArray>
-            </Grid>
-          </Paper>
-        </Box>
-      </Box>
-    </>
+                {/* Add More row — part of the table, like the original */}
+                <TableRow>
+                  <TableCell colSpan={3} sx={{ padding: "10px 12px", bgcolor: "#FAFBFD" }}>
+                    <Button
+                      onClick={() =>
+                        push({
+                          documentId: "",
+                          documentURLbase64: "",
+                        })
+                      }
+                      startIcon={<AddCircleOutline />}
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: 2,
+                        bgcolor: NAVY,
+                        "&:hover": { bgcolor: NAVY_LIGHT },
+                      }}
+                    >
+                      Add More
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </FieldArray>
+    </Box>
   );
 };
 

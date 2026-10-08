@@ -1,4 +1,8 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useFormikContext } from "formik";
+import { Avatar, Box, Card, CardContent, Divider, Stack, Typography } from "@mui/material";
+import LocationOnOutlined from "@mui/icons-material/LocationOnOutlined";
 import { GridRow, FormLabel, FormValue } from "../common/custom-form-grid";
 import SelectInput from "../form-fields/select-input";
 import TextInput from "../form-fields/text-input";
@@ -6,34 +10,51 @@ import useApiState from "../common/useApiState";
 import { showToastError } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
 import { labels } from "../../lang/labels";
-import { useSelector } from "react-redux";
-import { useFormikContext } from "formik";
 import { getFloor, getWing } from "../../services/assessment-services";
-import {
-  Grid,
-  Paper,
-  Box,
-  Typography,
-} from "@mui/material";
+
+// Theme tokens — same values used across the other redesigned pages.
+const NAVY = "#12233F";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+// Small caption that labels a group of related fields inside the card.
+const GroupCaption = ({ children, hint }) => (
+  <Box sx={{ mb: 1 }}>
+    <Typography
+      sx={{
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        color: "text.secondary",
+      }}
+    >
+      {children}
+    </Typography>
+    {hint && (
+      <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.25 }}>{hint}</Typography>
+    )}
+  </Box>
+);
 
 const PropertyAddressForm = () => {
   const formik = useFormikContext();
-  const lang = useSelector((state) => state.userDetails.lang);
+  const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading } = useApiState();
-  const [floor, setFloor] = useState([]);
-  const [wing, SetWing] = useState([]);
-
+  const [floorList, setFloorList] = useState([]);
+  const [wingList, setWingList] = useState([]);
 
   const floorOptions = useMemo(
-    () => floor.map((item) => ({ id: item.marFloorName, label: item.marFloorName })),
-    [floor]
+    () => floorList.map((item) => ({ id: item.marFloorName, label: item.marFloorName })),
+    [floorList]
   );
   const wingOptions = useMemo(
-    () => wing.map(item => ({
-      id: item.engWingName,
-      label: item.engWingName,
-    })),
-    [wing]
+    () =>
+      wingList.map((item) => ({
+        id: item.engWingName,
+        label: item.engWingName,
+      })),
+    [wingList]
   );
 
   useEffect(() => {
@@ -41,20 +62,13 @@ const PropertyAddressForm = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const
-          [
-            floorRes,
-            wingRes
-          ] = await Promise.all([
-            getFloor(),
-            getWing(),
-          ]);
+        const [floorRes, wingRes] = await Promise.all([getFloor(), getWing()]);
 
-        setFloor(floorRes || []);
-        SetWing(wingRes || []);
+        // Don't touch state if the component unmounted while we were waiting.
         if (!mounted) return;
 
-
+        setFloorList(floorRes || []);
+        setWingList(wingRes || []);
       } catch (err) {
         showToastError(getErrorMsg(err));
       } finally {
@@ -67,7 +81,9 @@ const PropertyAddressForm = () => {
     };
   }, [setLoading]);
 
-  const handleAddressBlur = (formik) => {
+  // Rebuilds the full Marathi / English address strings from the
+  // individual fields whenever one of them loses focus.
+  const handleAddressBlur = () => {
     const {
       flatNo,
       blockNo,
@@ -87,8 +103,7 @@ const PropertyAddressForm = () => {
       pinCode,
     } = formik.values;
 
-    // Marathi address
-    const marathiAddressParts = [
+    const marathiAddress = [
       flatNo && `फ्लॅट नं. ${flatNo}`,
       blockNo && `ब्लॉक नं. ${blockNo}`,
       floorMarathi,
@@ -99,12 +114,11 @@ const PropertyAddressForm = () => {
       towerNameMarathi,
       villageMarathi,
       pinCode,
-    ].filter(Boolean);
+    ]
+      .filter(Boolean)
+      .join(", ");
 
-    const marathiAddress = marathiAddressParts.join(", ");
-
-    // English address
-    const englishAddressParts = [
+    const englishAddress = [
       flatNo && `Flat No. ${flatNo}`,
       blockNo && `Block No. ${blockNo}`,
       floor,
@@ -115,120 +129,111 @@ const PropertyAddressForm = () => {
       towerName,
       village,
       pinCode,
-    ].filter(Boolean);
-
-    const englishAddress = englishAddressParts.join(", ");
+    ]
+      .filter(Boolean)
+      .join(", ");
 
     formik.setFieldValue("marPropertyAddress", marathiAddress);
     formik.setFieldValue("engPropertyAddress", englishAddress);
   };
 
   return (
-    <>
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "rgb(204, 234, 244)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: 4,
-          margin: 5,
-          borderRadius: 4,
-          minHeight: "auto",
-        }}
-      >
+    <Box>
+      {/* Section header */}
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+        <Avatar sx={{ width: 36, height: 36, bgcolor: MINT_BG, color: MINT }}>
+          <LocationOnOutlined fontSize="small" />
+        </Avatar>
         <Box>
-          <Paper
-            elevation={3}
-            sx={{
-              // width: "200%",
-              padding: 5,
-              marginLeft: "1.5%",
-              borderRadius: 5,
-              textAlign: "left",
-            }}
-          >
-            <Typography
-              variant="h5"
-              fontWeight="bolder"
-              align="center"
-              paddingBottom={2}
-              paddingTop={2}
-            >
-              {labels?.propertyAddressDetails?.[lang] || ""}
-            </Typography>
-            <Grid container alignItems="flex-start" justifyContent="flex-start">
-              <GridRow>
-                <FormLabel label={labels.FlatNo[lang]} required />
-                <FormValue component={<TextInput name="flatNo" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-                <FormLabel label={labels.blockNo[lang]} required />
-                <FormValue component={<TextInput name="blockNo" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.Floor[lang]} required />
-                <FormValue component={<SelectInput name="floorMarathi" options={floorOptions} onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-                <FormLabel label={labels.FloorEnglish[lang]} required />
-                <FormValue component={<TextInput name="floor" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.buildingNo[lang]} required />
-                <FormValue component={<TextInput name="buildingNo" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.Wing[lang]} required />
-                <FormValue component={<SelectInput name="wingNameMarathi" options={wingOptions} onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-                <FormLabel label={labels.WingEnglish[lang]} required />
-                <FormValue component={<TextInput name="wingName" required onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.SocityName[lang]} required />
-                <FormValue component={<TextInput name="societyNameMarathi" required onBlur={() => handleAddressBlur(formik)}  variant="standard"/>} />
-                <FormLabel label={labels.SocityNameEnglish[lang]} required />
-                <FormValue component={<TextInput name="societyName" required onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.Landmark[lang]} required />
-                <FormValue component={<TextInput name="landmarkMarathi" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-                <FormLabel label={labels.LandmarkEnglish[lang]} required />
-                <FormValue component={<TextInput name="landmark" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.TowerName[lang]} required />
-                <FormValue component={<TextInput name="towerNameMarathi" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-                <FormLabel label={labels.TowerNameEnglish[lang]} required />
-                <FormValue component={<TextInput name="towerName" required onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.Village[lang]} required />
-                <FormValue component={<TextInput name="villageMarathi" onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-                <FormLabel label={labels.VillageNameEnglish[lang]} required />
-                <FormValue component={<TextInput name="village" required onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.PinCode[lang]} required />
-                <FormValue component={<TextInput name="pinCode" required onBlur={() => handleAddressBlur(formik)} variant="standard" />} />
-              </GridRow>
-
-              <GridRow>
-                <FormLabel label={labels.propertyAddress[lang]} />
-                <FormValue component={<TextInput multiline={true} name="marPropertyAddress" variant="standard" />} />
-                <FormLabel label={labels.propertyAddressEnglish[lang]} />
-                <FormValue component={<TextInput multiline={true} name="engPropertyAddress" variant="standard" />} />
-              </GridRow>
-            </Grid>
-          </Paper>
+          <Typography sx={{ fontWeight: 700, fontSize: 16, color: NAVY }}>
+            {labels?.propertyAddressDetails?.[lang] || "Property Address Details"}
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+            Unit, building and locality details in both languages
+          </Typography>
         </Box>
-      </Box>
-    </>
+      </Stack>
+
+      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <GroupCaption>Unit details</GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.FlatNo[lang]} required />
+            <FormValue component={<TextInput name="flatNo" onBlur={handleAddressBlur} />} />
+            <FormLabel label={labels.blockNo[lang]} required />
+            <FormValue component={<TextInput name="blockNo" onBlur={handleAddressBlur} />} />
+          </GridRow>
+          <GridRow>
+            <FormLabel label={labels.Floor[lang]} required />
+            <FormValue
+              component={<SelectInput name="floorMarathi" options={floorOptions} onBlur={handleAddressBlur} />}
+            />
+            <FormLabel label={labels.FloorEnglish[lang]} required />
+            <FormValue component={<TextInput name="floor" onBlur={handleAddressBlur} />} />
+          </GridRow>
+          <GridRow>
+            <FormLabel label={labels.buildingNo[lang]} required />
+            <FormValue component={<TextInput name="buildingNo" onBlur={handleAddressBlur} />} />
+          </GridRow>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <GroupCaption>Building &amp; society</GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.Wing[lang]} required />
+            <FormValue
+              component={<SelectInput name="wingNameMarathi" options={wingOptions} onBlur={handleAddressBlur} />}
+            />
+            <FormLabel label={labels.WingEnglish[lang]} required />
+            <FormValue component={<TextInput name="wingName" required onBlur={handleAddressBlur} />} />
+          </GridRow>
+          <GridRow>
+            <FormLabel label={labels.SocityName[lang]} required />
+            <FormValue component={<TextInput name="societyNameMarathi" required onBlur={handleAddressBlur} />} />
+            <FormLabel label={labels.SocityNameEnglish[lang]} required />
+            <FormValue component={<TextInput name="societyName" required onBlur={handleAddressBlur} />} />
+          </GridRow>
+          <GridRow>
+            <FormLabel label={labels.TowerName[lang]} required />
+            <FormValue component={<TextInput name="towerNameMarathi" onBlur={handleAddressBlur} />} />
+            <FormLabel label={labels.TowerNameEnglish[lang]} required />
+            <FormValue component={<TextInput name="towerName" required onBlur={handleAddressBlur} />} />
+          </GridRow>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <GroupCaption>Locality</GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.Landmark[lang]} required />
+            <FormValue component={<TextInput name="landmarkMarathi" onBlur={handleAddressBlur} />} />
+            <FormLabel label={labels.LandmarkEnglish[lang]} required />
+            <FormValue component={<TextInput name="landmark" onBlur={handleAddressBlur} />} />
+          </GridRow>
+          <GridRow>
+            <FormLabel label={labels.Village[lang]} required />
+            <FormValue component={<TextInput name="villageMarathi" onBlur={handleAddressBlur} />} />
+            <FormLabel label={labels.VillageNameEnglish[lang]} required />
+            <FormValue component={<TextInput name="village" required onBlur={handleAddressBlur} />} />
+          </GridRow>
+          <GridRow>
+            <FormLabel label={labels.PinCode[lang]} required />
+            <FormValue component={<TextInput name="pinCode" required onBlur={handleAddressBlur} />} />
+          </GridRow>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <GroupCaption hint="Built automatically from the fields above when you leave a field — you can still edit it.">
+            Full address
+          </GroupCaption>
+          <GridRow>
+            <FormLabel label={labels.propertyAddress[lang]} />
+            <FormValue component={<TextInput multiline={true} name="marPropertyAddress" />} />
+            <FormLabel label={labels.propertyAddressEnglish[lang]} />
+            <FormValue component={<TextInput multiline={true} name="engPropertyAddress" />} />
+          </GridRow>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 
