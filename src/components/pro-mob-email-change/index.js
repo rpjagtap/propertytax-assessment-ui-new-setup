@@ -120,33 +120,65 @@ const PropertyTraAppforContact = () => {
         }
     }, [transactionTypeIdFromURL, transactionsOptions]);
 
+    // useEffect(() => {
+    //     if (propertyCodeFromURL) {
+    //         const propertyOwnerDetails = async () => {
+    //             try {
+    //                 setLoading(true);
+    //                 const response = await getPropertyForUpadate({
+    //                     propertyCode: propertyCodeFromURL
+    //                 });
+    //                 if (response) {
+    //                     setPropertyOwnerDetails(response.oldMarOwnerName);
+    //                     setMobileNo(response.oldOwnerMobileNo);
+    //                     setEmail(response.oldOwnerEmail);
+    //                     setOccupant(response.oldMarOccupantName);
+    //                     setOldMarOwnerAddress(response.oldMarOwnerAddress);
+    //                     setOldEngOwnerAddress(response.oldEngOwnerAddress);
+    //                     setOldOccMobile(response.oldOccupantMobileNo);
+    //                     setOldOccEmail(response.oldOccupantEmail);
+    //                 }
+    //             } catch (error) {
+    //                 showToastError(getErrorMsg(error));
+    //             } finally {
+    //                 setLoading(false);
+    //             }
+    //         };
+    //         propertyOwnerDetails();
+    //     }
+    // }, [propertyCodeFromURL]);
+
     useEffect(() => {
-        if (propertyCodeFromURL) {
-            const propertyOwnerDetails = async () => {
-                try {
-                    setLoading(true);
-                    const response = await getPropertyForUpadate({
-                        propertyCode: propertyCodeFromURL
-                    });
-                    if (response) {
-                        setPropertyOwnerDetails(response.oldMarOwnerName);
-                        setMobileNo(response.oldOwnerMobileNo);
-                        setEmail(response.oldOwnerEmail);
-                        setOccupant(response.oldMarOccupantName);
-                        setOldMarOwnerAddress(response.oldMarOwnerAddress);
-                        setOldEngOwnerAddress(response.oldEngOwnerAddress);
-                        setOldOccMobile(response.oldOccupantMobileNo);
-                        setOldOccEmail(response.oldOccupantEmail);
-                    }
-                } catch (error) {
-                    showToastError(getErrorMsg(error));
-                } finally {
-                    setLoading(false);
-                }
-            };
-            propertyOwnerDetails();
+    const { zoneKey, gatKey } = formik.values;
+    if (!propertyCodeFromURL || !zoneKey || !gatKey) return;
+
+    const loadPropertyDetails = async () => {
+        try {
+            setLoading(true);
+            const response = await getPropertyForUpadate({
+                propertyCode: propertyCodeFromURL,
+                zoneKey,
+                gatKey,
+            });
+            if (response) {
+                setPropertyOwnerDetails(response.oldMarOwnerName);
+                setMobileNo(response.oldOwnerMobileNo);
+                setEmail(response.oldOwnerEmail);
+                setOccupant(response.oldMarOccupantName);
+                setOldMarOwnerAddress(response.oldMarOwnerAddress);
+                setOldEngOwnerAddress(response.oldEngOwnerAddress);
+                setOldOccMobile(response.oldOccupantMobileNo);
+                setOldOccEmail(response.oldOccupantEmail);
+            }
+        } catch (error) {
+            showToastError(getErrorMsg(error));
+        } finally {
+            setLoading(false);
         }
-    }, [propertyCodeFromURL]);
+    };
+    loadPropertyDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [propertyCodeFromURL, formik.values.zoneKey, formik.values.gatKey]);
 
     useEffect(() => {
         const loadData = async () => {
