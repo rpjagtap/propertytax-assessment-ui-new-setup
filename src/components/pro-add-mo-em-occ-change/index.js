@@ -529,9 +529,6 @@ const PropertyTranApplication = () => {
 
                         {/* ---------- Documents + submit ---------- */}
                         <SectionCard
-                            icon={<DescriptionOutlined fontSize="small" />}
-                            title={labels?.DocumentDetails?.[lang] || "Document details"}
-                            subtitle="Supporting documents for this name correction request"
                             footer={
                                 <FormButtons
                                     disabled={!formik.isValid || !formik.dirty}
