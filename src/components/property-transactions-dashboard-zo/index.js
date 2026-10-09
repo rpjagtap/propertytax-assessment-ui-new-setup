@@ -31,7 +31,6 @@ import {
   ListAltOutlined,
   ReceiptLongOutlined,
 } from "@mui/icons-material";
-import RenderTableHead from "../common/table";
 
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
@@ -40,6 +39,7 @@ import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
 import SelectInput from "../form-fields/select-input";
+import { RenderTableHead } from "../common/table";
 import DateInput from "../form-fields/date-picker";
 import { getCurrentDate, getErrorMsg } from "../../utils/helpers";
 import { showToastError } from "../common/toastHelper";
