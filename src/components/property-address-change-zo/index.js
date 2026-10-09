@@ -1,801 +1,418 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import DashBoardContainer from "../layout/dashboard-container";
-import { Form, FormikProvider, useFormik } from "formik";
+import { useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
-import { Grid, Paper, Table, TableBody, TableCell, TableHead, TableRow, Button, TextField, Box, Typography } from "@mui/material";
+import {
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Button,
+  TextField,
+  Box,
+  Typography,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Divider,
+} from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
+import PersonOutline from "@mui/icons-material/PersonOutline";
+import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
+import EditLocationAltOutlined from "@mui/icons-material/EditLocationAltOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import ChatBubbleOutline from "@mui/icons-material/ChatBubbleOutline";
 import { useSelector } from "react-redux";
-import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
-import FormTitle from "../form-fields/form-title";
 import { labels } from "../../lang/labels";
 import useApiState from "../common/useApiState";
-import { getPropertyUpadateDetails, savePropertyUpdateDetails, ViewProTransactionDoc } from "../../services/assessment-services";
+import {
+  getPropertyUpadateDetails,
+  savePropertyUpdateDetails,
+  ViewProTransactionDoc,
+} from "../../services/assessment-services";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
 import { namChangeApplicationZoSchema } from "../../utils/validation-schema";
 import AlertMsg from "../common/alert";
 
+// Theme tokens
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+
+// Read-only "label: value" row
+const InfoRow = ({ label, value }) => (
+  <Grid item xs={12} md={6}>
+    <Box display="flex" alignItems="flex-start">
+      <Box minWidth={160} pr={1}>
+        <Typography fontWeight={600} fontSize={14} color={NAVY}>
+          {label}:
+        </Typography>
+      </Box>
+      <Typography fontSize={14} sx={{ wordBreak: "break-word", flex: 1 }}>
+        {value || "-"}
+      </Typography>
+    </Box>
+  </Grid>
+);
+
+const SectionCard = ({ icon, title, subtitle, children, footer }) => (
+  <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
+    <CardHeader
+      avatar={
+        <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
+          {icon}
+        </Avatar>
+      }
+      title={title}
+      titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
+      subheader={subtitle}
+      sx={{ pb: 1 }}
+    />
+    <Divider />
+    <CardContent sx={{ p: 3 }}>{children}</CardContent>
+    {footer && (
+      <>
+        <Divider />
+        <Box sx={{ p: 2, display: "flex", justifyContent: "center", gap: 2, bgcolor: "#FAFBFD" }}>
+          {footer}
+        </Box>
+      </>
+    )}
+  </Card>
+);
 
 const PropertyAddressChangeZo = () => {
-    const lang = useSelector((state) => state.userDetails.lang);
-    const { setLoading, error, setError } = useApiState();
-    const [responseData, setResponseData] = useState({});
-    const [searchParams] = useSearchParams();
-    const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
-    const propertyCodeFromURL = searchParams.get("propertyCode");
-    const applicationNoFromURL = searchParams.get("applicationNo");
-    const navigate = useNavigate();
+  const lang = useSelector((state) => state.userDetails.lang);
+  const currentUserProfileId = useSelector((state) => state.userDetails.userInfo.userId);
+  const { setLoading, error, setError } = useApiState();
+  const [responseData, setResponseData] = useState({});
+  const [searchParams] = useSearchParams();
+  const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
+  const propertyCodeFromURL = searchParams.get("propertyCode");
+  const applicationNoFromURL = searchParams.get("applicationNo");
+  const navigate = useNavigate();
 
-    const initialState = {
-        propertyCode: "",
-        transactionTypeId: "",
-        newMarOwnerName: "",
-        newEngOwnerName: "",
-        newMarOccupantName: "",
-        newEngOccupantName: "",
-        orderNo: "",
-        userid: "",
-        applicationId: "",
-        remark: "",
-        action: "",
-    };
+  const initialState = {
+    propertyCode: "",
+    transactionTypeId: "",
+    newMarOwnerName: "",
+    newEngOwnerName: "",
+    newMarOccupantName: "",
+    newEngOccupantName: "",
+    orderNo: "",
+    userid: "",
+    applicationId: "",
+    remark: "",
+    remarks: "",
+    action: "",
+  };
 
-    const formik = useFormik({
-        initialValues: initialState,
-        validationSchema: namChangeApplicationZoSchema,
-        onSubmit: (values) => {
-            alert(JSON.stringify(values, null, 2));
-        },
-    });
+  const formik = useFormik({
+    initialValues: initialState,
+    validationSchema: namChangeApplicationZoSchema,
+    onSubmit: (values) => {
+      alert(JSON.stringify(values, null, 2));
+    },
+  });
 
-    // Fetch property details
-    useEffect(() => {
-        if (!propertyCodeFromURL) return;
+  // Fetch property details
+  useEffect(() => {
+    if (!propertyCodeFromURL) return;
 
-        const fetchPropertyDetails = async () => {
-            try {
-                setLoading(true);
-                const response = await getPropertyUpadateDetails({
-                    transactionTypeKey: transactionTypeIdFromURL,
-                    applicationId: applicationNoFromURL,
-                });
-                if (response) {
-                    setResponseData(response);
-                }
-            } catch (error) {
-                showToastError(getErrorMsg(error));
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchPropertyDetails();
-    }, [propertyCodeFromURL]);
-
-    // Safe access to response data
-    const vo = responseData?.propertyUpdateVO?.[0] || {};
-    const documents = vo.documentVOs || [];
-    const currentUserProfileId = useSelector((state) => state.userDetails.userInfo.userId);
-
-    // Submit handler
-    const handleSubmit = async (actionType) => {
-        const values = formik.values;
-        const body = {
-            propertyCode: propertyCodeFromURL,
-            transactionTypeKey: transactionTypeIdFromURL,
-            orderNo: vo.orderNo,
-            userid: currentUserProfileId,
-            applicationId: applicationNoFromURL,
-            remark: values.remarks,
-            action: actionType,
-            newMarOwnerAddress: vo.newMarOwnerAddress,
-            newEngOwnerAddress: vo.newEngOwnerAddress,
-            newMarOccupantAddress: vo.newMarOccupantAddress,
-            newEngOccupantAddress: vo.newEngOccupantAddress,
-            newMarPropertyAddress: vo.newMarPropertyAddress,
-            newEngPropertyAddress: vo.newEngPropertyAddress,
-        };
-
-        try {
-            setLoading(true);
-            const response = await savePropertyUpdateDetails(body);
-            if (response?.applicationId !== "") {
-                showToastSuccess("Record saved successfully. Redirecting in 5 Sec");
-                setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
-            } else {
-                showToastError("Error occurred. Please try again.");
-            }
-        } catch (error) {
-            showToastError(getErrorMsg(error));
-        } finally {
-            setLoading(false);
+    const fetchPropertyDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await getPropertyUpadateDetails({
+          transactionTypeKey: transactionTypeIdFromURL,
+          applicationId: applicationNoFromURL,
+        });
+        if (response) {
+          setResponseData(response);
         }
+      } catch (error) {
+        showToastError(getErrorMsg(error));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPropertyDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyCodeFromURL]);
+
+  // Safe access to response data
+  const vo = responseData?.propertyUpdateVO?.[0] || {};
+  const documents = vo.documentVOs || [];
+
+  // Submit handler
+  const handleSubmit = async (actionType) => {
+    const values = formik.values;
+    const body = {
+      propertyCode: propertyCodeFromURL,
+      transactionTypeKey: transactionTypeIdFromURL,
+      orderNo: vo.orderNo,
+      userid: currentUserProfileId,
+      applicationId: applicationNoFromURL,
+      remark: values.remarks,
+      action: actionType,
+      newMarOwnerAddress: vo.newMarOwnerAddress,
+      newEngOwnerAddress: vo.newEngOwnerAddress,
+      newMarOccupantAddress: vo.newMarOccupantAddress,
+      newEngOccupantAddress: vo.newEngOccupantAddress,
+      newMarPropertyAddress: vo.newMarPropertyAddress,
+      newEngPropertyAddress: vo.newEngPropertyAddress,
     };
 
-    const handleDownload = async (documentName, documentURLbase64) => {
-        try {
-            const response = await ViewProTransactionDoc(documentName, documentURLbase64);
+    try {
+      setLoading(true);
+      const response = await savePropertyUpdateDetails(body);
+      if (response?.applicationId !== "") {
+        showToastSuccess("Record saved successfully. Redirecting in 5 Sec");
+        setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
+      } else {
+        showToastError("Error occurred. Please try again.");
+      }
+    } catch (error) {
+      showToastError(getErrorMsg(error));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            // Create blob using the response type from headers
-            const contentType = response.type || "application/pdf"; // default PDF
-            const blob = new Blob([response], { type: contentType });
-            const url = window.URL.createObjectURL(blob);
+  const handleDownload = async (documentName, documentURLbase64) => {
+    try {
+      const response = await ViewProTransactionDoc(documentName, documentURLbase64);
+      const contentType = response.type || "application/pdf";
+      const blob = new Blob([response], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
 
-            // Open in new tab
-            const newWindow = window.open(url, "_blank");
-            if (!newWindow) {
-                alert("Please allow popups to view the file.");
-            }
+      const newWindow = window.open(url, "_blank");
+      if (!newWindow) {
+        alert("Please allow popups to view the file.");
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
 
-            // Optional: revoke the object URL after a while
-            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-        } catch (error) {
-            console.error("Download failed:", error);
-        }
-    };
+  // Loading guard
+  if (!responseData?.propertyUpdateVO?.length) return <div>Loading...</div>;
 
-    // Loading guard
-    if (!responseData?.propertyUpdateVO?.length) return <div>Loading...</div>;
+  const remarkEmpty = !formik.values.remarks?.trim();
 
-    return (
-        <DashBoardContainer>
-            {error && <AlertMsg message={error} severity="error" onClose={() => setError("")} />}
-            <ScrollBottom />
-            <ScrollTop />
+  return (
+    <DashBoardContainer>
+      {error && <AlertMsg message={error} severity="error" onClose={() => setError("")} />}
+      <ScrollBottom />
+      <ScrollTop />
 
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    backgroundColor: "rgb(204, 234, 244)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    padding: 4,
-                    margin:5,
-                    borderRadius:4
-                }}
-            >
-                {/* Section Title */}
-                <Typography
-                    variant="h5"
-                    fontWeight="bolder"
-                    align="center"
-                    paddingBottom={2}
-                    paddingTop={5}
-                >
-                    {labels.PropertyAddressCorrection[lang]}
-                </Typography>
-
-                {/* Old Details Section */}
-                <Paper
-                    elevation={3}
-                    sx={{
-                        width: "90%",
-                        maxWidth: 1200,
-                        padding: 5,
-                        borderRadius:4
-                    }}
-                >
-                    <Grid container spacing={0.85}>
-
-                        {/* Type */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.Type[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.transactionType}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* Property Number */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.PropertyNumber[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.propertyCode}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* Zone */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.Zone[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.zoneName}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.Gat[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.gatName}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* Owner Name */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.ApplicationDate[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.applicationDate}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* Occupant Name */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.ApplicationNo[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.applicationId}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* Application Date */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OrderNumber[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.applicationId}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* Application No */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.RemarkForProperty[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.remark}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </Grid>
-                </Paper>
-
-                {/* New Details Title */}
-                <Typography
-                    variant="h5"
-                    fontWeight="bolder"
-                    align="center"
-                    paddingBottom={2}
-                    paddingTop={5}
-                >
-                    {labels.OwnerAddressDetails[lang]}
-                </Typography>
-
-                {/* New Details Section */}
-                <Paper
-                    elevation={3}
-                    sx={{
-                        width: "90%",
-                        maxWidth: 1200,
-                        padding: 5,
-                        borderRadius:4
-                    }}
-                >
-                    <Grid container spacing={0.85}>
-
-                        {/* New Owner Name Marathi */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OwnerOldAddressMarathi[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.oldMarOwnerAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Owner Name English */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OwnerOldAddressEnglish[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.oldEngOwnerAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Occupant Name Marathi */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OwnerNewAddressMarathi[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.newMarOwnerAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Occupant Name English */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OwnerNewAddressEnglish[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.newEngOwnerAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                    </Grid>
-                </Paper>
-
-                {/* New Details Title */}
-                <Typography
-                    variant="h5"
-                    fontWeight="bolder"
-                    align="center"
-                    paddingBottom={2}
-                    paddingTop={5}
-                >
-                    {labels.OccupantAddressDetails[lang]}
-                </Typography>
-
-                {/* New Details Section */}
-                <Paper
-                    elevation={3}
-                    sx={{
-                        width: "90%",
-                        maxWidth: 1200,
-                        padding: 5,
-                        borderRadius:4
-                    }}
-                >
-                    <Grid container spacing={0.85}>
-
-                        {/* New Owner Name Marathi */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OccupantOldAddressMarathi[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.oldMarOccupantAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Owner Name English */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OccupantOldAddressEnglish[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.oldEngOccupantAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Occupant Name Marathi */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OccupantNewAddressMarathi[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.newMarOccupantAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Occupant Name English */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.OccupantNewAddressEnglish[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.newEngOccupantAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                    </Grid>
-                </Paper>
-
-                {/* New Details Title */}
-                <Typography
-                    variant="h5"
-                    fontWeight="bolder"
-                    align="center"
-                    paddingBottom={2}
-                    paddingTop={5}
-                >
-                    {labels.PropertyAddressDetails[lang]}
-                </Typography>
-
-                {/* New Details Section */}
-                <Paper
-                    elevation={3}
-                    sx={{
-                        width: "90%",
-                        maxWidth: 1200,
-                        padding: 5,
-                        borderRadius:4
-                    }}
-                >
-                    <Grid container spacing={0.85}>
-
-                        {/* New Owner Name Marathi */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.propertyOldAddressMarathi[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.oldMarPropertyAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Owner Name English */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.propertyOldAddressEnglish[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.oldEngPropertyAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Occupant Name Marathi */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.propertyNewAddressMarathi[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.newMarPropertyAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                        {/* New Occupant Name English */}
-                        <Grid item xs={12} md={6}>
-                            <Grid container>
-                                <Grid item xs={4}>
-                                    <Typography fontWeight="bold">{labels.propertyNewAddressEnglish[lang]}:</Typography>
-                                </Grid>
-                                <Grid item xs={8}>
-                                    <>{vo.newEngPropertyAddress}</>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-
-                    </Grid>
-                </Paper>
-
-                {/* Document Details Title */}
-                <Typography
-                    variant="h5"
-                    fontWeight="bolder"
-                    align="center"
-                    paddingBottom={2}
-                    paddingTop={5}
-                >
-                    {labels.DocumentDetails[lang]}
-                </Typography>
-
-                {/* Document Section */}
-                <Paper
-                    elevation={3}
-                    sx={{
-                        width: "90%",
-                        maxWidth: 1200,
-                        padding: 5,
-                        borderRadius:4
-                    }}
-                >
-                    <Table
-                        sx={{
-                            width: "100%",
-                            border: "1px solid #bdbdbd",
-                            marginTop: 2,
-                            borderRadius: 1,
-                        }}
-                        size="small"
-                    >
-                        <TableHead>
-                            <TableRow sx={{ bgcolor: "#abd9e3" }}>
-                                <TableCell sx={{ fontWeight: 600, width: "10%", borderRight: "1px solid #bdbdbd" }}>Sr.</TableCell>
-                                <TableCell sx={{ fontWeight: 600, width: "60%", borderRight: "1px solid #bdbdbd" }}>
-                                    {labels.docs[lang]}
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 600, width: "30%" }} align="center">View</TableCell>
-                            </TableRow>
-                        </TableHead>
-
-                        <TableBody>
-                            {documents.map((doc, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{doc.documentName}</TableCell>
-                                    <TableCell align="center">
-                                        <VisibilityIcon
-                                            fontSize="small"
-                                            onClick={() => handleDownload(doc.documentName, doc.documentURLbase64)}
-                                            style={{
-                                                color: "#1976d2",
-                                                cursor: "pointer",
-                                            }}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Paper>
-
-                {/* Remark Section */}
-                <Typography
-                    variant="h5"
-                    fontWeight="bolder"
-                    align="center"
-                    paddingBottom={2}
-                    paddingTop={5}
-                >
-                    {labels.Remark[lang]}
-                </Typography>
-
-                <Paper
-                    elevation={3}
-                    sx={{
-                        width: "90%",
-                        maxWidth: 1200,
-                        padding: 5,
-                        borderRadius:4
-                    }}
-                >
-                    <Grid container spacing={0.85}>
-                        <Grid item xs={12}>
-                            <Typography fontWeight="bold" gutterBottom>
-                                {labels.Remark[lang]}:
-                            </Typography>
-
-                            <TextField
-                                fullWidth
-                                multiline
-                                minRows={2}
-                                maxRows={4}
-                                name="remarks"
-                                value={formik.values.remarks}
-                                onChange={formik.handleChange}
-                                placeholder="Remarks"
-                                variant="outlined"
-                                sx={{
-                                    "& textarea": {
-                                        resize: "vertical",
-                                    },
-                                }}
-                            />
-                        </Grid>
-                        <Grid container justifyContent="center" alignItems="center" spacing={2} sx={{ mt: 2 }}>
-                            <Grid item>
-                                <Button
-                                    variant="contained"
-                                    color="success"
-                                    onClick={() => handleSubmit("accept")}
-                                    disabled={!formik.values.remarks?.trim()}
-                                >
-                                    Accept
-                                </Button>
-                            </Grid>
-                            <Grid item>
-                                <Button
-                                    variant="contained"
-                                    color="error"
-                                    onClick={() => handleSubmit("reject")} // Reject action
-                                    disabled={!formik.values.remarks?.trim()}
-                                >
-                                    Reject
-                                </Button>
-                            </Grid>
-                            <Grid item>
-                                <Button
-                                    variant="outlined"
-                                    color="secondary"
-                                    onClick={() => navigate("/PropertyTransactionsDashBoardZO")} // Cancel action
-                                >
-                                    Cancel
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Grid>
-                </Paper>
+      <Box sx={{ p: 2 }}>
+        {/* Header band */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2.5,
+            mb: 3,
+            borderRadius: 3,
+            background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar sx={{ width: 48, height: 48, bgcolor: "rgba(255,255,255,0.12)", color: "#5DCAA5" }}>
+              <HomeWorkOutlined />
+            </Avatar>
+            <Box>
+              <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
+                {labels?.PropertyAddressCorrection?.[lang] || "Property Address Correction"}
+              </Typography>
+              <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                Review the old and new address details, then accept or reject this application.
+              </Typography>
             </Box>
+          </Box>
 
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(-1)}
+            sx={{
+              color: "#fff",
+              borderColor: "rgba(255,255,255,0.5)",
+              textTransform: "none",
+              "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,0.1)" },
+            }}
+          >
+            Back
+          </Button>
+        </Box>
 
+        {/* ---------- Application details ---------- */}
+        <SectionCard
+          icon={<HomeWorkOutlined fontSize="small" />}
+          title="Application details"
+          subtitle="Property and application information"
+        >
+          <Grid container spacing={3}>
+            <InfoRow label={labels.Type[lang]} value={vo.transactionType} />
+            <InfoRow label={labels.PropertyNumber[lang]} value={vo.propertyCode} />
+            <InfoRow label={labels.Zone[lang]} value={vo.zoneName} />
+            <InfoRow label={labels.Gat[lang]} value={vo.gatName} />
+            <InfoRow label={labels.ApplicationDate[lang]} value={vo.applicationDate} />
+            <InfoRow label={labels.ApplicationNo[lang]} value={vo.applicationId} />
+            <InfoRow label={labels.OrderNumber[lang]} value={vo.applicationId} />
+            <InfoRow label={labels.RemarkForProperty[lang]} value={vo.remark} />
+          </Grid>
+        </SectionCard>
 
+        {/* ---------- Owner address ---------- */}
+        <SectionCard
+          icon={<PersonOutline fontSize="small" />}
+          title={labels.OwnerAddressDetails[lang]}
+          subtitle="Old and new owner address"
+        >
+          <Grid container spacing={3}>
+            <InfoRow label={labels.OwnerOldAddressMarathi[lang]} value={vo.oldMarOwnerAddress} />
+            <InfoRow label={labels.OwnerOldAddressEnglish[lang]} value={vo.oldEngOwnerAddress} />
+            <InfoRow label={labels.OwnerNewAddressMarathi[lang]} value={vo.newMarOwnerAddress} />
+            <InfoRow label={labels.OwnerNewAddressEnglish[lang]} value={vo.newEngOwnerAddress} />
+          </Grid>
+        </SectionCard>
 
-            {/* <Grid>
-                <FormikProvider value={formik}>
-                    <Form>
-                        <Paper elevation={4} sx={{ marginBottom: "15px", padding: 2 }}>
-                            <FormTitle title={labels.PropertyAddressCorrection[lang]} />
-                            <GridRow>
-                                <FormLabel label={labels.Type[lang]} />
-                                <FormValue component={<>{vo.transactionType}</>} />
-                                <FormLabel label={labels.PropertyNumber[lang]} />
-                                <FormValue component={<>{vo.propertyCode}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.Zone[lang]} />
-                                <FormValue component={<>{vo.zoneName}</>} />
-                                <FormLabel label={labels.Gat[lang]} />
-                                <FormValue component={<>{vo.gatName}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.ApplicationDate[lang]} />
-                                <FormValue component={<>{vo.applicationDate}</>} />
-                                <FormLabel label={labels.ApplicationNo[lang]} />
-                                <FormValue component={<>{vo.applicationId}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.OrderNumber[lang]} />
-                                <FormValue component={<>{vo.applicationId}</>} />
-                                <FormLabel label={labels.RemarkForProperty[lang]} />
-                                <FormValue component={<>{vo.remark}</>} />
-                            </GridRow>
-                            <hr />
-                            <FormTitle title={labels.OwnerAddressDetails[lang]} />
-                            <GridRow>
-                                <FormLabel label={labels.OwnerOldAddressMarathi[lang]} />
-                                <FormValue component={<>{vo.oldMarOwnerAddress}</>} />
-                                <FormLabel label={labels.OwnerOldAddressEnglish[lang]} />
-                                <FormValue component={<>{vo.oldEngOwnerAddress}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.OwnerNewAddressMarathi[lang]} />
-                                <FormValue component={<>{vo.newMarOwnerAddress}</>} />
-                                <FormLabel label={labels.OwnerNewAddressEnglish[lang]} />
-                                <FormValue component={<>{vo.newEngOwnerAddress}</>} />
+        {/* ---------- Occupant address ---------- */}
+        <SectionCard
+          icon={<GroupsOutlined fontSize="small" />}
+          title={labels.OccupantAddressDetails[lang]}
+          subtitle="Old and new occupant address"
+        >
+          <Grid container spacing={3}>
+            <InfoRow label={labels.OccupantOldAddressMarathi[lang]} value={vo.oldMarOccupantAddress} />
+            <InfoRow label={labels.OccupantOldAddressEnglish[lang]} value={vo.oldEngOccupantAddress} />
+            <InfoRow label={labels.OccupantNewAddressMarathi[lang]} value={vo.newMarOccupantAddress} />
+            <InfoRow label={labels.OccupantNewAddressEnglish[lang]} value={vo.newEngOccupantAddress} />
+          </Grid>
+        </SectionCard>
 
-                            </GridRow>
-                            <hr />
-                            <FormTitle title={labels.OccupantAddressDetails[lang]} />
-                            <GridRow>
-                                <FormLabel label={labels.OccupantOldAddressMarathi[lang]} />
-                                <FormValue component={<>{vo.oldMarOccupantAddress}</>} />
-                                <FormLabel label={labels.OccupantOldAddressEnglish[lang]} />
-                                <FormValue component={<>{vo.oldEngOccupantAddress}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.OccupantNewAddressMarathi[lang]} />
-                                <FormValue component={<>{vo.newMarOccupantAddress}</>} />
-                                <FormLabel label={labels.OccupantNewAddressEnglish[lang]} />
-                                <FormValue component={<>{vo.newEngOccupantAddress}</>} />
-                            </GridRow>
-                            <hr />
-                            <FormTitle title={labels.PropertyAddressDetails[lang]} />
-                            <GridRow>
-                                <FormLabel label={labels.propertyOldAddressMarathi[lang]} />
-                                <FormValue component={<>{vo.oldMarPropertyAddress}</>} />
-                                <FormLabel label={labels.propertyOldAddressEnglish[lang]} />
-                                <FormValue component={<>{vo.oldEngPropertyAddress}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.propertyNewAddressMarathi[lang]} />
-                                <FormValue component={<>{vo.newMarPropertyAddress}</>} />
-                                <FormLabel label={labels.propertyNewAddressEnglish[lang]} />
-                                <FormValue component={<>{vo.newEngPropertyAddress}</>} />
-                            </GridRow>
-                            <hr />
-                            <FormTitle title={labels.DocumentDetails[lang]} />
-                            <Table
-                                sx={{
-                                    maxWidth: 650,
-                                    border: "1px solid #bdbdbd",
-                                    margin: "20px auto",
-                                    borderRadius: 1,
-                                }}
-                                size="small"
-                            >
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: "#abd9e3" }}>
-                                        <TableCell sx={{ fontWeight: 600, width: "10%", borderRight: "1px solid #bdbdbd" }}>Sr.</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, width: "60%", borderRight: "1px solid #bdbdbd" }}>
-                                            {labels.docs[lang]}
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 600, width: "30%" }} align="center">Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {documents.map((doc, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{doc.documentName}</TableCell>
-                                            <TableCell align="center">
-                                                <VisibilityIcon fontSize="small" onClick={() =>
-                                                    handleDownload(doc.documentName, doc.documentURLbase64)
-                                                }
-                                                    style={{
-                                                        color: "#1976d2",
-                                                        cursor: "pointer",
-                                                        textDecoration: "none",
-                                                    }} />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <hr />
-                            <GridRow>
-                                <FormLabel label={labels.Remark[lang]} required />
-                                <FormValue
-                                    component={
-                                        <TextField name="remarks" multiline minRows={2} maxRows={4} variant="outlined" sx={{ width: { xs: "100%", md: "90%" }, }} value={formik.values.remarks} onChange={formik.handleChange} />
-                                    }
-                                />
-                            </GridRow>
-                            <Grid container justifyContent="center" alignItems="center" spacing={2} sx={{ mt: 2 }}>
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        color="success"
-                                        onClick={() => handleSubmit("accept")}
-                                        disabled={!formik.values.remarks?.trim()}
-                                    >
-                                        Accept
-                                    </Button>
-                                </Grid>
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        color="error"
-                                        onClick={() => handleSubmit("reject")} // Reject action
-                                        disabled={!formik.values.remarks?.trim()}
-                                    >
-                                        Reject
-                                    </Button>
-                                </Grid>
-                                <Grid item>
-                                    <Button
-                                        variant="outlined"
-                                        color="secondary"
-                                        onClick={() => navigate("/PropertyTransactionsDashBoardZO")} // Cancel action
-                                    >
-                                        Cancel
-                                    </Button>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                    </Form>
-                </FormikProvider>
-            </Grid> */}
-        </DashBoardContainer>
-    );
+        {/* ---------- Property address ---------- */}
+        <SectionCard
+          icon={<EditLocationAltOutlined fontSize="small" />}
+          title={labels.PropertyAddressDetails[lang]}
+          subtitle="Old and new property address"
+        >
+          <Grid container spacing={3}>
+            <InfoRow label={labels.propertyOldAddressMarathi[lang]} value={vo.oldMarPropertyAddress} />
+            <InfoRow label={labels.propertyOldAddressEnglish[lang]} value={vo.oldEngPropertyAddress} />
+            <InfoRow label={labels.propertyNewAddressMarathi[lang]} value={vo.newMarPropertyAddress} />
+            <InfoRow label={labels.propertyNewAddressEnglish[lang]} value={vo.newEngPropertyAddress} />
+          </Grid>
+        </SectionCard>
+
+        {/* ---------- Documents ---------- */}
+        <SectionCard
+          icon={<DescriptionOutlined fontSize="small" />}
+          title={labels.DocumentDetails[lang]}
+          subtitle="Documents submitted with this application"
+        >
+          <Table
+            sx={{ width: "100%", border: "1px solid #D5DCE6", borderRadius: 1 }}
+            size="small"
+          >
+            <TableHead>
+              <TableRow sx={{ bgcolor: "#EEF2F7" }}>
+                <TableCell sx={{ fontWeight: 600, width: "10%", color: NAVY, borderRight: "1px solid #D5DCE6" }}>
+                  Sr.
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: "60%", color: NAVY, borderRight: "1px solid #D5DCE6" }}>
+                  {labels.docs[lang]}
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: "30%", color: NAVY }} align="center">
+                  View
+                </TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {documents.map((doc, index) => (
+                <TableRow key={index}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{doc.documentName}</TableCell>
+                  <TableCell align="center">
+                    <VisibilityIcon
+                      fontSize="small"
+                      onClick={() => handleDownload(doc.documentName, doc.documentURLbase64)}
+                      style={{ color: MINT, cursor: "pointer" }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </SectionCard>
+
+        {/* ---------- Remark + actions ---------- */}
+        <SectionCard
+          icon={<ChatBubbleOutline fontSize="small" />}
+          title={labels.Remark[lang]}
+          subtitle="A remark is required to accept or reject"
+          footer={
+            <>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => handleSubmit("accept")}
+                disabled={remarkEmpty}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Accept
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => handleSubmit("reject")}
+                disabled={remarkEmpty}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Reject
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => navigate("/PropertyTransactionsDashBoardZO")}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Cancel
+              </Button>
+            </>
+          }
+        >
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            maxRows={4}
+            name="remarks"
+            value={formik.values.remarks}
+            onChange={formik.handleChange}
+            placeholder="Remarks"
+            variant="outlined"
+            sx={{ "& textarea": { resize: "vertical" } }}
+          />
+        </SectionCard>
+      </Box>
+    </DashBoardContainer>
+  );
 };
+
 export default PropertyAddressChangeZo;

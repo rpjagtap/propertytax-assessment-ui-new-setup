@@ -4,35 +4,30 @@ import { useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
 import ScrollBottom from "../common/scrollBottom";
 import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Chip,
-  CircularProgress,
-  Divider,
   Grid,
-  Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
+  Button,
   TextField,
+  Box,
   Typography,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Divider,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
-import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
-import InfoOutlined from "@mui/icons-material/InfoOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
 import PersonOutline from "@mui/icons-material/PersonOutline";
-import DriveFileRenameOutline from "@mui/icons-material/DriveFileRenameOutline";
+import EditOutlined from "@mui/icons-material/EditOutlined";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
-import EditNoteOutlined from "@mui/icons-material/EditNoteOutlined";
-import InboxOutlined from "@mui/icons-material/InboxOutlined";
+import ChatBubbleOutline from "@mui/icons-material/ChatBubbleOutline";
 import { useSelector } from "react-redux";
 import { labels } from "../../lang/labels";
 import useApiState from "../common/useApiState";
@@ -46,27 +41,35 @@ import { getErrorMsg } from "../../utils/helpers";
 import { namChangeApplicationZoSchema } from "../../utils/validation-schema";
 import AlertMsg from "../common/alert";
 
-// Theme tokens — same values used across the other redesigned pages.
+// Theme tokens
 const NAVY = "#12233F";
 const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
-const headCellSx = {
-  bgcolor: NAVY,
-  color: "#fff",
-  fontWeight: 600,
-  fontSize: "13px",
-  padding: "10px 12px",
-  whiteSpace: "nowrap",
-};
+// Read-only "label: value" row
+const InfoRow = ({ label, value }) => (
+  <Grid item xs={12} md={6}>
+    <Box display="flex" alignItems="flex-start">
+      <Box minWidth={160} pr={1}>
+        <Typography fontWeight={600} fontSize={14} color={NAVY}>
+          {label}:
+        </Typography>
+      </Box>
+      <Typography fontSize={14} sx={{ wordBreak: "break-word", flex: 1 }}>
+        {value || "-"}
+      </Typography>
+    </Box>
+  </Grid>
+);
 
-// Section wrapper — icon-badged header + divider + padded body (+ optional footer).
 const SectionCard = ({ icon, title, subtitle, children, footer }) => (
   <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
     <CardHeader
       avatar={
-        <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>{icon}</Avatar>
+        <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
+          {icon}
+        </Avatar>
       }
       title={title}
       titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
@@ -78,7 +81,7 @@ const SectionCard = ({ icon, title, subtitle, children, footer }) => (
     {footer && (
       <>
         <Divider />
-        <Box sx={{ p: 2, display: "flex", justifyContent: "center", gap: 1.5, flexWrap: "wrap", bgcolor: "#FAFBFD" }}>
+        <Box sx={{ p: 2, display: "flex", justifyContent: "center", gap: 2, bgcolor: "#FAFBFD" }}>
           {footer}
         </Box>
       </>
@@ -86,34 +89,9 @@ const SectionCard = ({ icon, title, subtitle, children, footer }) => (
   </Card>
 );
 
-// One read-only "label → value" pair. `highlight` marks the new/requested value.
-const KeyValue = ({ label, value, highlight = false }) => (
-  <Grid item xs={12} md={6}>
-    <Typography sx={{ fontSize: 12, fontWeight: 600, color: "text.secondary", mb: 0.5 }}>
-      {label}
-    </Typography>
-    <Box
-      sx={{
-        px: 1.5,
-        py: 1,
-        borderRadius: 1.5,
-        minHeight: 38,
-        display: "flex",
-        alignItems: "center",
-        bgcolor: highlight ? MINT_BG : "#F6F8FB",
-        border: "1px solid",
-        borderColor: highlight ? "#BFE5D7" : "#EEF1F6",
-      }}
-    >
-      <Typography sx={{ fontSize: 14, fontWeight: 600, color: highlight ? MINT : NAVY, wordBreak: "break-word" }}>
-        {value || "-"}
-      </Typography>
-    </Box>
-  </Grid>
-);
-
 const PropertyNameChangeZo = () => {
-  const lang = useSelector((state) => state.userDetails?.lang);
+  const lang = useSelector((state) => state.userDetails.lang);
+  const currentUserProfileId = useSelector((state) => state.userDetails.userInfo.userId);
   const { setLoading, error, setError } = useApiState();
   const [responseData, setResponseData] = useState({});
   const [searchParams] = useSearchParams();
@@ -121,11 +99,6 @@ const PropertyNameChangeZo = () => {
   const propertyCodeFromURL = searchParams.get("propertyCode");
   const applicationNoFromURL = searchParams.get("applicationNo");
   const navigate = useNavigate();
-
-  // Page-level fetch state, so the page can show a spinner while loading
-  // and a proper empty state if nothing comes back (instead of a bare
-  // "Loading..." that never goes away).
-  const [isFetching, setIsFetching] = useState(Boolean(propertyCodeFromURL));
 
   const initialState = {
     propertyCode: "",
@@ -138,7 +111,7 @@ const PropertyNameChangeZo = () => {
     userid: "",
     applicationId: "",
     remark: "",
-    remarks: "", // the remark textarea below is bound to `remarks`
+    remarks: "",
     action: "",
   };
 
@@ -168,7 +141,6 @@ const PropertyNameChangeZo = () => {
         showToastError(getErrorMsg(error));
       } finally {
         setLoading(false);
-        setIsFetching(false);
       }
     };
     fetchPropertyDetails();
@@ -178,8 +150,6 @@ const PropertyNameChangeZo = () => {
   // Safe access to response data
   const vo = responseData?.propertyUpdateVO?.[0] || {};
   const documents = vo.documentVOs || [];
-  const currentUserProfileId = useSelector((state) => state.userDetails?.userInfo?.userId);
-  const hasData = Boolean(responseData?.propertyUpdateVO?.length);
 
   // Submit handler
   const handleSubmit = async (actionType) => {
@@ -217,26 +187,24 @@ const PropertyNameChangeZo = () => {
   const handleDownload = async (documentName, documentURLbase64) => {
     try {
       const response = await ViewProTransactionDoc(documentName, documentURLbase64);
-
-      // Create blob using the response type from headers
-      const contentType = response.type || "application/pdf"; // default PDF
+      const contentType = response.type || "application/pdf";
       const blob = new Blob([response], { type: contentType });
       const url = window.URL.createObjectURL(blob);
 
-      // Open in new tab
       const newWindow = window.open(url, "_blank");
       if (!newWindow) {
         alert("Please allow popups to view the file.");
       }
-
-      // Optional: revoke the object URL after a while
       setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (error) {
       console.error("Download failed:", error);
     }
   };
 
-  const remarkFilled = Boolean(formik.values.remarks?.trim());
+  // Loading guard
+  if (!responseData?.propertyUpdateVO?.length) return <div>Loading...</div>;
+
+  const remarkEmpty = !formik.values.remarks?.trim();
 
   return (
     <DashBoardContainer>
@@ -245,231 +213,175 @@ const PropertyNameChangeZo = () => {
       <ScrollTop />
 
       <Box sx={{ p: 2 }}>
-        {isFetching ? (
-          <Box display="flex" justifyContent="center">
-            <CircularProgress sx={{ marginTop: "65px" }} />
+        {/* Header band */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2.5,
+            mb: 3,
+            borderRadius: 3,
+            background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar sx={{ width: 48, height: 48, bgcolor: "rgba(255,255,255,0.12)", color: "#5DCAA5" }}>
+              <HomeWorkOutlined />
+            </Avatar>
+            <Box>
+              <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
+                {labels?.PropertyOwnerAndOccupantNameCorrection?.[lang] ||
+                  "Property Owner and Occupant Name Correction"}
+              </Typography>
+              <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                Review the current and corrected names, then accept or reject this application.
+              </Typography>
+            </Box>
           </Box>
-        ) : !hasData ? (
-          <Card elevation={3} sx={{ borderRadius: 3, py: 6 }}>
-            <Stack alignItems="center" spacing={1.5} sx={{ px: 3 }}>
-              <Box
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: "50%",
-                  bgcolor: "#EEF1F6",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(-1)}
+            sx={{
+              color: "#fff",
+              borderColor: "rgba(255,255,255,0.5)",
+              textTransform: "none",
+              "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,0.1)" },
+            }}
+          >
+            Back
+          </Button>
+        </Box>
+
+        {/* ---------- Current details ---------- */}
+        <SectionCard
+          icon={<PersonOutline fontSize="small" />}
+          title="Current property details"
+          subtitle="Existing owner, occupant and application information on record"
+        >
+          <Grid container spacing={3}>
+            <InfoRow label={labels.Type[lang]} value={vo.transactionType} />
+            <InfoRow label={labels.PropertyNumber[lang]} value={vo.propertyCode} />
+            <InfoRow label={labels.Zone[lang]} value={vo.zoneName} />
+            <InfoRow label={labels.Gat[lang]} value={vo.gatName} />
+            <InfoRow label={labels.ownerName[lang]} value={vo.oldMarOwnerName} />
+            <InfoRow label={labels.occupantName[lang]} value={vo.oldMarOccupantName} />
+            <InfoRow label={labels.ApplicationDate[lang]} value={vo.applicationDate} />
+            <InfoRow label={labels.ApplicationNo[lang]} value={vo.applicationId} />
+            <InfoRow label={labels.OrderNumber[lang]} value={vo.applicationId} />
+            <InfoRow label={labels.RemarkForProperty[lang]} value={vo.remark} />
+          </Grid>
+        </SectionCard>
+
+        {/* ---------- New details ---------- */}
+        <SectionCard
+          icon={<EditOutlined fontSize="small" />}
+          title={labels?.NewDetails?.[lang] || "New details"}
+          subtitle="Corrected owner and occupant names in both languages"
+        >
+          <Grid container spacing={3}>
+            <InfoRow label={labels.OwnerName[lang]} value={vo.newMarOwnerName} />
+            <InfoRow label={labels.ownerNameEnglish[lang]} value={vo.newEngOwnerName} />
+            <InfoRow label={labels.OccupantNameMarathi[lang]} value={vo.newMarOccupantName} />
+            <InfoRow label={labels.OccupantNameEnglish[lang]} value={vo.newEngOccupantName} />
+          </Grid>
+        </SectionCard>
+
+        {/* ---------- Documents ---------- */}
+        <SectionCard
+          icon={<DescriptionOutlined fontSize="small" />}
+          title={labels.DocumentDetails[lang]}
+          subtitle="Documents submitted with this application"
+        >
+          <Table
+            sx={{ width: "100%", border: "1px solid #D5DCE6", borderRadius: 1 }}
+            size="small"
+          >
+            <TableHead>
+              <TableRow sx={{ bgcolor: "#EEF2F7" }}>
+                <TableCell sx={{ fontWeight: 600, width: "10%", color: NAVY, borderRight: "1px solid #D5DCE6" }}>
+                  Sr.
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: "60%", color: NAVY, borderRight: "1px solid #D5DCE6" }}>
+                  {labels.docs[lang]}
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, width: "30%", color: NAVY }} align="center">
+                  View
+                </TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {documents.map((doc, index) => (
+                <TableRow key={index}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{doc.documentName}</TableCell>
+                  <TableCell align="center">
+                    <VisibilityIcon
+                      fontSize="small"
+                      onClick={() => handleDownload(doc.documentName, doc.documentURLbase64)}
+                      style={{ color: MINT, cursor: "pointer" }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </SectionCard>
+
+        {/* ---------- Remark + actions ---------- */}
+        <SectionCard
+          icon={<ChatBubbleOutline fontSize="small" />}
+          title={labels.Remark[lang]}
+          subtitle="A remark is required to accept or reject"
+          footer={
+            <>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => handleSubmit("accept")}
+                disabled={remarkEmpty}
+                sx={{ textTransform: "none", fontWeight: 600 }}
               >
-                <InboxOutlined sx={{ fontSize: 28, color: "#94A3B8" }} />
-              </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: 16, color: NAVY }}>
-                {labels?.NoRecordFound?.[lang] || "No Records Found"}
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "text.secondary", textAlign: "center" }}>
-                The application details could not be loaded.
-              </Typography>
+                Accept
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => handleSubmit("reject")}
+                disabled={remarkEmpty}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Reject
+              </Button>
               <Button
                 variant="outlined"
+                color="secondary"
                 onClick={() => navigate("/PropertyTransactionsDashBoardZO")}
-                sx={{ textTransform: "none", borderRadius: 2, borderColor: NAVY, color: NAVY }}
+                sx={{ textTransform: "none", fontWeight: 600 }}
               >
-                Back to dashboard
+                Cancel
               </Button>
-            </Stack>
-          </Card>
-        ) : (
-          <>
-            {/* Header band */}
-            <Box
-              sx={{
-                px: 3,
-                py: 2.5,
-                mb: 3,
-                borderRadius: 3,
-                background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <Avatar sx={{ width: 48, height: 48, bgcolor: "rgba(255,255,255,0.12)", color: "#5DCAA5" }}>
-                <BadgeOutlined />
-              </Avatar>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                  {labels?.PropertyOwnerAndOccupantNameCorrection?.[lang] || "Owner & Occupant Name Correction"}
-                </Typography>
-                <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                  Review the requested name changes, then accept or reject the application.
-                </Typography>
-              </Box>
-              {vo.applicationId && (
-                <Chip label={vo.applicationId} sx={{ bgcolor: MINT_BG, color: MINT, fontWeight: 600 }} />
-              )}
-            </Box>
-
-            {/* ---------- Application details ---------- */}
-            <SectionCard
-              icon={<InfoOutlined fontSize="small" />}
-              title="Application details"
-              subtitle="Property and application information"
-            >
-              <Grid container spacing={2.5}>
-                <KeyValue label={labels.Type[lang]} value={vo.transactionType} />
-                <KeyValue label={labels.PropertyNumber[lang]} value={vo.propertyCode} />
-                <KeyValue label={labels.Zone[lang]} value={vo.zoneName} />
-                <KeyValue label={labels.Gat[lang]} value={vo.gatName} />
-                <KeyValue label={labels.ApplicationDate[lang]} value={vo.applicationDate} />
-                <KeyValue label={labels.ApplicationNo[lang]} value={vo.applicationId} />
-                {/* The original showed vo.applicationId here as well (a duplicate of
-                    Application No). The submit handler sends vo.orderNo, so that's
-                    what this field is meant to display. */}
-                <KeyValue label={labels.OrderNumber[lang]} value={vo.orderNo} />
-                <KeyValue label={labels.RemarkForProperty[lang]} value={vo.remark} />
-              </Grid>
-            </SectionCard>
-
-            {/* ---------- Current names ---------- */}
-            <SectionCard
-              icon={<PersonOutline fontSize="small" />}
-              title="Current details"
-              subtitle="Owner and occupant names currently on record"
-            >
-              <Grid container spacing={2.5}>
-                <KeyValue label={labels.ownerName[lang]} value={vo.oldMarOwnerName} />
-                <KeyValue label={labels.occupantName[lang]} value={vo.oldMarOccupantName} />
-              </Grid>
-            </SectionCard>
-
-            {/* ---------- New names ---------- */}
-            <SectionCard
-              icon={<DriveFileRenameOutline fontSize="small" />}
-              title={labels.NewDetails[lang]}
-              subtitle="The requested names, in Marathi and English (highlighted)"
-            >
-              <Grid container spacing={2.5}>
-                <KeyValue label={labels.OwnerName[lang]} value={vo.newMarOwnerName} highlight />
-                <KeyValue label={labels.ownerNameEnglish[lang]} value={vo.newEngOwnerName} highlight />
-                <KeyValue label={labels.OccupantNameMarathi[lang]} value={vo.newMarOccupantName} highlight />
-                <KeyValue label={labels.OccupantNameEnglish[lang]} value={vo.newEngOccupantName} highlight />
-              </Grid>
-            </SectionCard>
-
-            {/* ---------- Documents ---------- */}
-            <SectionCard
-              icon={<DescriptionOutlined fontSize="small" />}
-              title={labels.DocumentDetails[lang]}
-              subtitle="Supporting documents attached to this application"
-            >
-              <TableContainer sx={{ border: "1px solid #DDE3EC", borderRadius: 2, overflow: "hidden" }}>
-                <Table size="small" aria-label="documents">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ ...headCellSx, width: "10%" }}>Sr.</TableCell>
-                      <TableCell sx={{ ...headCellSx, width: "60%" }}>{labels.docs[lang]}</TableCell>
-                      <TableCell align="center" sx={{ ...headCellSx, width: "30%" }}>
-                        View
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {documents.length ? (
-                      documents.map((doc, index) => (
-                        <TableRow key={index} hover sx={{ "& td": { padding: "8px 12px", fontSize: 13 } }}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>{doc.documentName}</TableCell>
-                          <TableCell align="center">
-                            <Button
-                              size="small"
-                              startIcon={<VisibilityOutlined />}
-                              onClick={() => handleDownload(doc.documentName, doc.documentURLbase64)}
-                              sx={{ textTransform: "none", color: MINT, fontWeight: 600 }}
-                            >
-                              View
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} align="center" sx={{ py: 3, color: "text.secondary" }}>
-                          {labels?.NoRecordFound?.[lang] || "No documents attached"}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </SectionCard>
-
-            {/* ---------- Remark + actions ---------- */}
-            <SectionCard
-              icon={<EditNoteOutlined fontSize="small" />}
-              title={labels.Remark[lang]}
-              subtitle="A remark is required before you can accept or reject"
-              footer={
-                <>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSubmit("accept")}
-                    disabled={!remarkFilled}
-                    sx={{
-                      textTransform: "none",
-                      borderRadius: 2,
-                      px: 3,
-                      bgcolor: MINT,
-                      "&:hover": { bgcolor: "#0B5A46" },
-                    }}
-                  >
-                    Accept
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={() => handleSubmit("reject")}
-                    disabled={!remarkFilled}
-                    sx={{ textTransform: "none", borderRadius: 2, px: 3 }}
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigate("/PropertyTransactionsDashBoardZO")}
-                    sx={{
-                      textTransform: "none",
-                      borderRadius: 2,
-                      px: 3,
-                      borderColor: NAVY,
-                      color: NAVY,
-                      "&:hover": { borderColor: NAVY_LIGHT, bgcolor: "rgba(18,35,63,0.04)" },
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              }
-            >
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: NAVY, mb: 1 }}>
-                {labels.Remark[lang]} *
-              </Typography>
-              <TextField
-                fullWidth
-                multiline
-                minRows={3}
-                maxRows={6}
-                name="remarks"
-                value={formik.values.remarks}
-                onChange={formik.handleChange}
-                placeholder="Enter your remark"
-                variant="outlined"
-                sx={{ "& textarea": { resize: "vertical" } }}
-              />
-            </SectionCard>
-          </>
-        )}
+            </>
+          }
+        >
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            maxRows={4}
+            name="remarks"
+            value={formik.values.remarks}
+            onChange={formik.handleChange}
+            placeholder="Remarks"
+            variant="outlined"
+            sx={{ "& textarea": { resize: "vertical" } }}
+          />
+        </SectionCard>
       </Box>
     </DashBoardContainer>
   );
