@@ -287,7 +287,7 @@ const AssessmentTable = ({
       const body = {
         useTypeId: Number(useType),
         subUseTypeId: Number(subUseType),
-        connstructionTypeId: Number(constructionType),
+        constructionTypeId: Number(constructionType),
         areaInSqmt: Number(areaInSqmt),
         zoneKey: Number(zoneKey),
         gatKey: Number(gatKey),

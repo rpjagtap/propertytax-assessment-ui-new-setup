@@ -1026,8 +1026,8 @@ export const labels = {
     ma: "भोगवटधारकाचे आडनाव (इंग्लिश)",
   },
   FlatNo: {
-    en: "Flat No",
-    ma: "सदनिका क्र.",
+    en: "Flat / Shop No",
+    ma: "फ्लॅट / शॉप नं ",
   },
   SocityName: {
     en: "Socity Name",
@@ -1767,21 +1767,21 @@ export const labels = {
     en: "Occupant Mobile No",
     ma: "भोगवटधारकाचा मोबाईल क्र.",
   },
-  NewPropertyRegistration:{
+  NewPropertyRegistration: {
     en: "New Property Registration",
     ma: "नवीन मालमत्ता नोंदणी",
   },
   PropertyAssessment: {
     en: "Property Assessment",
     ma: "मालमत्ता मूल्यांकन",
-  },  
+  },
   PropertyName: {
     en: "Property Name",
     ma: "मालमत्ताधारकाचे नाव",
   },
   UpicId: {
     en: "UPIC ID",
-    ma: "युपिक आयडी",   
+    ma: "युपिक आयडी",
   },
   totalAreaSqmt: {
     en: "Total Area (Sq.Mtr)",
@@ -1790,7 +1790,27 @@ export const labels = {
   ratableValueSum: {
     en: "Total Ratable Value",
     ma: "एकूण करयोग्य मूल्य",
-  },       
+  },
+  WingTower: {
+    ma: "विंग / टॉवरचे नाव",
+    en: "Wing / Tower Name",
+  },
+  WingTowerEnglish: {
+    ma: "विंग / टॉवरचे नाव (इंग्लिश)",
+    en: "Wing / Tower Name",
+  },
+  VisitDate: {
+    ma: "पाहणी दिनांक",
+    en: "Visit Date",
+  },
+  blockNoGatNoSecNo: {
+    en: "Block / Gat / Sector No",
+    ma: "ब्लॉक / गट / सेक्टर क्रमांक",
+  },
+  AreaType: {
+    ma: "क्षेत्रफळ प्रकार",
+    en: "Area Type",
+  },
 
   // show: {
   //     en: "Show",

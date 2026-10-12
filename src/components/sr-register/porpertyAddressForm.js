@@ -104,8 +104,8 @@ const PropertyAddressForm = () => {
     } = formik.values;
 
     const marathiAddress = [
-      flatNo && `फ्लॅट नं. ${flatNo}`,
-      blockNo && `ब्लॉक नं. ${blockNo}`,
+      flatNo && `फ्लॅट / शॉप नं / . ${flatNo}`,
+      blockNo && `ब्लॉक / गट / सेक्टर क्रमांक. ${blockNo}`,
       floorMarathi,
       buildingNo && `बिल्डिंग नं. ${buildingNo}`,
       wingNameMarathi,
@@ -119,8 +119,8 @@ const PropertyAddressForm = () => {
       .join(", ");
 
     const englishAddress = [
-      flatNo && `Flat No. ${flatNo}`,
-      blockNo && `Block No. ${blockNo}`,
+      flatNo && `Flat / Shop No. ${flatNo}`,
+      blockNo && `Block / Gat / Sector No. ${blockNo}`,
       floor,
       buildingNo && `Building No. ${buildingNo}`,
       wingName,
@@ -160,7 +160,7 @@ const PropertyAddressForm = () => {
           <GridRow>
             <FormLabel label={labels.FlatNo[lang]} required />
             <FormValue component={<TextInput name="flatNo" onBlur={handleAddressBlur} />} />
-            <FormLabel label={labels.blockNo[lang]} required />
+            <FormLabel label={labels.blockNoGatNoSecNo[lang]} required />
             <FormValue component={<TextInput name="blockNo" onBlur={handleAddressBlur} />} />
           </GridRow>
           <GridRow>

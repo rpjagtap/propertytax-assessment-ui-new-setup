@@ -68,9 +68,11 @@ const ProtectedRoute = ({ routeName, element: Component, ...rest }) => {
     routeName === "zonewise-property-transfer-report" ||
     routeName === "SRDashboardForZo" ||
     routeName === "viewPropertyTransactionApplicationPa" ||
-    routeName === "viewPropertyTransactionApplicationPa" || 
+    routeName === "viewPropertyTransactionApplicationPa" ||
     routeName === "UseTypeChangeProcess" ||
-    routeName === "AdditionalConstructedPropertyProcess"
+    routeName === "AdditionalConstructedPropertyProcess" ||
+    routeName === "viewPropertyTransactionApplicationGP" ||
+    routeName === "GenerateSR2"
   ) {
     return <Component {...rest} />;
   }

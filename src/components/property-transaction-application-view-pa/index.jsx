@@ -15,9 +15,23 @@ import {
   TextField,
   Box,
   Typography,
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Divider,
+  TableContainer,
 } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
+import PersonOutline from "@mui/icons-material/PersonOutline";
+import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
+import LocationOnOutlined from "@mui/icons-material/LocationOnOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import ApartmentOutlined from "@mui/icons-material/ApartmentOutlined";
+import ChatBubbleOutline from "@mui/icons-material/ChatBubbleOutline";
 import { useSelector } from "react-redux";
 import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
 import FormTitle from "../form-fields/form-title";
@@ -32,7 +46,69 @@ import { showToastError, showToastSuccess } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
 import { namChangeApplicationZoSchema } from "../../utils/validation-schema";
 import AlertMsg from "../common/alert";
-import { TableContainer } from "@mui/material";
+
+// Theme tokens
+const NAVY = "#12233F";
+const NAVY_LIGHT = "#1B3A63";
+const MINT = "#0F6E56";
+const MINT_BG = "#E1F5EE";
+const BORDER = "#D5DCE6";
+
+// Read-only "label: value" row
+const InfoRow = ({ label, value }) => (
+  <Grid item xs={12} md={6}>
+    <Box display="flex" alignItems="flex-start">
+      <Box minWidth={160} pr={1}>
+        <Typography fontWeight={600} fontSize={14} color={NAVY}>
+          {label}:
+        </Typography>
+      </Box>
+      <Typography fontSize={14} sx={{ wordBreak: "break-word", flex: 1 }}>
+        {value || "-"}
+      </Typography>
+    </Box>
+  </Grid>
+);
+
+const SectionCard = ({ icon, title, subtitle, children, footer }) => (
+  <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
+    <CardHeader
+      avatar={
+        <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
+          {icon}
+        </Avatar>
+      }
+      title={title}
+      titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
+      subheader={subtitle}
+      sx={{ pb: 1 }}
+    />
+    <Divider />
+    <CardContent sx={{ p: 3 }}>{children}</CardContent>
+    {footer && (
+      <>
+        <Divider />
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            justifyContent: "center",
+            gap: 2,
+            bgcolor: "#FAFBFD",
+          }}
+        >
+          {footer}
+        </Box>
+      </>
+    )}
+  </Card>
+);
+
+const headCellSx = {
+  fontWeight: 600,
+  color: NAVY,
+  borderRight: `1px solid ${BORDER}`,
+};
 
 const PropertyTransactionApplicationViewPa = () => {
   const lang = useSelector((state) => state.userDetails.lang);
@@ -113,10 +189,8 @@ const PropertyTransactionApplicationViewPa = () => {
     const body = {
       propertyCode: propertyCodeFromURL,
       transactionTypeKey: transactionTypeIdFromURL,
-      newMarOwnerName: vo.newMarOwnerName,
-      newEngOwnerName: vo.newEngOwnerName,
-      newMarOccupantName: vo.newMarOccupantName,
-      newEngOccupantName: vo.newEngOccupantName,
+      gatKey: vo.gatKey,
+      zoneKey: vo.zoneKey,
       orderNo: vo.orderNo,
       userid: currentUserProfileId,
       applicationId: applicationNoFromURL,
@@ -141,10 +215,7 @@ const PropertyTransactionApplicationViewPa = () => {
     }
   };
 
-  const handleDownload = async (
-    documentName,
-    documentURLbase64,
-  ) => {
+  const handleDownload = async (documentName, documentURLbase64) => {
     try {
       const response = await ViewProTransactionDoc(
         documentName,
@@ -173,6 +244,8 @@ const PropertyTransactionApplicationViewPa = () => {
   if (!responseData?.propertyTransactionVO?.length)
     return <div>Loading...</div>;
 
+  const remarkEmpty = !formik.values.remarks?.trim();
+
   return (
     <DashBoardContainer>
       {error && (
@@ -185,685 +258,258 @@ const PropertyTransactionApplicationViewPa = () => {
       <ScrollBottom />
       <ScrollTop />
 
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "rgb(204, 234, 244)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          padding: 4,
-          margin: 5,
-          borderRadius: 4,
-        }}
-      >
-        {/* Section Title */}
-        <Typography
-          variant="h5"
-          fontWeight="bolder"
-          align="center"
-          paddingBottom={2}
-          paddingTop={5}
-        >
-          {labels.NewPropertyRegistration[lang]}
-        </Typography>
-
-        {/* Old Details Section */}
-        <Paper
-          elevation={3}
+      <Box sx={{ p: 2 }}>
+        {/* Header band */}
+        <Box
           sx={{
-            width: "90%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
+            px: 3,
+            py: 2.5,
+            mb: 3,
+            borderRadius: 3,
+            background: `linear-gradient(90deg, ${NAVY} 0%, ${NAVY_LIGHT} 100%)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
           }}
         >
-          <Grid container spacing={0.85}>
-            {/* Type */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.TransactionType[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.transactionType}</>
-                </Grid>
-              </Grid>
-            </Grid>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar
+              sx={{
+                width: 48,
+                height: 48,
+                bgcolor: "rgba(255,255,255,0.12)",
+                color: "#5DCAA5",
+              }}
+            >
+              <HomeWorkOutlined />
+            </Avatar>
+            <Box>
+              <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
+                {labels.NewPropertyRegistration[lang]}
+              </Typography>
+              <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
+                Review the property, owner, occupant, address, documents and
+                assessment, then accept or reject this application.
+              </Typography>
+            </Box>
+          </Box>
 
-            {/* Property Number */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.PropertyNumber[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>-</>
-                </Grid>
-              </Grid>
-            </Grid>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate(-1)}
+            sx={{
+              color: "#fff",
+              borderColor: "rgba(255,255,255,0.5)",
+              textTransform: "none",
+              "&:hover": {
+                borderColor: "#fff",
+                bgcolor: "rgba(255,255,255,0.1)",
+              },
+            }}
+          >
+            Back
+          </Button>
+        </Box>
 
-            {/* Zone */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.Zone[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.zoneName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">{labels.Gat[lang]}:</Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.gatName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Owner Name */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.SRDate[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.sr1Date}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Occupant Name */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.PropertyDescription[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.description}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Application Date */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.FYear[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.assessmentFinYear}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Application No */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.SpecialOwnership[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.specialOwnership}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Order Number */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.WaterConnectionNumber[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.waterConnNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* Remark */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.DrainageNumber[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{vo.drainageNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
+        {/* ---------- Property details ---------- */}
+        <SectionCard
+          icon={<HomeWorkOutlined fontSize="small" />}
+          title={labels.NewPropertyRegistration[lang]}
+          subtitle="Property and application information on record"
+        >
+          <Grid container spacing={3}>
+            <InfoRow
+              label={labels.TransactionType[lang]}
+              value={vo.transactionType}
+            />
+            <InfoRow label={labels.PropertyNumber[lang]} value="-" />
+            <InfoRow label={labels.Zone[lang]} value={vo.zoneName} />
+            <InfoRow label={labels.Gat[lang]} value={vo.gatName} />
+            <InfoRow label={labels.SRDate[lang]} value={vo.sr1Date} />
+            <InfoRow
+              label={labels.PropertyDescription[lang]}
+              value={vo.description}
+            />
+            <InfoRow label={labels.FYear[lang]} value={vo.assessmentFinYear} />
+            <InfoRow
+              label={labels.SpecialOwnership[lang]}
+              value={vo.specialOwnership}
+            />
+            <InfoRow
+              label={labels.WaterConnectionNumber[lang]}
+              value={vo.waterConnNo}
+            />
+            <InfoRow
+              label={labels.DrainageNumber[lang]}
+              value={vo.drainageNo}
+            />
           </Grid>
-        </Paper>
+        </SectionCard>
 
-        {/* New Details Title */}
-        <Typography
-          variant="h5"
-          fontWeight="bolder"
-          align="center"
-          paddingBottom={2}
-          paddingTop={5}
+        {/* ---------- Owner details ---------- */}
+        <SectionCard
+          icon={<PersonOutline fontSize="small" />}
+          title={labels.ownerDetails[lang]}
+          subtitle="Owner name, contact and identity details"
         >
-          {labels.ownerDetails[lang]}
-        </Typography>
-
-        {/* New Details Section */}
-        <Paper
-          elevation={3}
-          sx={{
-            width: "90%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
-          }}
-        >
-          <Grid container spacing={0.85}>
-            {/* New Owner Name Marathi */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.NameMarathi[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{ownerInfo.marOwnerName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Owner Name English */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.NameEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{ownerInfo.engOwnerName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Occupant Name Marathi */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.MobileNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{ownerInfo.ownerMobile}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Occupant Name English */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.emailId[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{ownerInfo.ownerEmail}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.AadhaarNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{ownerInfo.ownerAdharNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
+          <Grid container spacing={3}>
+            <InfoRow
+              label={labels.NameMarathi[lang]}
+              value={ownerInfo.marOwnerName}
+            />
+            <InfoRow
+              label={labels.NameEnglish[lang]}
+              value={ownerInfo.engOwnerName}
+            />
+            <InfoRow
+              label={labels.MobileNo[lang]}
+              value={ownerInfo.ownerMobile}
+            />
+            <InfoRow
+              label={labels.emailId[lang]}
+              value={ownerInfo.ownerEmail}
+            />
+            <InfoRow
+              label={labels.AadhaarNo[lang]}
+              value={ownerInfo.ownerAdharNo}
+            />
           </Grid>
-        </Paper>
+        </SectionCard>
 
-        {/* New Details Title */}
-        <Typography
-          variant="h5"
-          fontWeight="bolder"
-          align="center"
-          paddingBottom={2}
-          paddingTop={5}
+        {/* ---------- Occupant details ---------- */}
+        <SectionCard
+          icon={<BadgeOutlined fontSize="small" />}
+          title={labels.OccupantDetails[lang]}
+          subtitle="Occupant name, contact and identity details"
         >
-          {labels.OccupantDetails[lang]}
-        </Typography>
-
-        {/* New Details Section */}
-        <Paper
-          elevation={3}
-          sx={{
-            width: "90%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
-          }}
-        >
-          <Grid container spacing={0.85}>
-            {/* New Occupant details */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.NameMarathi[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{occupantInfo.marOccupantName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Owner Name English */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.NameEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{occupantInfo.engOccupantName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Occupant Name Marathi */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.OccupantMobileNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{occupantInfo.occupantMobile}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Occupant Name English */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.OccupantEmailId[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{occupantInfo.occupantEmail}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.OccupantAadhaarNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{occupantInfo.occupantAdharNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
+          <Grid container spacing={3}>
+            <InfoRow
+              label={labels.NameMarathi[lang]}
+              value={occupantInfo.marOccupantName}
+            />
+            <InfoRow
+              label={labels.NameEnglish[lang]}
+              value={occupantInfo.engOccupantName}
+            />
+            <InfoRow
+              label={labels.OccupantMobileNo[lang]}
+              value={occupantInfo.occupantMobile}
+            />
+            <InfoRow
+              label={labels.OccupantEmailId[lang]}
+              value={occupantInfo.occupantEmail}
+            />
+            <InfoRow
+              label={labels.OccupantAadhaarNo[lang]}
+              value={occupantInfo.occupantAdharNo}
+            />
           </Grid>
-        </Paper>
+        </SectionCard>
 
-        {/* Document Details Title */}
-        <Typography
-          variant="h5"
-          fontWeight="bolder"
-          align="center"
-          paddingBottom={2}
-          paddingTop={5}
+        {/* ---------- Property address ---------- */}
+        <SectionCard
+          icon={<LocationOnOutlined fontSize="small" />}
+          title={labels.PropertyAddressDetails[lang]}
+          subtitle="Address of the property in Marathi and English"
         >
-          {labels.PropertyAddressDetails[lang]}
-        </Typography>
-
-        <Paper
-          elevation={3}
-          sx={{
-            width: "90%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
-          }}
-        >
-          <Grid container spacing={0.85}>
-            {/* New Occupant details */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.FlatNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.flatNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Owner Name English */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.blockNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.blockNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Occupant Name Marathi */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.Floor[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.floorMarathi}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            {/* New Occupant Name English */}
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.FloorEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.floor}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.buildingNo[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.buildingNo}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              &nbsp;
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.Wing[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.wingNameMarathi}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.WingEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.wingName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.SocityName[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.societyNameMarathi}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.SocityNameEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.societyName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.Landmark[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.landmarkMarathi}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.LandmarkEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.landmark}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.TowerName[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.towerNameMarathi}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.TowerNameEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.towerName}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.Village[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.villageMarathi}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.VillageEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.village}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.PinCode[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.pinCode}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              &nbsp;
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.propertyAddress[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.marPropertyAddress}</>
-                </Grid>
-              </Grid>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Grid container>
-                <Grid item xs={4}>
-                  <Typography fontWeight="bold">
-                    {labels.propertyAddressEnglish[lang]}:
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
-                  <>{propertyAddressInfo.engPropertyAddress}</>
-                </Grid>
-              </Grid>
-            </Grid>
+          <Grid container spacing={3}>
+            <InfoRow
+              label={labels.FlatNo[lang]}
+              value={propertyAddressInfo.flatNo}
+            />
+            <InfoRow
+              label={labels.blockNo[lang]}
+              value={propertyAddressInfo.blockNo}
+            />
+            <InfoRow
+              label={labels.Floor[lang]}
+              value={propertyAddressInfo.floorMarathi}
+            />
+            <InfoRow
+              label={labels.FloorEnglish[lang]}
+              value={propertyAddressInfo.floor}
+            />
+            <InfoRow
+              label={labels.buildingNo[lang]}
+              value={propertyAddressInfo.buildingNo}
+            />
+            <Grid item xs={12} md={6} />
+            <InfoRow
+              label={labels.Wing[lang]}
+              value={propertyAddressInfo.wingNameMarathi}
+            />
+            <InfoRow
+              label={labels.WingEnglish[lang]}
+              value={propertyAddressInfo.wingName}
+            />
+            <InfoRow
+              label={labels.SocityName[lang]}
+              value={propertyAddressInfo.societyNameMarathi}
+            />
+            <InfoRow
+              label={labels.SocityNameEnglish[lang]}
+              value={propertyAddressInfo.societyName}
+            />
+            <InfoRow
+              label={labels.Landmark[lang]}
+              value={propertyAddressInfo.landmarkMarathi}
+            />
+            <InfoRow
+              label={labels.LandmarkEnglish[lang]}
+              value={propertyAddressInfo.landmark}
+            />
+            <InfoRow
+              label={labels.TowerName[lang]}
+              value={propertyAddressInfo.towerNameMarathi}
+            />
+            <InfoRow
+              label={labels.TowerNameEnglish[lang]}
+              value={propertyAddressInfo.towerName}
+            />
+            <InfoRow
+              label={labels.Village[lang]}
+              value={propertyAddressInfo.villageMarathi}
+            />
+            <InfoRow
+              label={labels.VillageEnglish[lang]}
+              value={propertyAddressInfo.village}
+            />
+            <InfoRow
+              label={labels.PinCode[lang]}
+              value={propertyAddressInfo.pinCode}
+            />
+            <Grid item xs={12} md={6} />
+            <InfoRow
+              label={labels.propertyAddress[lang]}
+              value={propertyAddressInfo.marPropertyAddress}
+            />
+            <InfoRow
+              label={labels.propertyAddressEnglish[lang]}
+              value={propertyAddressInfo.engPropertyAddress}
+            />
           </Grid>
-        </Paper>
+        </SectionCard>
 
-        {/* Document Details Title */}
-        <Typography
-          variant="h5"
-          fontWeight="bolder"
-          align="center"
-          paddingBottom={2}
-          paddingTop={5}
-        >
-          {labels.DocumentDetails[lang]}
-        </Typography>
-
-        {/* Document Section */}
-        <Paper
-          elevation={3}
-          sx={{
-            width: "90%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
-          }}
+        {/* ---------- Documents ---------- */}
+        <SectionCard
+          icon={<DescriptionOutlined fontSize="small" />}
+          title={labels.DocumentDetails[lang]}
+          subtitle="Documents submitted with this application"
         >
           <Table
-            sx={{
-              width: "100%",
-              border: "1px solid #bdbdbd",
-              marginTop: 2,
-              borderRadius: 1,
-            }}
+            sx={{ width: "100%", border: `1px solid ${BORDER}`, borderRadius: 1 }}
             size="small"
           >
             <TableHead>
-              <TableRow sx={{ bgcolor: "#abd9e3" }}>
-                <TableCell
-                  sx={{
-                    fontWeight: 600,
-                    width: "10%",
-                    borderRight: "1px solid #bdbdbd",
-                  }}
-                >
-                  Sr.
-                </TableCell>
-                <TableCell
-                  sx={{
-                    fontWeight: 600,
-                    width: "60%",
-                    borderRight: "1px solid #bdbdbd",
-                  }}
-                >
+              <TableRow sx={{ bgcolor: "#EEF2F7" }}>
+                <TableCell sx={{ ...headCellSx, width: "10%" }}>Sr.</TableCell>
+                <TableCell sx={{ ...headCellSx, width: "60%" }}>
                   {labels.docs[lang]}
                 </TableCell>
                 <TableCell
-                  sx={{ fontWeight: 600, width: "30%" }}
+                  sx={{ fontWeight: 600, width: "30%", color: NAVY }}
                   align="center"
                 >
                   View
@@ -880,35 +526,22 @@ const PropertyTransactionApplicationViewPa = () => {
                     <VisibilityIcon
                       fontSize="small"
                       onClick={() =>
-                        handleDownload(
-                          doc.documentName,
-                          doc.documentURLbase64,
-                        )
+                        handleDownload(doc.documentName, doc.documentURLbase64)
                       }
-                      style={{
-                        color: "#1976d2",
-                        cursor: "pointer",
-                      }}
+                      style={{ color: MINT, cursor: "pointer" }}
                     />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </Paper>
+        </SectionCard>
 
-        <Typography variant="h5" fontWeight="bolder" align="center" py={2}>
-          {labels?.PropertyAssessment?.[lang] || ""}
-        </Typography>
-
-        <Paper
-          elevation={3}
-          sx={{
-            width: "100%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
-          }}
+        {/* ---------- Property assessment ---------- */}
+        <SectionCard
+          icon={<ApartmentOutlined fontSize="small" />}
+          title={labels?.PropertyAssessment?.[lang] || "Property Assessment"}
+          subtitle="Use type, construction and rateable value details"
         >
           <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
             <Table
@@ -916,14 +549,21 @@ const PropertyTransactionApplicationViewPa = () => {
               sx={{
                 tableLayout: "fixed",
                 width: "100%",
+                minWidth: 900,
+                border: `1px solid ${BORDER}`,
                 "& th, & td": {
                   textAlign: "center",
                   verticalAlign: "middle",
                 },
+                "& th": {
+                  fontWeight: 600,
+                  color: NAVY,
+                  borderRight: `1px solid ${BORDER}`,
+                },
               }}
             >
               <TableHead>
-                <TableRow sx={{ bgcolor: "#abd9e3" }}>
+                <TableRow sx={{ bgcolor: "#EEF2F7" }}>
                   <TableCell>{labels.useType[lang]}</TableCell>
                   <TableCell>{labels.secUseType[lang]}</TableCell>
                   <TableCell>{labels.constructionType[lang]}</TableCell>
@@ -955,224 +595,58 @@ const PropertyTransactionApplicationViewPa = () => {
               </TableBody>
             </Table>
           </TableContainer>
-        </Paper>
+        </SectionCard>
 
-        {/* Remark Section */}
-        <Typography
-          variant="h5"
-          fontWeight="bolder"
-          align="center"
-          paddingBottom={2}
-          paddingTop={5}
-        >
-          {labels.Remark[lang]}
-        </Typography>
-
-        <Paper
-          elevation={3}
-          sx={{
-            width: "90%",
-            maxWidth: 1200,
-            padding: 5,
-            borderRadius: 4,
-          }}
-        >
-          <Grid container spacing={0.85}>
-            <Grid item xs={12}>
-              <Typography fontWeight="bold" gutterBottom>
-                {labels.Remark[lang]}:
-              </Typography>
-
-              <TextField
-                fullWidth
-                multiline
-                minRows={2}
-                maxRows={4}
-                name="remarks"
-                value={formik.values.remarks}
-                onChange={formik.handleChange}
-                placeholder="Remarks"
+        {/* ---------- Remark + actions ---------- */}
+        <SectionCard
+          icon={<ChatBubbleOutline fontSize="small" />}
+          title={labels.Remark[lang]}
+          subtitle="A remark is required to accept or reject"
+          footer={
+            <>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => handleSubmit("accept")}
+                disabled={remarkEmpty}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Accept
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => handleSubmit("reject")} // Reject action
+                disabled={remarkEmpty}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Reject
+              </Button>
+              <Button
                 variant="outlined"
-                sx={{
-                  "& textarea": {
-                    resize: "vertical",
-                  },
-                }}
-              />
-            </Grid>
-            <Grid
-              container
-              justifyContent="center"
-              alignItems="center"
-              spacing={2}
-              sx={{ mt: 2 }}
-            >
-              <Grid item>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleSubmit("accept")}
-                  disabled={!formik.values.remarks?.trim()}
-                >
-                  Accept
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleSubmit("reject")} // Reject action
-                  disabled={!formik.values.remarks?.trim()}
-                >
-                  Reject
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => navigate("/PropertyTransactionsDashBoardZO")} // Cancel action
-                >
-                  Cancel
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Paper>
+                color="secondary"
+                onClick={() => navigate("/PropertyTransactionsDashBoardZO")} // Cancel action
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Cancel
+              </Button>
+            </>
+          }
+        >
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            maxRows={4}
+            name="remarks"
+            value={formik.values.remarks}
+            onChange={formik.handleChange}
+            placeholder="Remarks"
+            variant="outlined"
+            sx={{ "& textarea": { resize: "vertical" } }}
+          />
+        </SectionCard>
       </Box>
-
-      {/* <Grid>
-                <FormikProvider value={formik}>
-                    <Form>
-                        <Paper elevation={4} sx={{ marginBottom: "15px", padding: 2 }}>
-                            <FormTitle title={labels.PropertyOwnerAndOccupantNameCorrection[lang]} />
-                            <GridRow>
-                                <FormLabel label={labels.Type[lang]} />
-                                <FormValue component={<>{vo.transactionType}</>} />
-                                <FormLabel label={labels.PropertyNumber[lang]} />
-                                <FormValue component={<>{vo.propertyCode}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.Zone[lang]} />
-                                <FormValue component={<>{vo.zoneName}</>} />
-                                <FormLabel label={labels.Gat[lang]} />
-                                <FormValue component={<>{vo.gatName}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.ownerName[lang]} />
-                                <FormValue component={<>{vo.oldMarOwnerName}</>} />
-                                <FormLabel label={labels.occupantName[lang]} />
-                                <FormValue component={<>{vo.oldMarOccupantName}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.ApplicationDate[lang]} />
-                                <FormValue component={<>{vo.applicationDate}</>} />
-                                <FormLabel label={labels.ApplicationNo[lang]} />
-                                <FormValue component={<>{vo.applicationId}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.OrderNumber[lang]} />
-                                <FormValue component={<>{vo.applicationId}</>} />
-                                <FormLabel label={labels.RemarkForProperty[lang]} />
-                                <FormValue component={<>{vo.remark}</>} />
-                            </GridRow>
-                            <hr />
-                            <FormTitle title={labels.NewDetails[lang]} />
-                            <GridRow>
-                                <FormLabel label={labels.OwnerName[lang]} />
-                                <FormValue component={<>{vo.newMarOwnerName}</>} />
-                                <FormLabel label={labels.ownerNameEnglish[lang]} />
-                                <FormValue component={<>{vo.newEngOwnerName}</>} />
-                            </GridRow>
-                            <GridRow>
-                                <FormLabel label={labels.OccupantNameMarathi[lang]} />
-                                <FormValue component={<>{vo.newMarOccupantName}</>} />
-                                <FormLabel label={labels.OccupantNameEnglish[lang]} />
-                                <FormValue component={<>{vo.newEngOccupantName}</>} />
-                            </GridRow>
-                            <hr />
-                            <FormTitle title={labels.DocumentDetails[lang]} />
-                            <Table
-                                sx={{
-                                    maxWidth: 650,
-                                    border: "1px solid #bdbdbd",
-                                    margin: "20px auto",
-                                    borderRadius: 1,
-                                }}
-                                size="small"
-                            >
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: "#abd9e3" }}>
-                                        <TableCell sx={{ fontWeight: 600, width: "10%", borderRight: "1px solid #bdbdbd" }}>Sr.</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, width: "60%", borderRight: "1px solid #bdbdbd" }}>
-                                            {labels.docs[lang]}
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 600, width: "30%" }} align="center">View</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {documents.map((doc, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{doc.documentName}</TableCell>
-                                            <TableCell align="center">
-                                                <VisibilityIcon fontSize="small" onClick={() =>
-                                                    handleDownload(doc.documentName, doc.documentURLbase64)
-                                                }
-                                                    style={{
-                                                        color: "#1976d2",
-                                                        cursor: "pointer",
-                                                        textDecoration: "none",
-                                                    }} />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <hr />
-                            <GridRow>
-                                <FormLabel label={labels.Remark[lang]} required />
-                                <FormValue
-                                    component={
-                                        <TextField name="remarks" multiline minRows={2} maxRows={4} variant="outlined" sx={{ width: { xs: "100%", md: "90%" }, }} value={formik.values.remarks} onChange={formik.handleChange} />
-                                    }
-                                />
-                            </GridRow>
-                            <Grid container justifyContent="center" alignItems="center" spacing={2} sx={{ mt: 2 }}>
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        color="success"
-                                        onClick={() => handleSubmit("accept")}
-                                        disabled={!formik.values.remarks?.trim()}
-                                    >
-                                        Accept
-                                    </Button>
-                                </Grid>
-                                <Grid item>
-                                    <Button
-                                        variant="contained"
-                                        color="error"
-                                        onClick={() => handleSubmit("reject")} // Reject action
-                                        disabled={!formik.values.remarks?.trim()}
-                                    >
-                                        Reject
-                                    </Button>
-                                </Grid>
-                                <Grid item>
-                                    <Button
-                                        variant="outlined"
-                                        color="secondary"
-                                        onClick={() => navigate("/PropertyTransactionsDashBoardZO")} // Cancel action
-                                    >
-                                        Cancel
-                                    </Button>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                    </Form>
-                </FormikProvider>
-            </Grid> */}
     </DashBoardContainer>
   );
 };
