@@ -62,6 +62,7 @@ import SthaptyaVadhivSR1DashBoard from "./components/sthaptya-Vadhiv-SR1-DashBoa
 
 import PropertyAssessmentDashboardGP from "./components/property-assessment-dashboard-GP";
 import PropertyTransactionApplicationViewGP from "./components/property-transaction-application-view-GP";
+import GenerateSR2 from "./components/generate-sr-2";
 
 const routes = [
   {
@@ -291,11 +292,11 @@ const routes = [
   },
   {
     path: "CreateAssignInterface",
-    component : CreateAssignInterface,
+    component: CreateAssignInterface,
   },
   {
     path: "EditProfileInterface",
-    component : EditProfileInterface,
+    component: EditProfileInterface,
   },
 
     {
@@ -309,8 +310,11 @@ const routes = [
   {
     path: "viewPropertyTransactionApplicationGP",
     component: PropertyTransactionApplicationViewGP,
-  }
-  
+  },
+  {
+    path: "GenerateSR2",
+    component: GenerateSR2,
+  },
   // Add other routes here
 ];
 
