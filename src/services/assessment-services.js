@@ -786,11 +786,20 @@ export const getSthapatyaSurveyDashboard = async (body) => {
   return response.data;
 };
 
-
 export const submitSthapathyaVadhivProperty = async (body) => {
   const response = await apiClient.post(`sthapatya/submit-sthapatya-vadhiv-property` ,body);
   return response.data;
 }; 
+
+export const getSthapatyaSurveyDashboardSR1 = async (body) => {
+  const response = await apiClient.post(`/sthapatya/get-sthapatya-vadhiv-property-sr1`, body);
+  return response.data;
+};
+
+export const submitSthapathyaVadhivPropertySR1 = async (body) => {
+  const response = await apiClient.post(`sthapatya/submit-property-vadhiv` ,body);
+  return response.data;
+}
 
 export const createassignInterface = async (body) => {
   const response = await apiClient.post(`userdetails/create-assign-interface` ,body);

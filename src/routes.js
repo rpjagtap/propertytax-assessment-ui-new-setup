@@ -58,6 +58,7 @@ import AdditionalConstructedPropertyProcess from "./components/property-add-cons
 import SthapatyaVadhivPropertyDashboard from "./components/sthapatya-vadhiv-propertydata";
 import CreateAssignInterface from "./components/create-assign-interface";
 import EditProfileInterface from "./components/edit-profile-interface";
+import SthaptyaVadhivSR1DashBoard from "./components/sthaptya-Vadhiv-SR1-DashBoard";
 
 const routes = [
   {
@@ -292,6 +293,11 @@ const routes = [
   {
     path: "EditProfileInterface",
     component : EditProfileInterface,
+  },
+
+    {
+    path: "SthaptyaVadhivSR1DashBoard",
+    component : SthaptyaVadhivSR1DashBoard,
   }
   
   // Add other routes here
