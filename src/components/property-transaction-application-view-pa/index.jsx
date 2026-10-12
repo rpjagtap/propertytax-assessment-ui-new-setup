@@ -39,7 +39,7 @@ import { labels } from "../../lang/labels";
 import useApiState from "../common/useApiState";
 import {
   viewPendingApplications,
-  savePropertyUpdateDetails,
+  revertApplication,
   ViewProTransactionDoc,
 } from "../../services/assessment-services";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
@@ -187,24 +187,82 @@ const PropertyTransactionApplicationViewPa = () => {
   const handleSubmit = async (actionType) => {
     const values = formik.values;
     const body = {
-      propertyCode: propertyCodeFromURL,
-      transactionTypeKey: transactionTypeIdFromURL,
-      gatKey: vo.gatKey,
-      zoneKey: vo.zoneKey,
-      orderNo: vo.orderNo,
-      userid: currentUserProfileId,
-      applicationId: applicationNoFromURL,
-      remark: values.remarks,
-      action: actionType,
+      //requestId: generateUUID(),
+      propertyTransactionVO: [
+        {
+          // PropertyInfoForm
+          propertyTransactionId: vo.propertyTransactionId || "",
+          transactionType: values.oldPropertyKey,
+          propertyCode: vo.propertyCode,
+          propertyName: vo.propertyName || "",
+          propertyOccupantName: vo.propertyOccupantName || "",
+          propertyAddress: vo.propertyAddress || "",
+          propertyMobileNo: vo.propertyMobileNo,
+          zoneKey: vo.zoneKey,
+          gatKey: vo.gatKey,
+          zoneName: vo.zoneName || "",
+          gatName: vo.gatName || "",
+          totalArea: vo.totalArea || 0,
+          totalRateableValue: vo.totalRateableValue || 0,
+          sr1Date: vo.sr1Date,
+          applicationId: vo.applicationId,
+          applicationDate: vo.applicationDate,
+          transactionTypeKey: vo.transactionTypeKey,
+
+          documentVOs: vo.documentVOs.map((doc) => ({
+            documentURLbase64: doc.documentURLbase64,
+            documentName: doc.documentName,
+          })),
+          // AssessmentTable
+          propertyTransactionDetailsVO: vo.propertyTransactionDetailsVO.map(
+            (row) => ({
+              useType: row.useType,
+              subUseType: row.subUseType,
+              constructionType: row.constructionType,
+              occuapncy: row.occuapncy,
+              specialOccupant: row.specialOccupant,
+              assessmentDate: row.assessmentDate,
+              area: row.area,
+              rateableValue: row.rateableValue,
+              toilet: row.toilet,
+              permision: row.permision,
+              florage: row.florage,
+              transactionType: row.transactionType,
+              propertyTransactionDetailsId: row.propertyTransactionDetailsId,
+            }),
+          ),
+          revertFormVO: {
+            remark: values.remarks,
+            revertAction: actionType,
+          },
+        },
+      ],
     };
 
+    const sessionData = sessionStorage.getItem("sessionData");
+    const userDetails = JSON.parse(sessionData);
+    const profileId = userDetails?.profileId;
+    console.log("Submitting with body:", body, "Profile ID:", profileId, "Action Type:", actionType);
     try {
       //console.log("Submitting with body:", body);
       setLoading(true);
-      const response = await savePropertyUpdateDetails(body);
+      const response = await revertApplication(body);
       if (response?.applicationId !== "") {
         showToastSuccess("Record saved successfully. Redirecting in 5 Sec");
-        setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
+        if (profileId === 8 && actionType === "accept") { // 8 is ZO
+          setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
+        } 
+        else if (profileId === 8 && actionType === "reject") { // 8 is ZO
+          setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
+        }
+        else if (profileId === 14 && actionType === "reject") // 14 is PA
+        {
+          setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000); // Send to Hearing -> S3
+        } 
+        else if (profileId === 14 && actionType === "accept")  // 14 is PA
+        {
+          setTimeout(() => navigate("/GenerateSr2"), 2000); // Send to sr2
+        }
       } else {
         showToastError("Error occurred. Please try again.");
       }
