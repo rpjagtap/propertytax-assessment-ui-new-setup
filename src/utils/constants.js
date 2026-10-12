@@ -1,5 +1,5 @@
 // export const BASE_URL = "https://noncoreuat.pcmcindia.gov.in:8443";
-export const DEV_BASE_URL = "http://192.168.1.89:8080/propertytax-assessment-api-config";
+export const DEV_BASE_URL = "http://192.168.1.89:8080/propertytax-assessment-api-1";
 export const PROD_BASE_URL = "https://live.publicptaxpcmc.in:8445/propertytax-assessment-api-prod";
 export const CONTEXT_ROOT = "";
 export const errorMsg = "Something went wrong please try again!!";

@@ -71,7 +71,7 @@ const OccupantInfoForm = React.memo(() => {
 
           <GroupCaption>Identity</GroupCaption>
           <GridRow>
-            <FormLabel label={labels.OccupantAadhaarNo[lang]} required />
+            <FormLabel label={labels.OccupantAadhaarNo[lang]} />
             <FormValue component={<TextInput name="occupantAdharNo" />} />
           </GridRow>
         </CardContent>
