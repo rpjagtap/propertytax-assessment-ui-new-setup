@@ -1811,6 +1811,10 @@ export const labels = {
     ma: "क्षेत्रफळ प्रकार",
     en: "Area Type",
   },
+  Sr1Date:{
+      ma:"Sr1Date",
+      en:"Sr1Date",
+  },
 
   // show: {
   //     en: "Show",

@@ -797,7 +797,7 @@ export const getSthapatyaSurveyDashboardSR1 = async (body) => {
 };
 
 export const submitSthapathyaVadhivPropertySR1 = async (body) => {
-  const response = await apiClient.post(`sthapatya/submit-property-vadhiv` ,body);
+  const response = await apiClient.post(`property-transactions/submit-property-vadhiv` ,body);
   return response.data;
 }
 

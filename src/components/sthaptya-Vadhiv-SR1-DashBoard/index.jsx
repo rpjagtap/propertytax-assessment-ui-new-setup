@@ -47,6 +47,73 @@ const optLabel = (o) => o?.label ?? o?.name ?? String(o?.value ?? "");
 const sumField = (list, field) =>
     (list || []).reduce((acc, d) => acc + (parseFloat(d?.[field]) || 0), 0);
 
+// Simple UUID generator (uses crypto if available)
+const generateRequestId = () => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+
+// Build the submit payload exactly as the API expects
+
+
+const buildSubmitPayload = (record) => ({
+    requestId: generateRequestId(),
+    channelName: "SthapatyaSurvey",
+    propertyTransactionVO: [
+        {
+            transactionTypeId: record.transactionTypeId,
+            oldPropertyKey: record.oldPropertyKey,
+            propertyCode: record.propertyCode,
+            propertyName: record.propertyName,
+            propertyOccupantName: record.propertyOccupantName,
+            propertyAddress: record.propertyAddress,
+            propertyMobileNo: record.propertyMobileNo,
+            zoneKey: record.zoneKey,
+            gatKey: record.gatKey,
+            sr1Date: record.sr1Date,
+            description: record.description,
+            assessmentFinYear: record.assessmentFinYear ?? "",
+            specialOwnershipId: record.specialOwnershipId ?? "",
+            waterConnNo: record.waterConnNo ?? "",
+            drainageNo: record.drainageNo ?? "",
+            finalConstructionType: record.finalConstructionType,
+            applicationId: record.applicationId,
+            finalUseType: record.finalUseType,
+            // document sent with empty base64 string
+            documentVOs: [
+                {
+                    documentId: 1,
+                    documentURLbase64: "",
+                },
+            ],
+            propertyTransactionDetailsVO: (record.propertyTransactionDetailsVO || []).map((d) => ({
+                oldPropertyKey: d.oldPropertyKey,
+                oldPropertyDetailsKey: d.oldPropertyDetailsKey,
+                useTypeKey: d.useTypeKey,
+                subUseTypeKey: d.subUseTypeKey,
+                constructionTypeKey: d.constructionTypeKey,
+                occuapncyKey: d.occuapncyKey,
+                specialOccupantKey: d.specialOccupantKey,
+                assessmentDate: d.assessmentDate,
+                rate: Number(d.rate),
+                "areaType":"बांधकाम क्षेत्रफळ",
+                // API returns mixed string/number types, normalize to numbers
+                area: Number(d.area),
+                rateableValue: Number(d.rateableValue),
+                toiletFlag: d.toiletFlag,
+                permission: d.permission,
+            })),
+        },
+    ],
+});
+
+
 const SthaptyaVadhivSR1DashBoard = () => {
     const lang = useSelector((state) => state.userDetails.lang);
     const { loading, setLoading, error, setError } = useApiState();
@@ -183,11 +250,10 @@ const SthaptyaVadhivSR1DashBoard = () => {
     // ---- Accept / Submit ----
     const handleSubmitRecord = async (record) => {
         try {
+            console.log(record);
+            
             setActionLoadingId(record.applicationId);
-            await submitSthapathyaVadhivPropertySR1({
-                applicationId: record.applicationId,
-                status: "Accept",
-            });
+            await submitSthapathyaVadhivPropertySR1(buildSubmitPayload(record));
             showToastSuccess(labels?.RecordSavedSuccessfully?.[lang] || "Record saved successfully");
             setRecords((prev) => prev.filter((r) => r.applicationId !== record.applicationId));
         } catch (err) {
@@ -246,7 +312,12 @@ const SthaptyaVadhivSR1DashBoard = () => {
             },
             {
                 field: "applicationId",
-                headerName: labels?.ApplicationId?.[lang] || "Application Id",
+                headerName: labels?.UpicId?.[lang] || "UPIC ID",
+                width: 170,
+            },
+            {
+                field: "propertyCode",
+                headerName: labels?.PropertyCode?.[lang] || "Property Code",
                 width: 170,
             },
             {
