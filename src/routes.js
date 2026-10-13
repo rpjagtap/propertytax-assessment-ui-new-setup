@@ -58,6 +58,7 @@ import AdditionalConstructedPropertyProcess from "./components/property-add-cons
 import SthapatyaVadhivPropertyDashboard from "./components/sthapatya-vadhiv-propertydata";
 import CreateAssignInterface from "./components/create-assign-interface";
 import EditProfileInterface from "./components/edit-profile-interface";
+import SthaptyaVadhivSR1DashBoard from "./components/sthaptya-Vadhiv-SR1-DashBoard";
 
 import PropertyAssessmentDashboardGP from "./components/property-assessment-dashboard-GP";
 import PropertyTransactionApplicationViewGP from "./components/property-transaction-application-view-GP";
@@ -297,6 +298,11 @@ const routes = [
     path: "EditProfileInterface",
     component: EditProfileInterface,
   },
+
+    {
+    path: "SthaptyaVadhivSR1DashBoard",
+    component : SthaptyaVadhivSR1DashBoard,
+    },
   {
     path: "PropertyAssessmentDashboardGP",
     component: PropertyAssessmentDashboardGP,
