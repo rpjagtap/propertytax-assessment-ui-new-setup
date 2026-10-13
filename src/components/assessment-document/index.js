@@ -519,7 +519,17 @@ const PropertyTaxDocumentBundle = () => {
                                         गट क्रमांक - {sr1Data?.gatName}
                                     </TableCell>
                                     <TableCell sx={{ ...cellSx, fontWeight: "bold" }}>
-                                        विषय : नवीन मालमत्ता कर आकारणी बाबत...
+                                        विषय :
+                                        {
+                                            Number(sr1Data?.transactionTypeId) === 11
+                                                ? " वापर प्रकार बदल"
+                                                : Number(sr1Data?.transactionTypeId) === 1
+                                                    ? " नवीन मालमत्ता कर आकारणी बाबत..."
+                                                    : Number(sr1Data?.transactionTypeId) === 2
+                                                        ? " वाढीव मालमत्ता कर आकारणी बाबत..."
+                                                        : ""
+                                        }
+
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
@@ -664,7 +674,7 @@ const PropertyTaxDocumentBundle = () => {
                     {/* ---------- divider between प्रस्ताव and फेरसादर blocks ---------- */}
                     <Box sx={{ borderTop: `1.5px solid ${palette.border}`, mt: 3, pt: 1.5 }}>
                         <Typography sx={{ fontSize: "12px", textAlign: "right", mr: 20 }}>
-                            दिनांक : 
+                            दिनांक :
                         </Typography>
 
                         <Typography sx={{ fontSize: "12px", mt: 1 }}>मा.स.फेरसादर,</Typography>
@@ -891,7 +901,7 @@ const PropertyTaxDocumentBundle = () => {
                                         py: 0.4,
                                     }}
                                 >
-                                    आकारणी न झालेल्या मालमत्तेतील नविन / वापराबद्दल / वाढीव भागाचा तपशील 
+                                    आकारणी न झालेल्या मालमत्तेतील नविन / वापराबद्दल / वाढीव भागाचा तपशील
                                 </Typography>
                                 <Box sx={{ border: `1px solid ${palette.border}`, borderTop: "none", overflow: "hidden" }}>
                                     <Table sx={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse" }} size="small">
@@ -1089,7 +1099,7 @@ const PropertyTaxDocumentBundle = () => {
                                 क्रमांक : <b>{sr1Data?.srNumber}</b>
                             </Typography>
                             <Typography sx={{ fontSize: "12px" }}>
-                                दिनांक : 
+                                दिनांक :
                             </Typography>
                         </Grid>
                         <Grid item xs={5}>

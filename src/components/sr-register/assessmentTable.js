@@ -274,14 +274,14 @@ const AssessmentTable = ({
   const handleAssessmentDetailsInputChange = async (id, field, value) => {
     await handleFieldChange(id, field, value);
   };
-
+ 
   const fetchTaxAmount = async (
     useType,
     subUseType,
     constructionType,
     areaInSqmt,
-    currentZoneKey,
-    currentGatKey
+    //currentZoneKey,
+    //currentGatKey
   ) => {
     try {
       const body = {
@@ -293,7 +293,6 @@ const AssessmentTable = ({
         gatKey: Number(gatKey),
       };
 
-      console.log("RATE API REQUEST BODY:", body);
 
       const response = await getRatebaleValueCalculation(body);
 

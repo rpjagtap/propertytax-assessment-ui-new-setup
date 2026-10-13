@@ -72,6 +72,7 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
    Role-based access pattern. Which fields are shown/required
    depends on the selected profile:
      - Prashashan Adhikari -> multiple zones, no gat, no counter
+     - HOD                 -> multiple zones, no gat, no counter
      - Zone Officer        -> exactly one zone, no gat, no counter
      - Gat (Gat Pramukh)   -> exactly one zone, multiple gats
      - Cashier             -> exactly one zone, one cash counter
@@ -102,6 +103,7 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
         shows an Active / Inactive chip on the right for the loaded user.
 --------------------------------------------------------- */
 const ROLE_ADMIN = "admin"; // Prashashan Adhikari
+const ROLE_HOD = "hod"; // Head of Department -> multi zone, same as admin
 const ROLE_ZONE_OFFICER = "zoneofficer";
 const ROLE_GAT = "gat";
 const ROLE_CASHIER = "cashier";
@@ -112,6 +114,8 @@ const TAB_EDIT = "edit";
 const getRoleKey = (label = "") => {
   const l = (label || "").toLowerCase();
   if (l.includes("prashashan") || l.includes("adhikari")) return ROLE_ADMIN;
+  // \bhod\b matches "HOD" as a whole word only (so "method" etc. won't match)
+  if (/\bhod\b/.test(l) || l.includes("head of department")) return ROLE_HOD;
   if (l.includes("cashier")) return ROLE_CASHIER;
   if (l.includes("zone") && l.includes("officer")) return ROLE_ZONE_OFFICER;
   if (l.includes("gat")) return ROLE_GAT;
@@ -250,11 +254,15 @@ const AddUser = () => {
 
   const roleKey = getRoleKey(selectedProfile?.label);
   const isAdminRole = roleKey === ROLE_ADMIN; // Prashashan Adhikari -> multi zone, no gat
+  const isHodRole = roleKey === ROLE_HOD; // HOD -> multi zone, no gat
   const isZoneOfficerRole = roleKey === ROLE_ZONE_OFFICER; // single zone, no gat
   const isGatRole = roleKey === ROLE_GAT; // single zone, multi gat
   const isCashierRole = roleKey === ROLE_CASHIER; // single zone, cash counter
 
-  const zoneMultiple = isAdminRole;
+  // Roles that can be given access to more than one zone
+  const isMultiZoneRole = isAdminRole || isHodRole;
+
+  const zoneMultiple = isMultiZoneRole;
   const showGatSelect = isGatRole;
   const showCashCounter = isCashierRole;
 
@@ -358,13 +366,14 @@ const AddUser = () => {
   /* -------------------------------------------------------
      Whenever the role changes, drop any selections that no
      longer make sense for that role: trim zone down to one
-     for every role except admin, clear gat unless the role
-     is Gat, and clear cash counter unless the role is Cashier.
+     for every role except the multi-zone roles (admin, HOD),
+     clear gat unless the role is Gat, and clear cash counter
+     unless the role is Cashier.
   ------------------------------------------------------- */
   useEffect(() => {
     if (!selectedProfile) return;
 
-    if (!isAdminRole && formik.values.zoneKey.length > 1) {
+    if (!isMultiZoneRole && formik.values.zoneKey.length > 1) {
       formik.setFieldValue("zoneKey", formik.values.zoneKey.slice(0, 1));
     }
     if (!isGatRole && formik.values.gatKey.length) {
@@ -1023,6 +1032,8 @@ const AddUser = () => {
                           ? "Select a role to configure access"
                           : isAdminRole
                           ? "Prashashan Adhikari: select all zones this user should access"
+                          : isHodRole
+                          ? "HOD: select all zones this user should access"
                           : isZoneOfficerRole
                           ? "Zone Officer: select the one zone this user belongs to"
                           : isGatRole

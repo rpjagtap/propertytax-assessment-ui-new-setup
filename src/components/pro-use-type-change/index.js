@@ -351,9 +351,11 @@ const PropertyUseTypeChangeApplication = () => {
             specialOccupantKey: row.specialResidents,
             assessmentDate: row.assessmentDate || getCurrentDate(),
             area: row.areaInSqmt,
+            rate: row.billRate,
             rateableValue: row.rVValue,
             toiletFlag: row.isToilet ? "Y" : "N",
             permission: row.isIllegal ? "Y" : "N",
+            areaType: row.areaType,
           })),
         },
       ],
@@ -523,6 +525,7 @@ const PropertyUseTypeChangeApplication = () => {
                 <Grid container item spacing={3} xs={12}>
                   <AssessmentTable
                     zoneKey={formik.values.zoneKey}
+                    gatKey={formik.values.gatKey}
                     initialRows={oldUseTypeDtls}
                     disableAddButton={true}
                   />
