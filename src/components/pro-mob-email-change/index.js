@@ -120,34 +120,6 @@ const PropertyTraAppforContact = () => {
         }
     }, [transactionTypeIdFromURL, transactionsOptions]);
 
-    // useEffect(() => {
-    //     if (propertyCodeFromURL) {
-    //         const propertyOwnerDetails = async () => {
-    //             try {
-    //                 setLoading(true);
-    //                 const response = await getPropertyForUpadate({
-    //                     propertyCode: propertyCodeFromURL
-    //                 });
-    //                 if (response) {
-    //                     setPropertyOwnerDetails(response.oldMarOwnerName);
-    //                     setMobileNo(response.oldOwnerMobileNo);
-    //                     setEmail(response.oldOwnerEmail);
-    //                     setOccupant(response.oldMarOccupantName);
-    //                     setOldMarOwnerAddress(response.oldMarOwnerAddress);
-    //                     setOldEngOwnerAddress(response.oldEngOwnerAddress);
-    //                     setOldOccMobile(response.oldOccupantMobileNo);
-    //                     setOldOccEmail(response.oldOccupantEmail);
-    //                 }
-    //             } catch (error) {
-    //                 showToastError(getErrorMsg(error));
-    //             } finally {
-    //                 setLoading(false);
-    //             }
-    //         };
-    //         propertyOwnerDetails();
-    //     }
-    // }, [propertyCodeFromURL]);
-
     useEffect(() => {
     const { zoneKey, gatKey } = formik.values;
     if (!propertyCodeFromURL || !zoneKey || !gatKey) return;
@@ -722,100 +694,7 @@ const PropertyTraAppforContact = () => {
                                         </Grid>
                                     </Grid>
                                 </Paper>
-                            </Box>
-
-
-                            {/* <Paper elevation={4} sx={{ marginBottom: "15px" }}>
-
-                                {/* <FormTitle title={labels.MobileEmailChangeApplicationType[lang]} />
-                                <GridRow>
-                                    <FormLabel label={labels.Type[lang]} required />
-                                    <FormValue component={<SelectInput name="transactionTypeId" options={transactionsOptions} disabled required />} />
-                                    <FormLabel label={labels.PropertyNumber[lang]} />
-                                    <FormValue component={<TextInput name="propertyCode" disabled value={propertyCodeFromURL} />} />
-                                </GridRow>
-                                <GridRow>
-                                    <FormLabel label={labels.Zone[lang]} />
-                                    <FormValue component={<SelectInput name="zoneKey" options={zoneKeys} />} />
-                                    <FormLabel label={labels.Gat[lang]} />
-                                    <FormValue component={<SelectInput name="gatKey" options={gatKeys} />} />
-                                </GridRow>
-                                <GridRow>
-                                    <FormLabel label={labels.ownerName[lang]} />
-                                    <FormValue component={<TextInput name="propertyOwnerName" value={propertyOwnerDetails} disabled />} />
-                                    <FormLabel label={labels.PropertyAddress[lang]} />
-                                    <FormValue component={<TextInput multiline={true} name="propertyAddress" value={oldMarOwnerAddress} disabled />} />
-                                </GridRow>
-                                <GridRow>
-                                    <FormLabel label={labels.occupantName[lang]} />
-                                    <FormValue component={<TextInput name="occupantName" value={occupant} disabled />} />
-
-                                </GridRow>
-
-                                <GridRow>
-                                    <FormLabel label={labels.OwnerMobilNo[lang]} />
-                                    <FormValue component={<TextInput name="mobileNo" value={oldOwnerMobileNo} disabled />} />
-                                    <FormLabel label={labels.OwnerEmail[lang]} />
-                                    <FormValue component={<TextInput name="email" disabled value={email} />} />
-                                </GridRow>
-
-                                <GridRow>
-                                    <FormLabel label={labels.OccMobileNo[lang]} />
-                                    <FormValue component={<TextInput name="mobileNo" value={oldOccMobile} disabled />} />
-                                    <FormLabel label={labels.OccupantEmail[lang]} />
-                                    <FormValue component={<TextInput name="email" disabled value={oldOccEmail} />} />
-                                </GridRow>
-
-
-                                <GridRow>
-                                    <FormLabel label={labels.OrderNumber[lang]} required />
-                                <FormValue component={<TextInput name="orderNo" required />} />
-                                    <FormLabel label={labels.RemarkForProperty[lang]} required />
-                                    <FormValue component={<TextInput name="remark" required />} />
-                                </GridRow> *}
-                                {/* <hr />
-
-                                <FormTitle title={labels.OwnerContactDetails[lang]} />
-                                <GridRow>
-                                    <FormLabel label={labels.newOwnerMobilNo[lang]} required />
-                                    <FormValue component={<TextInput name="newOwnerMobile" />} />
-                                    <FormLabel label={labels.newOwnerEmallId[lang]} required />
-                                    <FormValue component={<TextInput name="newOwnerEmail" />} />
-                                </GridRow>
-                                <hr />
-
-                                <FormTitle title={labels.OccupantContactDetails[lang]} />
-                                <GridRow>
-                                    <FormLabel label={labels.newOccupantMobileNo[lang]} required />
-                                    <FormValue component={<TextInput name="newOccupantMobile" />} />
-                                    <FormLabel label={labels.newOccupantEmailId[lang]} required />
-                                    <FormValue component={<TextInput name="newOccupantEmail" />} />
-                                </GridRow> *}
-
-                                <hr />
-                                {/* Property Documents *}
-                                <PropertyDocumentsForm />
-                                <hr />
-                                <Grid container justifyContent="center" alignItems="center">
-                                    <Grid
-                                        item
-                                        md={3}
-                                        container
-                                        justifyContent={{ md: "flex-end" }}
-                                        alignItems="center"
-                                        p={2}
-                                    >
-                                        <FormButtons
-                                            disabled={!formik.isValid || !formik.dirty}
-                                            handleSubmitButtonClick={handleSubmit}
-                                            resetForm={() => { window.location.reload(); }}
-                                            submitBtnLabel="Submit"
-                                            isSubmitIcon={false}
-                                            cancelRedirect="/PropertyTransactionsDashBoard"
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </Paper> */}
+                            </Box>l                          
                         </Form>
                     </FormikProvider>
                 </Grid>

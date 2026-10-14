@@ -387,7 +387,7 @@ const SthapatyaVadhivPropertyDashboard = () => {
                                     }}
                                 >
                                     {labels?.SthapatyaVadhivPropertyDashboard?.[lang] ||
-                                        "Sthapatya vadhiv Property Dashboard"}
+                                        "स्थापत्य वाढीव प्रॉपर्टी डॅशबोर्ड"}
                                 </Typography>
 
                                 <Box

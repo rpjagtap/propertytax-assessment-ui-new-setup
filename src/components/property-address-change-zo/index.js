@@ -262,8 +262,11 @@ const PropertyAddressChangeZo = () => {
         {/* ---------- Application details ---------- */}
         <SectionCard
           icon={<HomeWorkOutlined fontSize="small" />}
-          title="Application details"
-          subtitle="Property and application information"
+          title={labels?.ApplicationDetails?.[lang] || "Application details"}
+          subtitle={
+            labels?.PropertyAndApplicationInfo?.[lang] ||
+            "Property and application information"
+          }
         >
           <Grid container spacing={3}>
             <InfoRow label={labels.Type[lang]} value={vo.transactionType} />
@@ -281,7 +284,10 @@ const PropertyAddressChangeZo = () => {
         <SectionCard
           icon={<PersonOutline fontSize="small" />}
           title={labels.OwnerAddressDetails[lang]}
-          subtitle="Old and new owner address"
+          subtitle={
+            labels?.OldAndNewOwnerAddress?.[lang] ||
+            "Old and new owner address"
+          }
         >
           <Grid container spacing={3}>
             <InfoRow label={labels.OwnerOldAddressMarathi[lang]} value={vo.oldMarOwnerAddress} />
@@ -295,7 +301,7 @@ const PropertyAddressChangeZo = () => {
         <SectionCard
           icon={<GroupsOutlined fontSize="small" />}
           title={labels.OccupantAddressDetails[lang]}
-          subtitle="Old and new occupant address"
+          subtitle={labels?.OldAndNewOccupantAddress?.[lang] || "Old and new occupant address"}
         >
           <Grid container spacing={3}>
             <InfoRow label={labels.OccupantOldAddressMarathi[lang]} value={vo.oldMarOccupantAddress} />
@@ -309,7 +315,7 @@ const PropertyAddressChangeZo = () => {
         <SectionCard
           icon={<EditLocationAltOutlined fontSize="small" />}
           title={labels.PropertyAddressDetails[lang]}
-          subtitle="Old and new property address"
+          subtitle={labels?.OldAndNewPropertyAddress?.[lang] || "Old and new property address"}
         >
           <Grid container spacing={3}>
             <InfoRow label={labels.propertyOldAddressMarathi[lang]} value={vo.oldMarPropertyAddress} />
@@ -323,7 +329,10 @@ const PropertyAddressChangeZo = () => {
         <SectionCard
           icon={<DescriptionOutlined fontSize="small" />}
           title={labels.DocumentDetails[lang]}
-          subtitle="Documents submitted with this application"
+          subtitle={
+            labels?.DocumentsSubmittedWithApplication?.[lang] ||
+            "Documents submitted with this application"
+          }
         >
           <Table
             sx={{ width: "100%", border: "1px solid #D5DCE6", borderRadius: 1 }}

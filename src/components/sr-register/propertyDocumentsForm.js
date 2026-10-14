@@ -138,7 +138,9 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
               {labels?.DocumentDetails?.[lang] || "Document Details"}
             </Typography>
             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-              Choose a document type and attach the file (PDF, JPG or PNG)
+              {/* Choose a document type and attach the file (PDF, JPG or PNG) */}
+              {labels?.ChooseDocTypeAndAttach?.[lang] ||
+                "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा"}
             </Typography>
           </Box>
         </Stack>

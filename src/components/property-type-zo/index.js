@@ -20,12 +20,15 @@ import {
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import FormTitle from "../form-fields/form-title";
+import { labels } from "../../lang/labels";
+import { useSelector } from "react-redux";
 
 // 👉 Replace with your list API
 import { getPropertyListForZO } from "../../services/assessment-services";
 
 const PropertyTypeZO = () => {
     const { loading, setLoading, error, setError } = useApiState();
+    const lang = useSelector((state) => state.userDetails.lang);
 
     const [data, setData] = useState([]);
     const [selected, setSelected] = useState({});
@@ -74,13 +77,13 @@ const PropertyTypeZO = () => {
         setSelected(updated);
         setSelectAll(!selectAll);
     };
-   
+
 
     const handleSubmit = async () => {
         try {
             setLoading(true);
             setError("");
-        
+
             const selectedRows = data.filter(
                 (item) => selected[item.propertyKey]
             );
@@ -90,14 +93,14 @@ const PropertyTypeZO = () => {
                 return;
             }
 
-    
+
             for (let row of selectedRows) {
                 await sendToZoDashboard(row.propertyKey, true);
             }
 
             alert("Submitted successfully");
 
-   
+
             setSelected({});
             setSelectAll(false);
 
@@ -136,17 +139,18 @@ const PropertyTypeZO = () => {
                 </Box>
             ) : (
                 <Paper elevation={4} sx={{ p: 3 }}>
-                    <FormTitle title="Property Type ZO" />
+                    {/* <FormTitle title="Property Type ZO" /> */}
+                    <FormTitle title={labels?.PropertyType?.[lang] || "Property Type ZO"} />
 
                     {/* ✅ TABLE (same UI) */}
                     <TableContainer component={Paper} sx={{ mt: 4 }}>
                         <Table size="small">
                             <TableHead>
                                 <TableRow sx={{ backgroundColor: "#e6eaeb" }}>
-                                    <TableCell align="center">Sr No</TableCell>
-                                    <TableCell align="center">Property Code</TableCell>
-                                    <TableCell align="center">Property Name</TableCell>
-                                    <TableCell align="center">Address</TableCell>
+                                    <TableCell align="center">{labels?.SrNo?.[lang] || "Sr No"}</TableCell>
+                                    <TableCell align="center">{labels?.PropertyCode?.[lang] || "Property Code"}</TableCell>
+                                    <TableCell align="center">{labels?.PropertyName?.[lang] || "Property Name"}</TableCell>
+                                    <TableCell align="center">{labels?.Address?.[lang] || "Address"}</TableCell>
                                     {/* <TableCell align="center">Mobile</TableCell> */}
 
                                     {/* ✅ Select All in header */}

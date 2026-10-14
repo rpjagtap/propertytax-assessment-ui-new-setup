@@ -1811,10 +1811,88 @@ export const labels = {
     ma: "क्षेत्रफळ प्रकार",
     en: "Area Type",
   },
-  Sr1Date:{
-      ma:"Sr1Date",
-      en:"Sr1Date",
+  Sr1Date: {
+    ma: "Sr1Date",
+    en: "Sr1Date",
   },
+  CurentPropertyDetails: {
+    ma: "मालमत्ता तपशील",
+    en: "Current Property Details",
+  },
+
+  UpdatedAddressesInfo: {
+    en: "Enter the updated owner, occupant and property addresses in both languages",
+    mr: "मालक, भोगवटादार आणि मालमत्तेचे अद्ययावत पत्ते दोन्ही भाषांमध्ये प्रविष्ट करा",
+  },
+  ChooseDocTypeAndAttach: {
+    en: "Choose a document type and attach the file (PDF, JPG or PNG)",
+    mr: "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा",
+  },
+  SthapatyaVadhivPropertyDashboard:{
+    en: "Sthapatya Vadhiv Property Dashboard",
+    ma: "स्थापत्य वाढीव प्रॉपर्टी डॅशबोर्ड",
+  },
+    SthapatyaVadhivPropertySR1Dashboard:{
+    en: "Sthapatya Vadhiv Property SR1 Dashboard",
+    ma: "स्थापत्य वाढीव प्रॉपर्टी SR1 डॅशबोर्ड",
+  },
+  ClickShowRecord: {   
+  en: "Select Zone and Gat, then click Show Record",
+  mr: "झोन आणि गट निवडा, नंतर रेकॉर्ड दाखवा वर क्लिक करा",
+  },
+  Search:{
+    en: "Search",
+    ma: "शोधा",   
+  },
+  PropertyType:{
+    en: "Property Type",
+    ma: "मालमत्ता प्रकार",   
+  },
+  PropertyOrMobileNo: {
+    en: "Property / Mobile No.",
+    ma: "मालमत्ता क्र. / मोबाईल क्र.",
+  },
+  ExistingOwnerOccupantInfo:{
+    en: "Existing Owner, Occupant and Property Details",
+    ma: "मालक, भोगवटधारक आणि मालमत्तेचा सध्याचा तपशील",
+  },
+  CorrectedOwnerOccupantNames:{
+    en: "Corrected Owner and Occupant Names",
+    ma: "मालक व भोगवटधारक यांची दुरुस्त केलेली नावे",   
+  },
+  RemarkRequiredToAcceptOrReject:{
+    en: "Remark is required to accept or reject the application",
+    ma: "अर्ज स्वीकारण्यासाठी किंवा नाकारण्यासाठी शेरा आवश्यक आहे.",
+  },
+  ApplicationDetails:{
+    en: "Application Details",
+    ma: "अर्जाचे तपशील",
+  },
+  PropertyAndApplicationInfo:{
+    en: "Property and application information",
+    ma: "मालमत्ता आणि अर्जाची माहिती",
+  },
+  OldAndNewOwnerAddress:{
+    en: "Old and New Owner Address",
+    ma: "जुना आणि नवीन मालकाचा पत्ता",
+  },
+  OldAndNewOccupantAddress:{
+    en: "Old and New Occupant Address",
+    ma: "जुना आणि नवीन भोगवटधारकाचा पत्ता",
+  },
+  OldAndNewPropertyAddress:{
+    en: "Old and New Property Address",
+    ma: "जुना आणि नवीन मालमत्तेचा पत्ता",
+  },
+  DocumentsSubmittedWithApplication:{
+    en: "Documents submitted with the application",
+    ma: "अर्जासह सादर केलेली कागदपत्रे",
+  },
+  CurrentContactAndRequestedChanges:{
+    en: "Current contact details and requested changes",
+    ma: "सध्याचे संपर्क तपशील आणि विनंती केलेले बदल",
+  },
+
 
   // show: {
   //     en: "Show",

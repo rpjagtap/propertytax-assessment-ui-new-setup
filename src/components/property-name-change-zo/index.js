@@ -236,9 +236,6 @@ const PropertyNameChangeZo = () => {
                 {labels?.PropertyOwnerAndOccupantNameCorrection?.[lang] ||
                   "Property Owner and Occupant Name Correction"}
               </Typography>
-              <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                Review the current and corrected names, then accept or reject this application.
-              </Typography>
             </Box>
           </Box>
 
@@ -260,8 +257,11 @@ const PropertyNameChangeZo = () => {
         {/* ---------- Current details ---------- */}
         <SectionCard
           icon={<PersonOutline fontSize="small" />}
-          title="Current property details"
-          subtitle="Existing owner, occupant and application information on record"
+          title={labels?.CurentPropertyDetails?.[lang] || "Current property details"}
+          subtitle={
+            labels?.ExistingOwnerOccupantInfo?.[lang] ||
+            "Existing owner, occupant and application information on record"
+          }
         >
           <Grid container spacing={3}>
             <InfoRow label={labels.Type[lang]} value={vo.transactionType} />
@@ -281,7 +281,10 @@ const PropertyNameChangeZo = () => {
         <SectionCard
           icon={<EditOutlined fontSize="small" />}
           title={labels?.NewDetails?.[lang] || "New details"}
-          subtitle="Corrected owner and occupant names in both languages"
+          subtitle={
+            labels?.CorrectedOwnerOccupantNames?.[lang] ||
+            "Corrected owner and occupant names in both languages"
+          }
         >
           <Grid container spacing={3}>
             <InfoRow label={labels.OwnerName[lang]} value={vo.newMarOwnerName} />
@@ -295,7 +298,9 @@ const PropertyNameChangeZo = () => {
         <SectionCard
           icon={<DescriptionOutlined fontSize="small" />}
           title={labels.DocumentDetails[lang]}
-          subtitle="Documents submitted with this application"
+          subtitle={
+            labels?.ChooseDocTypeAndAttach?.[lang] || "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा"
+          }
         >
           <Table
             sx={{ width: "100%", border: "1px solid #D5DCE6", borderRadius: 1 }}
@@ -337,7 +342,10 @@ const PropertyNameChangeZo = () => {
         <SectionCard
           icon={<ChatBubbleOutline fontSize="small" />}
           title={labels.Remark[lang]}
-          subtitle="A remark is required to accept or reject"
+          subtitle={
+            labels?.RemarkRequiredToAcceptOrReject?.[lang] ||
+            "A remark is required to accept or reject"
+          }
           footer={
             <>
               <Button

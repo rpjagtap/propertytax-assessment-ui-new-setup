@@ -33,6 +33,9 @@ import { sendToZoDashboard } from "../../services/assessment-services"; // make 
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { getPropertyDetailsForTransfer } from "../../services/assessment-services";
+import { labels } from "../../lang/labels";
+import { useSelector } from "react-redux";
+
 
 // Theme tokens — same values used across the other redesigned pages.
 // Kept local so this file has no dependency on any shared common/
@@ -81,6 +84,7 @@ const ResultsHeader = ({ title, right }) => (
 
 const PropertyType = () => {
   const { loading, setLoading, error, setError } = useApiState();
+  const lang = useSelector((state) => state.userDetails.lang);
 
   const [propertyData, setPropertyData] = useState(null);
   const navigate = useNavigate();
@@ -175,10 +179,9 @@ const PropertyType = () => {
                   </Avatar>
                   <Box>
                     <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                      Property Type
+                      {labels?.PropertyType?.[lang] || "मालमत्तेचा प्रकार"}
                     </Typography>
                     <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                      Look up a property by code or mobile number and mark its red zone status.
                     </Typography>
                   </Box>
                 </Box>
@@ -187,9 +190,9 @@ const PropertyType = () => {
                   <Card variant="outlined" sx={{ borderRadius: 2 }}>
                     <CardHeader
                       avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                      title="Search criteria"
+                      // title="Search"
+                      title={labels?.Search?.[lang] || "शोधा"}
                       titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                      subheader="Enter a property code or mobile number to look up the record"
                       sx={{ pb: 0 }}
                     />
                     <CardContent>
@@ -202,7 +205,7 @@ const PropertyType = () => {
                       >
                         <Box width={{ xs: "100%", sm: "220px" }}>
                           <Typography fontWeight={600} fontSize={14} color={NAVY}>
-                            Property / Mobile No.
+                            {labels?.PropertyOrMobileNo?.[lang] || "Property / Mobile No."}
                           </Typography>
                         </Box>
 

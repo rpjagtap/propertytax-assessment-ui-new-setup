@@ -326,11 +326,7 @@ const PropertyTransactionDashboard = () => {
                       >
                         {labels?.PropertyTransactionDashboard?.[lang] ||
                           "Property Transaction Dashboard"}
-                      </Typography>
-                      <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                        Filter by transaction type, zone or gat to track property
-                        transaction applications.
-                      </Typography>
+                      </Typography>                     
                     </Box>
 
                     {!!pendingAppCountData?.length && (
@@ -352,9 +348,8 @@ const PropertyTransactionDashboard = () => {
                             avatar={
                               <SearchOutlined sx={{ color: "text.secondary" }} />
                             }
-                            title="Search criteria"
-                            titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                            subheader="Narrow down applications by transaction type, zone/gat and date range"
+                            title="Search"
+                            titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}                           
                             sx={{ pb: 0 }}
                           />
                           <CardContent>

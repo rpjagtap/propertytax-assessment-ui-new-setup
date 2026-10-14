@@ -397,10 +397,7 @@ const PropertyTranApplication = () => {
                             <Box>
                                 <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
                                     {labels?.NameCorrectionApplicationType?.[lang] || "Name Correction Application"}
-                                </Typography>
-                                <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                                    Review the current property details and submit the corrected owner and occupant names.
-                                </Typography>
+                                </Typography>                                
                             </Box>
                         </Box>
 
@@ -423,8 +420,7 @@ const PropertyTranApplication = () => {
                         {/* ---------- Current details ---------- */}
                         <SectionCard
                             icon={<HomeWorkOutlined fontSize="small" />}
-                            title="Current property details"
-                            subtitle="Existing owner and occupant information on record"
+                            title="Current property details"                            
                         >
                             <Grid container spacing={3}>
                                 <FieldRow label={labels.Type[lang]}>
@@ -469,8 +465,7 @@ const PropertyTranApplication = () => {
                         {/* ---------- New details ---------- */}
                         <SectionCard
                             icon={<EditLocationAltOutlined fontSize="small" />}
-                            title={labels?.NewDetails?.[lang] || "New details"}
-                            subtitle="Enter the corrected owner and occupant names in both languages"
+                            title={labels?.NewDetails?.[lang] || "New details"}                            
                         >
                             <Grid container spacing={3}>
                                 <FieldRow label={labels.PropertyNameMar[lang]}>

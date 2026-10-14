@@ -314,8 +314,10 @@ const PropertyMobileEmailChangeZo = () => {
             {/* ---------- Application details ---------- */}
             <SectionCard
               icon={<InfoOutlined fontSize="small" />}
-              title="Application details"
-              subtitle="Property and application information"
+              title={labels?.ApplicationDetails?.[lang] || "Application details"}
+              subtitle={
+                labels?.PropertyAndApplicationInfo?.[lang] || "Property and application information"
+              }
             >
               <Grid container spacing={2.5}>
                 <KeyValue label={labels.Type[lang]} value={vo.transactionType} />
@@ -336,7 +338,10 @@ const PropertyMobileEmailChangeZo = () => {
             <SectionCard
               icon={<PersonOutline fontSize="small" />}
               title={labels.ownerDetails[lang]}
-              subtitle="Current contact details and the requested changes (highlighted)"
+              subtitle={
+                labels?.CurrentContactAndRequestedChanges?.[lang] ||
+                "सध्याचे संपर्क तपशील आणि विनंती केलेले बदल"
+              }
             >
               <Grid container spacing={2.5}>
                 <KeyValue label={labels.newOwnerOldMobilNo[lang]} value={vo.oldOwnerMobileNo} />
@@ -350,7 +355,10 @@ const PropertyMobileEmailChangeZo = () => {
             <SectionCard
               icon={<PeopleOutline fontSize="small" />}
               title={labels.OccupantDetails[lang]}
-              subtitle="Current contact details and the requested changes (highlighted)"
+              subtitle={
+                labels?.CurrentContactAndRequestedChanges?.[lang] ||
+                "Current contact details and the requested changes (highlighted)"
+              }
             >
               <Grid container spacing={2.5}>
                 <KeyValue label={labels.newOccupantOldMobileNo[lang]} value={vo.oldOccupantMobileNo} />
@@ -411,7 +419,10 @@ const PropertyMobileEmailChangeZo = () => {
             <SectionCard
               icon={<EditNoteOutlined fontSize="small" />}
               title={labels.Remark[lang]}
-              subtitle="A remark is required before you can accept or reject"
+              subtitle={
+                labels?.RemarkRequiredToAcceptOrReject?.[lang] ||
+                "A remark is required before you can accept or reject"
+              }
               footer={
                 <>
                   <Button

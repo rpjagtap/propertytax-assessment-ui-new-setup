@@ -449,8 +449,8 @@ const SthaptyaVadhivSR1DashBoard = () => {
                             },
                         }}
                     >
-                        {labels?.SthapatyaVadhivPropertyDashboard?.[lang] ||
-                            "Sthapatya vadhiv Property Dashboard"}
+                        {labels?.SthapatyaVadhivPropertySR1Dashboard?.[lang] ||
+                            "स्थापत्य वाढीव प्रॉपर्टी डॅशबोर्ड"}
                     </Typography>
 
                     {/* ---- Filters ---- */}
@@ -537,7 +537,7 @@ const SthaptyaVadhivSR1DashBoard = () => {
                                 noRowsLabel: hasSearched
                                     ? labels?.NoRecordFound?.[lang] || "No records found"
                                     : labels?.ClickShowRecord?.[lang] ||
-                                      "Select Zone and Gat, then click Show Record",
+                                      "झोन आणि गट निवडा, नंतर रेकॉर्ड दाखवा वर क्लिक करा",
                             }}
                         />
                     </div>

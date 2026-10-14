@@ -399,10 +399,7 @@ const PropertyTraAppforadd = () => {
               <Box>
                 <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
                   {labels?.AddressChangeApplicationType?.[lang] || "Address Change Application"}
-                </Typography>
-                <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                  Review the current property details and submit the new address information.
-                </Typography>
+                </Typography>                
               </Box>
             </Box>
 
@@ -425,8 +422,8 @@ const PropertyTraAppforadd = () => {
             {/* ---------- Current details (read-only) ---------- */}
             <SectionCard
               icon={<HomeWorkOutlined fontSize="small" />}
-              title="Current property details"
-              subtitle="Existing owner, occupant and property information on record"
+              // title="Current property details"   
+              title={labels?.CurentPropertyDetails?.[lang] || "Curent Property Details"}          
             >
               <Grid container spacing={3}>
                 <FieldRow label={labels.Type[lang]}>
@@ -475,7 +472,8 @@ const PropertyTraAppforadd = () => {
             <SectionCard
               icon={<EditLocationAltOutlined fontSize="small" />}
               title={labels?.NewDetails?.[lang] || "New details"}
-              subtitle="Enter the updated owner, occupant and property addresses in both languages"
+              // subtitle="Enter the updated owner, occupant and property addresses in both languages"
+             subtitle= {labels?.UpdatedAddressesInfo?.[lang] ||  "मालक, भोगवटादार आणि मालमत्तेचे अद्ययावत पत्ते दोन्ही भाषांमध्ये प्रविष्ट करा"}
             >
               <Grid container spacing={3}>
                 <FieldRow label={labels.OwnerAddress[lang]}>
