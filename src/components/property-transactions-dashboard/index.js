@@ -348,7 +348,7 @@ const PropertyTransactionDashboard = () => {
                             avatar={
                               <SearchOutlined sx={{ color: "text.secondary" }} />
                             }
-                            title="Search"
+                            title={labels.Search[lang]}
                             titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}                           
                             sx={{ pb: 0 }}
                           />
@@ -467,7 +467,7 @@ const PropertyTransactionDashboard = () => {
                     <Typography
                       sx={{ fontWeight: 600, fontSize: 15, color: "#12233F" }}
                     >
-                      Transaction applications
+                      {labels.Application[lang]}
                     </Typography>
                   </Stack>
 

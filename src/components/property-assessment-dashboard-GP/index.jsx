@@ -317,7 +317,7 @@ const PropertyAssessmentDashboardGP = () => {
                     <Card variant="outlined" sx={{ borderRadius: 2 }}>
                       <CardHeader
                         avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                        title="Search criteria"
+                        title={labels.Search[lang]}
                         sx={{ pb: 0 }}
                       />
                       <CardContent>
