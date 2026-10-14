@@ -308,10 +308,7 @@ const PropertyAssessmentDashboardGP = () => {
                     </Avatar>
                     <Box>
                       <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                        Property Transactions Dashboard
-                      </Typography>
-                      <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                        Filter property transaction applications by type, stage, zone/gat and date range.
+                        {labels.PropertyAssessmentDashboard[lang]}
                       </Typography>
                     </Box>
                   </Box>
@@ -321,8 +318,6 @@ const PropertyAssessmentDashboardGP = () => {
                       <CardHeader
                         avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
                         title="Search criteria"
-                        titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                        subheader="Narrow down applications by transaction type, stage, zone/gat and date range"
                         sx={{ pb: 0 }}
                       />
                       <CardContent>
@@ -374,7 +369,7 @@ const PropertyAssessmentDashboardGP = () => {
             {pendingAppCountData && (
               <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
                 <ResultsHeader
-                  title="Transactions"
+                  title={labels.Application[lang]}
                   right={
                     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
                       {pendingAppCountData.length > 0 && (

@@ -146,17 +146,14 @@ const PropertyAddressForm = () => {
         </Avatar>
         <Box>
           <Typography sx={{ fontWeight: 700, fontSize: 16, color: NAVY }}>
-            {labels?.propertyAddressDetails?.[lang] || "Property Address Details"}
-          </Typography>
-          <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-            Unit, building and locality details in both languages
+            {labels.PropertyAddressDetails[lang]}
           </Typography>
         </Box>
       </Stack>
 
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <GroupCaption>Unit details</GroupCaption>
+          <GroupCaption>{labels.Unitdetails[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.FlatNo[lang]} required />
             <FormValue component={<TextInput name="flatNo" onBlur={handleAddressBlur} />} />
@@ -178,7 +175,7 @@ const PropertyAddressForm = () => {
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption>Building &amp; society</GroupCaption>
+          <GroupCaption>{labels.BuildingAndsociety[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.Wing[lang]} required />
             <FormValue
@@ -202,7 +199,7 @@ const PropertyAddressForm = () => {
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption>Locality</GroupCaption>
+          <GroupCaption>{labels.Locality[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.Landmark[lang]} required />
             <FormValue component={<TextInput name="landmarkMarathi" onBlur={handleAddressBlur} />} />
@@ -222,9 +219,7 @@ const PropertyAddressForm = () => {
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption hint="Built automatically from the fields above when you leave a field — you can still edit it.">
-            Full address
-          </GroupCaption>
+          <GroupCaption>{labels.FullAddress[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.propertyAddress[lang]} />
             <FormValue component={<TextInput multiline={true} name="marPropertyAddress" />} />

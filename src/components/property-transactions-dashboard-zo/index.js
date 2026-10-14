@@ -268,12 +268,7 @@ const PropertyTransactionDashboardZo = () => {
                     </Avatar>
                     <Box sx={{ flexGrow: 1 }}>
                       <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                        {labels?.PropertyTransactionDashboard?.[lang] ||
-                          "Property Transactions Dashboard"}
-                      </Typography>
-                      <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                        Filter by transaction type, stage, zone or gat to review
-                        property transaction applications.
+                        {labels.PropertyTransactionsDashboard[lang]}
                       </Typography>
                     </Box>
 
@@ -292,10 +287,7 @@ const PropertyTransactionDashboardZo = () => {
                         <Card variant="outlined" sx={{ borderRadius: 2 }}>
                           <CardHeader
                             avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                            title="Search criteria"
-                            titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                            subheader="Narrow down applications by transaction type, stage, zone/gat and date range"
-                            sx={{ pb: 0 }}
+                            title={labels.Search[lang]}
                           />
                           <CardContent>
                             <GridRow>
@@ -388,7 +380,7 @@ const PropertyTransactionDashboardZo = () => {
                       <ListAltOutlined fontSize="small" />
                     </Avatar>
                     <Typography sx={{ fontWeight: 600, fontSize: 15, color: "#12233F" }}>
-                      Transaction applications
+                      {labels.Application[lang]}
                     </Typography>
                   </Stack>
 

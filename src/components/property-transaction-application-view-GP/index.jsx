@@ -387,10 +387,6 @@ const PropertyTransactionApplicationViewGP = () => {
               <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
                 {labels.NewPropertyRegistration[lang]}
               </Typography>
-              <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                Review the property, owner, occupant, address, documents and
-                assessment, then submit or reject this application.
-              </Typography>
             </Box>
           </Box>
 
@@ -427,7 +423,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<HomeWorkOutlined fontSize="small" />}
           title={labels.NewPropertyRegistration[lang]}
-          subtitle="Property and application information on record"
         >
           <Grid container spacing={3}>
             <InfoRow
@@ -462,7 +457,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<PersonOutline fontSize="small" />}
           title={labels.ownerDetails[lang]}
-          subtitle="Owner name, contact and identity details"
         >
           <Grid container spacing={3}>
             <InfoRow
@@ -492,7 +486,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<BadgeOutlined fontSize="small" />}
           title={labels.OccupantDetails[lang]}
-          subtitle="Occupant name, contact and identity details"
         >
           <Grid container spacing={3}>
             <InfoRow
@@ -522,7 +515,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<LocationOnOutlined fontSize="small" />}
           title={labels.PropertyAddressDetails[lang]}
-          subtitle="Address of the property in Marathi and English"
         >
           <Grid container spacing={3}>
             <InfoRow
@@ -602,7 +594,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<DescriptionOutlined fontSize="small" />}
           title={labels.DocumentDetails[lang]}
-          subtitle="Documents submitted with this application"
         >
           <Table
             sx={{ width: "100%", border: `1px solid ${BORDER}`, borderRadius: 1 }}
@@ -647,7 +638,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<ApartmentOutlined fontSize="small" />}
           title={labels?.PropertyAssessment?.[lang] || "Property Assessment"}
-          subtitle="Use type, construction and rateable value details"
         >
           <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
             <Table
@@ -707,7 +697,6 @@ const PropertyTransactionApplicationViewGP = () => {
         <SectionCard
           icon={<ChatBubbleOutline fontSize="small" />}
           title={labels.Remark[lang]}
-          subtitle="A remark type and remark are required to submit or reject"
           footer={
             <>
               <Button

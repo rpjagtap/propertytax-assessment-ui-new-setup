@@ -378,10 +378,7 @@ const TrackApplication = () => {
                       </Avatar>
                       <Box sx={{ flexGrow: 1 }}>
                         <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                          Track Application
-                        </Typography>
-                        <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                          Search and track applications by stage, zone/gat, date range or application number.
+                          {labels.TrackBuildingPermissionApplication[lang]}
                         </Typography>
                       </Box>
                     </Box>
@@ -390,10 +387,7 @@ const TrackApplication = () => {
                       <Card variant="outlined" sx={{ borderRadius: 2 }}>
                         <CardHeader
                           avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                          title="Search criteria"
-                          titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                          subheader="Narrow down applications by stage, zone/gat, application number and date range"
-                          sx={{ pb: 0 }}
+                          title={labels.Search[lang]}
                         />
                         <CardContent>
                           <GridRow>
@@ -441,7 +435,7 @@ const TrackApplication = () => {
               {pendingAppCountData && (
                 <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
                   <ResultsHeader
-                    title="Tracked applications"
+                    title={labels.Application[lang]}
                     right={
                       <TextField
                         size="small"

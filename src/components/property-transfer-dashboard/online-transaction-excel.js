@@ -28,6 +28,8 @@ import DashBoardContainer from "../layout/dashboard-container";
 import UploadFileOutlined from "@mui/icons-material/UploadFileOutlined";
 import InsertDriveFileOutlined from "@mui/icons-material/InsertDriveFileOutlined";
 import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
+import { labels } from "../../lang/labels";
+import { useSelector } from "react-redux";
 
 // Theme tokens — same values used across the other redesigned pages.
 const NAVY = "#12233F";
@@ -73,6 +75,7 @@ const ResultsHeader = ({ title, right }) => (
 );
 
 const OnlineTransactionExcel = () => {
+  const lang = useSelector((state) => state.userDetails.lang);
   const [selectedFile, setSelectedFile] = useState(null);
   const [tableData, setTableData] = useState([]);
 
@@ -183,10 +186,10 @@ const OnlineTransactionExcel = () => {
             </Avatar>
             <Box>
               <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                Browse Online Transaction Excel
+                {labels.BrowseOnlineTransactionExcel[lang]}
               </Typography>
               <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                Upload an Excel file (.xls or .xlsx) to preview and reconcile online transactions.
+                {labels.UploadanExcel[lang]}
               </Typography>
             </Box>
           </Box>
@@ -195,10 +198,7 @@ const OnlineTransactionExcel = () => {
             <Card variant="outlined" sx={{ borderRadius: 2 }}>
               <CardHeader
                 avatar={<InsertDriveFileOutlined sx={{ color: "text.secondary" }} />}
-                title="Select file"
-                titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                subheader="Choose an Excel file and upload it to generate a preview below"
-                sx={{ pb: 0 }}
+                title={labels.Selectfile[lang]}
               />
               <CardContent>
                 <Stack
@@ -256,7 +256,7 @@ const OnlineTransactionExcel = () => {
         {/* ---------- Preview results ---------- */}
         <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
           <ResultsHeader
-            title="Transaction preview"
+            title={labels.Transactionpreview[lang]}
             right={
               tableData.length > 0 && (
                 <Chip
@@ -272,12 +272,12 @@ const OnlineTransactionExcel = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center" sx={headCellSx}>Sr No</TableCell>
-                    <TableCell align="center" sx={headCellSx}>Customer ID</TableCell>
-                    <TableCell align="center" sx={headCellSx}>Department</TableCell>
-                    <TableCell align="center" sx={headCellSx}>Transaction Date</TableCell>
-                    <TableCell align="center" sx={headCellSx}>Gross Amount</TableCell>
-                    <TableCell align="center" sx={headCellSx}>Net Amount</TableCell>
+                    <TableCell align="center" sx={headCellSx}>{labels.SrNo[lang]}</TableCell>
+                    <TableCell align="center" sx={headCellSx}>{labels.customerID[lang]}</TableCell>
+                     <TableCell align="center" sx={headCellSx}>{labels.Vibhag[lang]}</TableCell>
+                    <TableCell align="center" sx={headCellSx}>{labels.transactionDate[lang]}</TableCell>
+                    <TableCell align="center" sx={headCellSx}>{labels.GrossAmount[lang]}</TableCell>
+                    <TableCell align="center" sx={headCellSx}>{labels.NetAmount[lang]}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -297,7 +297,7 @@ const OnlineTransactionExcel = () => {
                   ) : (
                     <TableRow>
                       <TableCell align="center" colSpan={6} sx={{ py: 4, color: "text.secondary" }}>
-                        No Data Found
+                        {labels.NoRecordFound[lang]}
                       </TableCell>
                     </TableRow>
                   )}

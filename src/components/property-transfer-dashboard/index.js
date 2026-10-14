@@ -348,11 +348,7 @@ const PropertyTransferDashBoard = () => {
                           <Typography
                             sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}
                           >
-                            Property Transfer Dashboard
-                          </Typography>
-                          <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                            Filter by stage, zone or gat to track pending property
-                            transfer applications.
+                            {labels.PropertyTransferDashboard[lang]}
                           </Typography>
                         </Box>
                         {!!pendingAppCountData?.length && (
@@ -375,10 +371,7 @@ const PropertyTransferDashBoard = () => {
                                 avatar={
                                   <SearchOutlined sx={{ color: "text.secondary" }} />
                                 }
-                                title="Search criteria"
-                                titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                                subheader="Narrow down applications by stage, application number, zone/gat and date range"
-                                sx={{ pb: 0 }}
+                                title="Search"
                               />
                               <CardContent>
                                 <GridRow>
@@ -479,7 +472,7 @@ const PropertyTransferDashBoard = () => {
                           <ListAltOutlined fontSize="small" />
                         </Avatar>
                         <Typography sx={{ fontWeight: 600, fontSize: 15, color: "#12233F" }}>
-                          Transfer applications
+                          {labels.Transferapplications[lang]}
                         </Typography>
                       </Stack>
 
@@ -516,7 +509,7 @@ const PropertyTransferDashBoard = () => {
                         <TextField
                           fullWidth
                           size="small"
-                          label="Search by Applicant Name / Application No"
+                          label={labels.SearchbyApplicantName[lang]}
                           variant="outlined"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
