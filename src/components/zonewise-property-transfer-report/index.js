@@ -39,6 +39,8 @@ import {
   MapOutlined,
   PrintOutlined,
 } from "@mui/icons-material";
+import { labels } from "../../lang/labels";
+import { useSelector } from "react-redux";
 
 // Theme tokens (same as Property Transfer Dashboard)
 const NAVY = "#12233F";
@@ -148,6 +150,7 @@ const ZonewisePropertyTransferReport = () => {
   const [detailTableData, setDetailTableData] = useState([]);
   const [zoneTotal, setZoneTotal] = useState({});
   const [selectedZone, setSelectedZone] = useState("");
+    const lang = useSelector((state) => state.userDetails?.lang);
 
   const fetchData = async (fromDate, toDate) => {
     try {
@@ -340,11 +343,7 @@ const ZonewisePropertyTransferReport = () => {
                 </Avatar>
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                    Zonewise Property Transfer Report
-                  </Typography>
-                  <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                    Select a date range to view zone-wise status of property
-                    transfer applications.
+                    {labels.ZonewisePropertyTransferReport[lang]}
                   </Typography>
                 </Box>
                 {showTable && !!zoneData.length && (
@@ -360,16 +359,13 @@ const ZonewisePropertyTransferReport = () => {
                 <Card variant="outlined" sx={{ borderRadius: 2 }}>
                   <CardHeader
                     avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                    title="Search criteria"
-                    titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                    subheader="Choose the from and to date for the report"
-                    sx={{ pb: 0 }}
+                    title={labels.Search[lang]}
                   />
                   <CardContent>
                     <GridRow>
-                      <FormLabel label="From Date" required />
+                      <FormLabel label={labels.FromDate[lang]} required />
                       <FormValue component={<DateInput name="fromDate" />} />
-                      <FormLabel label="To Date" required />
+                      <FormLabel label={labels.ToDate[lang]} required />
                       <FormValue component={<DateInput name="toDate" />} />
                     </GridRow>
                   </CardContent>
@@ -401,7 +397,7 @@ const ZonewisePropertyTransferReport = () => {
           <div ref={printRef} className="print-area">
             <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
               <ResultsHeader
-                title="Zone summary"
+                title={labels.Zonesummary[lang]}
                 right={
                   <Button
                     className="print-hide"

@@ -132,14 +132,6 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
     };
   }, [setLoading]);
 
-  // =========================================================
-  // Load GAT when Zone changes / PropertyInfo mounts again
-  //
-  // IMPORTANT:
-  // Do NOT clear gatKey here.
-  // Otherwise when user returns to this tab, selected GAT
-  // will be erased.
-  // =========================================================
   useEffect(() => {
     const selectedZoneKey = formik.values.zoneKey;
 
@@ -166,15 +158,6 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
 
     loadGatData();
 
-    // IMPORTANT:
-    // We intentionally DO NOT do:
-    //
-    // formik.setFieldValue("gatKey", "");
-    //
-    // because PropertyInfoForm gets mounted again when
-    // user comes back to this tab.
-    //
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.zoneKey]);
 
   // =========================================================
@@ -287,18 +270,7 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
               color: NAVY,
             }}
           >
-            {labels?.PropertyInfo?.[lang] ||
-              "Property Info"}
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: 13,
-              color: "text.secondary",
-            }}
-          >
-            Transaction type, location, registration and
-            utility connection details
+            {labels.PropertyDetails[lang]}
           </Typography>
         </Box>
       </Stack>
@@ -307,7 +279,7 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
 
           <GroupCaption>
-            Transaction &amp; location
+            {labels.TransactionAndLocation[lang]}
           </GroupCaption>
 
           <GridRow>
@@ -378,7 +350,7 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
           <Divider sx={{ my: 2.5 }} />
 
           <GroupCaption>
-            Registration details
+            {labels.Registrationdetails[lang]}
           </GroupCaption>
 
           <GridRow>
@@ -449,7 +421,7 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
           <Divider sx={{ my: 2.5 }} />
 
           <GroupCaption>
-            Utility connections
+            {labels.WaterAndDrainage[lang]}
           </GroupCaption>
 
           <GridRow>

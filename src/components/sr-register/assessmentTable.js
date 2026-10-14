@@ -577,7 +577,7 @@ const AssessmentTable = ({
               >
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#abd9e3", fontWeight: 600 }}>
-                    <TableCell align="center">Floor</TableCell>
+                    <TableCell align="center">{labels.Floor[lang]}</TableCell>
                     <TableCell>{getLabel("useType", "Use Type")}</TableCell>
                     <TableCell>
                       {getLabel("secUseType", "Sub Use Type")}
@@ -600,15 +600,15 @@ const AssessmentTable = ({
                     <TableCell align="center">
                       {getLabel("areaInMeter", "Area")}
                     </TableCell>
-                    <TableCell align="center">Bill Rate</TableCell>
+                    <TableCell align="center">{labels.BillRate[lang]}</TableCell>
                     <TableCell align="center">
                       {getLabel("taxAmount", "Tax Amount")}
                     </TableCell>
                     <TableCell align="center">
-                      {getLabel("Toilet", "Toilet")}
+                      {labels.Toilet[lang]}
                     </TableCell>
                     <TableCell align="center">
-                      {getLabel("ConstructionStatus", "Construction Status")}
+                      {labels.ConstructionStatus[lang]}
                     </TableCell>
                     <TableCell align="center">
                       {getLabel("Action", "Action")}
@@ -857,7 +857,7 @@ const AssessmentTable = ({
                           onClick={() => handleRemoveRow(row.id)}
                           endIcon={<RemoveCircleTwoTone />}
                         >
-                          Remove
+                          {labels.Remove[lang]}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -872,7 +872,7 @@ const AssessmentTable = ({
                           variant="contained"
                           color="primary"
                         >
-                          Add More
+                          {labels.AddMore[lang]}
                         </Button>
                       </TableCell>
                     </TableRow>

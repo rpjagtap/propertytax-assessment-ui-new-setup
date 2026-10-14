@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useSelector } from "react-redux";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
@@ -35,6 +36,7 @@ import OccupantInfoForm from "./occupaneInfoForm";
 import PropertyAddressForm from "./porpertyAddressForm";
 import PropertyDocumentsForm from "./propertyDocumentsForm";
 import AssessmentTable from "./assessmentTable";
+import { labels } from "../../lang/labels";
 
 // Theme tokens — same values used across the other redesigned pages.
 // Kept local so this file has no dependency on shared common/ components.
@@ -43,6 +45,7 @@ const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
+
 // =============================
 // Wizard Component
 // =============================
@@ -50,9 +53,12 @@ const WizardWrapper = ({ step, setStep, steps, handleSubmitButtonClick }) => {
   const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const prev = () => setStep((s) => Math.max(s - 1, 0));
   const isLast = step === steps.length - 1;
+  const lang = useSelector((state) => state.userDetails?.lang);
+
 
   return (
     <>
+    
       {/* Step tabs */}
       <Box sx={{ px: { xs: 1, md: 3 }, pt: 2.5, pb: 2 }}>
         <Tabs
@@ -136,11 +142,11 @@ const WizardWrapper = ({ step, setStep, steps, handleSubmitButtonClick }) => {
             "&:hover": { borderColor: NAVY_LIGHT, bgcolor: "rgba(18,35,63,0.04)" },
           }}
         >
-          Previous
+          {labels.Previous[lang]}
         </Button>
 
         <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-          Step {step + 1} of {steps.length}
+          {labels.Step[lang]} {step + 1} of {steps.length}
         </Typography>
 
         <Button
@@ -155,7 +161,7 @@ const WizardWrapper = ({ step, setStep, steps, handleSubmitButtonClick }) => {
             "&:hover": { bgcolor: isLast ? "#0B5A46" : NAVY_LIGHT },
           }}
         >
-          {isLast ? "Submit" : "Next"}
+          {isLast ? labels.Submit[lang] : labels.next[lang]}
         </Button>
       </Box>
     </>
@@ -166,6 +172,7 @@ const WizardWrapper = ({ step, setStep, steps, handleSubmitButtonClick }) => {
 // MAIN COMPONENT
 // =============================
 const SrRegister = () => {
+  const lang = useSelector((state) => state.userDetails?.lang);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const applicationNoFromURL = searchParams.get("applicationNo");
@@ -390,12 +397,12 @@ const SrRegister = () => {
   // Wizard Steps Definition
   // =============================
   const steps = [
-    { label: "Property Info", component: (<PropertyInfoForm zoneKey={zoneKey} setZoneKey={setZoneKey} />), },
-    { label: "Owner Info", component: <OwnerInfoForm />, },
-    { label: "Occupant Info", component: <OccupantInfoForm />, },
-    { label: "Property Address", component: <PropertyAddressForm />, },
-    { label: "Documents", component: <PropertyDocumentsForm />, },
-    { label: "Assessment", component: (<AssessmentTable zoneKey={zoneKey} gatKey={formik.values.gatKey} />), },
+    { label: labels.PropertyDetails[lang], component: (<PropertyInfoForm zoneKey={zoneKey} setZoneKey={setZoneKey} />), },
+    { label: labels.ownerInfo[lang], component: <OwnerInfoForm />, },
+    { label: labels.OccupantInfo[lang], component: <OccupantInfoForm />, },
+    { label: labels.PropertyAddress[lang], component: <PropertyAddressForm />, },
+    { label: labels.docs[lang], component: <PropertyDocumentsForm />, },
+    { label: labels.PropertyAssessment[lang], component: (<AssessmentTable zoneKey={zoneKey} gatKey={formik.values.gatKey} />), },
   ];
 
   // =============================
@@ -442,10 +449,7 @@ const SrRegister = () => {
                       </Avatar>
                       <Box sx={{ flexGrow: 1 }}>
                         <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                          Property Transactions
-                        </Typography>
-                        <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                          Complete each step to register the property transaction.
+                          {labels.PropertyTransactions[lang]}
                         </Typography>
                       </Box>
                       <Chip

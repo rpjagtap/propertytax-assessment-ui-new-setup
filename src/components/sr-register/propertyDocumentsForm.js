@@ -141,6 +141,7 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
               {/* Choose a document type and attach the file (PDF, JPG or PNG) */}
               {labels?.ChooseDocTypeAndAttach?.[lang] ||
                 "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा"}
+              Choose a document type and attach the file (PDF or JPG)
             </Typography>
           </Box>
         </Stack>

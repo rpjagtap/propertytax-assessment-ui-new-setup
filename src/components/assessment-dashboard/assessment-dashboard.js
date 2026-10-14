@@ -367,10 +367,7 @@ const AssessmentDashboard = () => {
                       </Avatar>
                       <Box sx={{ flexGrow: 1 }}>
                         <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                          Process Applications
-                        </Typography>
-                        <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                          Review pending applications by stage, zone and gat, and generate SR.
+                          {labels.BuildingPermissionPropertyAssesment[lang]}
                         </Typography>
                       </Box>
                     </Box>
@@ -379,10 +376,7 @@ const AssessmentDashboard = () => {
                       <Card variant="outlined" sx={{ borderRadius: 2 }}>
                         <CardHeader
                           avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                          title="Search criteria"
-                          titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                          subheader="Filter pending applications by stage, zone/gat and date range"
-                          sx={{ pb: 0 }}
+                          title="Search"
                         />
                         <CardContent>
                           <GridRow>
@@ -428,7 +422,7 @@ const AssessmentDashboard = () => {
               {pendingAppCountData && (
                 <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
                   <ResultsHeader
-                    title="Pending applications"
+                    title={labels.Application[lang]}
                     right={
                       <TextField
                         size="small"

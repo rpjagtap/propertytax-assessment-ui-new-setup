@@ -1919,4 +1919,161 @@ export const labels = {
   //     ma: "दिनांक पासून",
   // },
   // Nikita label end
+  ownerInfo: {
+    en: "Owner Info",
+    ma: "मालकाचा तपशील",
+  },
+  OccupantInfo  : {
+    en: "Occupant Info",
+    ma: "भोगवटधारकाचा तपशील",
+  },
+  TransactionAndLocation:{
+    en: "Transaction & Location",
+    ma: "व्यवहार आणि स्थान",
+  },
+  Registrationdetails:{
+    en: "Registration Details",
+    ma: "नोंदणी तपशील",
+  },
+  WaterAndDrainage:{
+    en: "Water & Drainage",
+    ma: "पाणी आणि सांडपाणी",
+  },
+  PropertyTransactions:{
+    en: "Property Transactions",
+    ma: "मालमत्ता व्यवहार",
+  },
+  next:{
+    en:"next",
+    ma:"पुढील",
+  },
+  Submit:{
+    en:"Submit",
+    ma:"संचय करा",
+  },
+  Previous:{
+    en:"Previous",
+    ma:"मागील",
+  },
+  Step:{
+    en:"Step",
+    ma:"पायरी",
+  },
+  Contact: {
+    en: "Contact",
+    ma: "संपर्क",
+  },
+  Identity:{
+    en:"Identity",
+    ma:"ओळख",
+  },
+  Unitdetails:{
+    en:"Unit Details",
+    ma:"युनिट तपशील",
+  },
+  BuildingAndsociety:
+  {
+    en:"Building & society",
+    ma:"इमारत आणि सोसायटी"
+  },
+  Locality:{
+    en:"Locality",
+    ma:"परिसर"
+  },
+  FullAddress:{
+    en:"Full Address",
+    ma:"पूर्ण पत्ता",
+  },
+  PropertyAddressDetails:{
+    en:"Property Address Details",
+    ma:"मालमत्तेचा पत्ता तपशील"
+  },
+  BillRate:{
+    en:"Bill Rate",
+    ma:"बिल दर"
+  },
+  ConstructionStatus:{
+    en:"Construction Status",
+    ma:"बांधकाम स्थिती"
+  },
+  AddMore:{
+    en:"Add More",
+    ma:"अधिक जोडा"
+  },
+  Remove:{
+    en:"Remove",
+    ma:"काढा"
+  },
+  PropertyAssessmentDashboard: {
+    en: "Property Assessment Dashboard",
+    ma: "मालमत्ता मूल्यांकन डॅशबोर्ड",
+  },
+  Application: {
+    ma: "अर्ज",
+    en: "Applications",
+  },
+  PropertyTransferDashboard: {
+    en: "Property Transfer Dashboard",
+    ma: "मालमत्ता हस्तांतरण डॅशबोर्ड",
+  },
+  Transferapplications: {
+    en: "Transfer Applications",
+    ma: "हस्तांतरण अर्ज",
+  },
+  SearchbyApplicantName: {
+    en: "Search by Applicant Name",
+    ma: "अर्जदाराच्या नावाने शोधा",
+  },
+  BuildingPermissionPropertyAssesment: {
+    en: "Building Permission Property Assesment",
+    ma: "बांधकाम परवानगी मालमत्ता मूल्यांकन",
+  },
+  TrackBuildingPermissionApplication: {
+    en: "Track Building Permission Application",
+    ma: "बांधकाम परवानगी अर्ज ट्रॅक करा",
+  },
+  Search: {
+    en: "Search",
+    ma: "शोधा",
+  },
+  TrackPropertyTransactionApplication : {
+    en: "Track Property Transaction Application",
+    ma: "मालमत्ता व्यवहार अर्ज ट्रॅक करा", 
+  },
+  BrowseOnlineTransactionExcel: {
+    en: "Browse Online Transaction Excel",
+    ma: "ऑनलाइन व्यवहार एक्सेल ब्राउझ करा",   
+  },
+  UploadanExcel: {
+    en: "Upload an Excel file (.xls or .xlsx) to preview and reconcile online transactions.",
+    ma: "ऑनलाइन व्यवहारांचे पूर्वावलोकन आणि समायोजन करण्यासाठी Excel फाइल (.xls किंवा .xlsx) अपलोड करा.",
+  },
+  Selectfile: {
+    en: "Select File",
+    ma: "फाइल निवडा",
+  },
+  Transactionpreview: {
+    en: "Transaction Preview",
+    ma: "व्यवहार पूर्वावलोकन",
+  },
+  GrossAmount: {
+    en: "Gross Amount",
+    ma: "एकूण रक्कम",
+  },
+  NetAmount: {
+    en: "Net Amount",
+    ma: "निव्वळ रक्कम",
+  },
+  PropertyTransactionsDashboard: {
+    en: "Property Transactions Dashboard",
+    ma: "मालमत्ता व्यवहार डॅशबोर्ड",
+  },
+  ZonewisePropertyTransferReport: {
+    en: "Zonewise Property Transfer Report",
+    ma: "झोननुसार मालमत्ता हस्तांतरण अहवाल",
+  },
+  Zonesummary: {
+    en: "Zone Summary",
+    ma: "झोन सारांश",
+  }
 };

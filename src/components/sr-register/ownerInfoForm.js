@@ -41,15 +41,12 @@ const OwnerInfoForm = React.memo(() => {
           <Typography sx={{ fontWeight: 700, fontSize: 16, color: NAVY }}>
             {labels?.ownerDetails?.[lang] || "Owner Details"}
           </Typography>
-          <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-            Owner name in both languages, contact details and Aadhaar number
-          </Typography>
         </Box>
       </Stack>
 
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <GroupCaption>Name</GroupCaption>
+          <GroupCaption>{labels.DocName[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.NameMarathi[lang]} required />
             <FormValue component={<TextInput name="marFirstOwnerName" />} />
@@ -59,7 +56,7 @@ const OwnerInfoForm = React.memo(() => {
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption>Contact</GroupCaption>
+          <GroupCaption>{labels.Contact[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.MobileNo[lang]} required />
             <FormValue component={<TextInput name="ownerMobile" />} />
@@ -69,7 +66,7 @@ const OwnerInfoForm = React.memo(() => {
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption>Identity</GroupCaption>
+          <GroupCaption>{labels.Identity[lang]}</GroupCaption>
           <GridRow>
             <FormLabel label={labels.AadhaarNo[lang]}  />
             <FormValue component={<TextInput name="ownerAdharNo" />} />

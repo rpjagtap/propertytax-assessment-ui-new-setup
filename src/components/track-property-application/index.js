@@ -379,10 +379,7 @@ const TrackPropertyApplication = () => {
                         </Avatar>
                         <Box>
                           <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                            Track Property Application
-                          </Typography>
-                          <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                            Search and track property transfer applications by transaction type, zone/gat and date range.
+                            {labels.TrackPropertyTransactionApplication[lang]}
                           </Typography>
                         </Box>
                       </Box>
@@ -391,10 +388,7 @@ const TrackPropertyApplication = () => {
                         <Card variant="outlined" sx={{ borderRadius: 2 }}>
                           <CardHeader
                             avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                            title="Search criteria"
-                            titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                            subheader="Narrow down applications by transaction type, property code, zone/gat and date range"
-                            sx={{ pb: 0 }}
+                            title={labels.Search[lang]}
                           />
                           <CardContent>
                             <GridRow>
@@ -461,7 +455,7 @@ const TrackPropertyApplication = () => {
               {pendingAppCountData && (
                 <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
                   <ResultsHeader
-                    title="Transfer applications"
+                    title={labels.Application[lang]}
                     right={
                       pendingAppCountData.length > rowsPerPage && (
                         <Stack direction="row" spacing={2} alignItems="center">
