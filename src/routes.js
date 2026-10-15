@@ -64,6 +64,7 @@ import PropertyAssessmentDashboardGP from "./components/property-assessment-dash
 import PropertyTransactionApplicationViewGP from "./components/property-transaction-application-view-GP";
 import GenerateSR2 from "./components/generate-sr-2";
 import JahirNoticeDashboard from "./components/property-transfer-jahir-notice-dashboard";
+import CitizenSRDoc from "./components/citizen-sr-doc";
 
 const routes = [
   {
@@ -319,6 +320,8 @@ const routes = [
   {
     path: "JahirNoticeDashboard",
     component: JahirNoticeDashboard,
+    path: "CitizenSRDoc",
+    component: CitizenSRDoc,
   },
   // Add other routes here
 ];

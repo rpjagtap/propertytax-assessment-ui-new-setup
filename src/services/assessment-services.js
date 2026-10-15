@@ -833,7 +833,39 @@ export const deactivateUserApi = async (body) => {
   const response = await apiClient.post(`userdetails/deactivate-user`, body);
   return response.data;
 }
+export const citizenSRDoc = async (pdfDocId) => {
+  const response = await apiClient.get(`/property-transactions/get-citizen-sr-doc?applicationNo=${pdfDocId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/pdf",
+      },
+    },
+  );
+  return response.data;
+};
 
+export const getApplicationDetail = async (body) => {
+  const response = await apiClient.post(
+    `/property-transactions/get-application-detail`,
+    body,
+  );
+  return response.data;
+};
+
+export const ViewCitizenSRDoc = async ( documentId,documentName, documentURLbase64, ) => {
+
+  const response = await apiClient.get(`/property-transactions/download-transaction-doc`, {
+      params: {
+        documentId: documentId,
+        documentName: documentName,
+        documentURLbase64: documentURLbase64,
+      },
+      responseType: "blob",
+    },
+  );
+  return response.data;
+};
 
 
 

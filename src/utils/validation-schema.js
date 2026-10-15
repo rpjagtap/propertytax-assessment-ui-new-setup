@@ -65,8 +65,6 @@ export const srRegisterFullFormSchema = yup.object({
   "propertyDescription": yup.string("").required("Required *"),
   "fYear": yup.string("").required("Required *"),
   "specialOwnership": yup.string("").required("Required *"),
-  "waterConnNo": yup.string("").required("Required *"),
-  "drainageNo": yup.string("").required("Required *"),
   "marFirstOwnerName": yup.string("").required("Required *"),
   "marMiddleOwnerName": yup.string("").required("Required *"),
   "marLastOwnerName": yup.string("").required("Required *"),

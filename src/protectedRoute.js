@@ -73,7 +73,8 @@ const ProtectedRoute = ({ routeName, element: Component, ...rest }) => {
     routeName === "AdditionalConstructedPropertyProcess" ||
     routeName === "viewPropertyTransactionApplicationGP" ||
     routeName === "GenerateSR2" ||
-    routeName === "JahirNoticeDashboard"
+    routeName === "JahirNoticeDashboard"||
+    routeName === "CitizenSRDoc"
   ) {
     return <Component {...rest} />;
   }
