@@ -371,7 +371,7 @@ const PropertyTransferDashBoard = () => {
                                 avatar={
                                   <SearchOutlined sx={{ color: "text.secondary" }} />
                                 }
-                                title="Search"
+                                title={labels.Search[lang]}
                               />
                               <CardContent>
                                 <GridRow>

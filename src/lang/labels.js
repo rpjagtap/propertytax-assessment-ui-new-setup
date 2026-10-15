@@ -2075,5 +2075,9 @@ export const labels = {
   Zonesummary: {
     en: "Zone Summary",
     ma: "झोन सारांश",
-  }
+  },
+  OnlineTransactionReport: {
+    en: "Online Transaction Report",
+    ma: "ऑनलाइन व्यवहार अहवाल",
+  },
 };

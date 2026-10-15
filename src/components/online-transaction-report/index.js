@@ -209,10 +209,7 @@ const OnlineTransactionReport = () => {
               </Avatar>
               <Box>
                 <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
-                  Online Transaction Report
-                </Typography>
-                <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
-                  Reconcile online payments by consumer number, status and date range.
+                  {labels.OnlineTransactionReport[lang]}
                 </Typography>
               </Box>
             </Box>
@@ -221,10 +218,7 @@ const OnlineTransactionReport = () => {
               <Card variant="outlined" sx={{ borderRadius: 2 }}>
                 <CardHeader
                   avatar={<SearchOutlined sx={{ color: "text.secondary" }} />}
-                  title="Search criteria"
-                  titleTypographyProps={{ fontSize: 15, fontWeight: 600 }}
-                  subheader="Filter transactions by consumer number, status and date range"
-                  sx={{ pb: 0 }}
+                  title={labels.Search[lang]}
                 />
                 <CardContent>
                   <GridRow>
@@ -294,7 +288,7 @@ const OnlineTransactionReport = () => {
         {/* ---------- Results ---------- */}
         <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
           <ResultsHeader
-            title="Transactions"
+            title={labels.Application[lang]}
             right={
               selectedCount > 0 && (
                 <Chip
@@ -368,7 +362,7 @@ const OnlineTransactionReport = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={7} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                        No records found
+                        {labels.NoRecordFound[lang]}
                       </TableCell>
                     </TableRow>
                   )}
