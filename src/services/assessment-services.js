@@ -716,6 +716,14 @@ export const getPropertyTransactionStages = async () => {
   const response = await apiClient.get(`/master/get-property-transaction-stages`);
   return response.data;
 };
+export const getPropertyTransferJahirNoticeDashboard = async (body) => {
+  const response = await apiClient.get('/citizen/property_transfer-jahir-notice-dashboard');
+  return response.data;
+};
+export const generateTransferNotice = async (body) => {
+  const response = await apiClient.post(`/property-transfer/generate-transfer-notice`,body,);
+  return response.data;
+};
 
 // propertyService.js
 
@@ -750,7 +758,7 @@ export const sendToZoDashboard = async (propertyKey, isChecked) => {
   const response = await apiClient.post(
     `/property-transactions/get-pending-applications`,
   )};*/
-  
+
 export const revertApplication = async (body) => {
   const response = await apiClient.post(
     `/property-transactions/revert-application`,
@@ -760,16 +768,16 @@ export const revertApplication = async (body) => {
 };
 
 
-export const ViewSRTransactionDoc = async ( documentId,documentName, documentURLbase64, ) => {
+export const ViewSRTransactionDoc = async (documentId, documentName, documentURLbase64,) => {
 
   const response = await apiClient.get(`/property-transactions/download-transaction-doc`, {
-      params: {
-        documentId: documentId,
-        documentName: documentName,
-        documentURLbase64: documentURLbase64,
-      },
-      responseType: "blob",
+    params: {
+      documentId: documentId,
+      documentName: documentName,
+      documentURLbase64: documentURLbase64,
     },
+    responseType: "blob",
+  },
   );
   return response.data;
 };
@@ -787,9 +795,9 @@ export const getSthapatyaSurveyDashboard = async (body) => {
 };
 
 export const submitSthapathyaVadhivProperty = async (body) => {
-  const response = await apiClient.post(`sthapatya/submit-sthapatya-vadhiv-property` ,body);
+  const response = await apiClient.post(`sthapatya/submit-sthapatya-vadhiv-property`, body);
   return response.data;
-}; 
+};
 
 export const getSthapatyaSurveyDashboardSR1 = async (body) => {
   const response = await apiClient.post(`/sthapatya/get-sthapatya-vadhiv-property-sr1`, body);
@@ -797,32 +805,32 @@ export const getSthapatyaSurveyDashboardSR1 = async (body) => {
 };
 
 export const submitSthapathyaVadhivPropertySR1 = async (body) => {
-  const response = await apiClient.post(`property-transactions/submit-property-vadhiv` ,body);
+  const response = await apiClient.post(`property-transactions/submit-property-vadhiv`, body);
   return response.data;
 }
 
 export const createassignInterface = async (body) => {
-  const response = await apiClient.post(`userdetails/create-assign-interface` ,body);
+  const response = await apiClient.post(`userdetails/create-assign-interface`, body);
   return response.data;
 };
 
 export const editProfileInterface = async (body) => {
-  const response = await apiClient.post(`userdetails/edit-profile-interface` ,body);
+  const response = await apiClient.post(`userdetails/edit-profile-interface`, body);
   return response.data;
 };
 
-export const getAllUserByUserCode = async(body) => {
-  const response = await apiClient.post(`userdetails/get-all-user-by-usercode` ,body);
+export const getAllUserByUserCode = async (body) => {
+  const response = await apiClient.post(`userdetails/get-all-user-by-usercode`, body);
   return response.data;
 }
 
 export const saveProfileInterface = async (body) => {
-  const response = await apiClient.post(`userdetails/save-profile-interface` ,body);
+  const response = await apiClient.post(`userdetails/save-profile-interface`, body);
   return response.data;
 };
 
-export const deactivateUserApi = async(body) => {
-  const response = await apiClient.post(`userdetails/deactivate-user` ,body);
+export const deactivateUserApi = async (body) => {
+  const response = await apiClient.post(`userdetails/deactivate-user`, body);
   return response.data;
 }
 
