@@ -22,7 +22,12 @@ import {
 } from "@mui/material";
 import DashboardHeader from "../layout/dashboard-header";
 import { useSearchParams } from "react-router-dom";
-import { citizenSRDoc, citizenConsentApplication, objList } from "../../services/assessment-services";
+import {
+  citizenSRDoc,
+  citizenConsentApplication,
+  objList,
+  ViewProTransactionDoc,
+} from "../../services/assessment-services";
 import { showToastError } from "../common/toastHelper";
 import { getApiBaseUrl, getErrorMsg } from "../../utils/helpers";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
@@ -57,9 +62,7 @@ const CitizenSRDoc = () => {
     if (action !== "Reject") {
       //setObjectionList([]); // Reset selections if not rejecting
     }
-
   };
-
 
   const handleClose = () => {
     setOpen(false);
@@ -75,13 +78,14 @@ const CitizenSRDoc = () => {
     const getData = async () => {
       setLoading(true);
       try {
-        const [response, objectionListRes] = await Promise.all([citizenSRDoc(applicationNo), objList()]);
+        const [response, objectionListRes] = await Promise.all([
+          citizenSRDoc(applicationNo),
+          objList(),
+        ]);
         const uint8ArrayString = response.uint8Array;
-        setDocuments(response.lstAssessmentDocVO);
-        setAssessmentId(response.assessmentId);
+        setDocuments(response.documentVOs);
+        setAssessmentId(response.propertyTransactionId);
         setObjectionList(objectionListRes.lstObjection);
-
-
 
         if (uint8ArrayString) {
           // Parse the string to an array of numbers
@@ -103,7 +107,6 @@ const CitizenSRDoc = () => {
       } finally {
         setLoading(false);
       }
-
     };
 
     getData();
@@ -111,10 +114,11 @@ const CitizenSRDoc = () => {
   }, []);
 
   const handleCheckboxChange = (reason) => {
-    setSelectedObjections((prev) =>
-      prev.includes(reason)
-        ? prev.filter((item) => item !== reason) // Remove if already selected
-        : [...prev, reason] // Add if not selected
+    setSelectedObjections(
+      (prev) =>
+        prev.includes(reason)
+          ? prev.filter((item) => item !== reason) // Remove if already selected
+          : [...prev, reason], // Add if not selected
     );
   };
 
@@ -137,20 +141,21 @@ const CitizenSRDoc = () => {
       }
 
       // Set remark based on action
-      const finalRemark = action === "Reject" ? selectedObjections.join(", ") : remark;
-
+      const finalRemark =
+        action === "Reject" ? selectedObjections.join(", ") : remark;
 
       const requestData = {
-        assessmentFormVOLst: [
+        propertyTransactionVO: [
           {
             revertFormVO: {
               revertAction: action, // Accept or Reject
               remark: finalRemark,
             },
-            assessmentId: assessmentId,
+            propertyTransactionId: assessmentId,
           },
         ],
       };
+      //console.log("Request Data:", requestData);
       await citizenConsentApplication(requestData);
 
       if (action === "Accept") {
@@ -166,13 +171,29 @@ const CitizenSRDoc = () => {
     }
   };
 
-  const handleDownload = (url) => {
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (documentName, documentURLbase64) => {
+    try {
+      const response = await ViewProTransactionDoc(
+        documentName,
+        documentURLbase64,
+      );
+
+      // Create blob using the response type from headers
+      const contentType = response.type || "application/pdf"; // default PDF
+      const blob = new Blob([response], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+
+      // Open in new tab
+      const newWindow = window.open(url, "_blank");
+      if (!newWindow) {
+        alert("Please allow popups to view the file.");
+      }
+
+      // Optional: revoke the object URL after a while
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
   };
 
   return (
@@ -186,7 +207,13 @@ const CitizenSRDoc = () => {
           </TabList>
         </Box>
         <TabPanel value="1">
-          <Box display="flex" flexDirection="column" alignItems="center" height="100vh" padding={2}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            height="100vh"
+            padding={2}
+          >
             <Dialog
               open={open}
               onClose={handleClose}
@@ -195,12 +222,16 @@ const CitizenSRDoc = () => {
             >
               <DialogTitle id="alert-dialog-title">Confirm Action</DialogTitle>
               {action !== "Reject" && (
-                <DialogContent>Are you sure you want to {action}?</DialogContent>
+                <DialogContent>
+                  Are you sure you want to {action}?
+                </DialogContent>
               )}
 
               {action === "Reject" && (
                 <div>
-                  <DialogContent><label>Please select at least one objection:</label></DialogContent>
+                  <DialogContent>
+                    <label>Please select at least one objection:</label>
+                  </DialogContent>
 
                   {objectionList.map((item, index) => (
                     <div key={index}>
@@ -219,7 +250,12 @@ const CitizenSRDoc = () => {
                 <Button onClick={handleClose} color="error" variant="contained">
                   Cancel
                 </Button>
-                <Button onClick={handleConfirm} autoFocus color="success" variant="contained">
+                <Button
+                  onClick={handleConfirm}
+                  autoFocus
+                  color="success"
+                  variant="contained"
+                >
                   Confirm
                 </Button>
               </DialogActions>
@@ -236,7 +272,9 @@ const CitizenSRDoc = () => {
                 flexDirection: "column",
               }}
             >
-              <Alert severity="info">Please Accept or Reject Application from below</Alert>
+              <Alert severity="info">
+                Please Accept or Reject Application from below
+              </Alert>
               {/* PDF Viewer Container */}
               <Box
                 sx={{
@@ -244,7 +282,12 @@ const CitizenSRDoc = () => {
                 }}
               >
                 {loading ? (
-                  <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    height="100%"
+                  >
                     <CircularProgress />
                   </Box>
                 ) : pdfUrl ? (
@@ -317,7 +360,9 @@ const CitizenSRDoc = () => {
                       color: userResponse === "accepted" ? "green" : "red",
                     }}
                   >
-                    You have {userResponse === "accepted" ? "accepted" : "objection"} the consent.
+                    You have{" "}
+                    {userResponse === "accepted" ? "accepted" : "objection"} the
+                    consent.
                   </Typography>
                 )}
               </Box>
@@ -331,30 +376,37 @@ const CitizenSRDoc = () => {
                 No documents available
               </Typography>
             ) : (
-              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
-                <Card sx={{ maxWidth: "50%", width: "100%", textAlign: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
+                <Card
+                  sx={{ maxWidth: "50%", width: "100%", textAlign: "center" }}
+                >
                   <CardContent>
-                    <List >
+                    <List>
                       {documents.map((doc, index) => (
                         <ListItem key={index} divider>
                           <ListItemText>
-                            <Link
-                              href={`${getApiBaseUrl()}/assessment/get-assessment-documents?docId=${doc.docId
-                                }`}
-                              download
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              {doc.docName}
-                            </Link>
+                            {doc.documentName}
                             <IconButton
                               onClick={() =>
                                 handleDownload(
-                                  `${getApiBaseUrl()}/assessment/get-assessment-documents?docId=${doc.docId}`
+                                  doc.documentName,
+                                  doc.documentURL,
                                 )
                               }
                             >
-                              <img src="/pdf-icon-1.jpg" alt="Icon" width={40} height={35} />
+                              <img
+                                src="/pdf-icon-1.jpg"
+                                alt="Icon"
+                                width={40}
+                                height={35}
+                              />
                             </IconButton>
                           </ListItemText>
                         </ListItem>
@@ -370,5 +422,4 @@ const CitizenSRDoc = () => {
     </>
   );
 };
-
 export default CitizenSRDoc;

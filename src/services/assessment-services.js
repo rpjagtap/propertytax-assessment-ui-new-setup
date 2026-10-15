@@ -845,5 +845,19 @@ export const getApplicationDetail = async (body) => {
   return response.data;
 };
 
+export const ViewCitizenSRDoc = async ( documentId,documentName, documentURLbase64, ) => {
+
+  const response = await apiClient.get(`/property-transactions/download-transaction-doc`, {
+      params: {
+        documentId: documentId,
+        documentName: documentName,
+        documentURLbase64: documentURLbase64,
+      },
+      responseType: "blob",
+    },
+  );
+  return response.data;
+};
+
 
 
