@@ -63,6 +63,7 @@ import SthaptyaVadhivSR1DashBoard from "./components/sthaptya-Vadhiv-SR1-DashBoa
 import PropertyAssessmentDashboardGP from "./components/property-assessment-dashboard-GP";
 import PropertyTransactionApplicationViewGP from "./components/property-transaction-application-view-GP";
 import GenerateSR2 from "./components/generate-sr-2";
+import CitizenSRDoc from "./components/citizen-sr-doc";
 
 const routes = [
   {
@@ -314,6 +315,10 @@ const routes = [
   {
     path: "GenerateSR2",
     component: GenerateSR2,
+  },
+  {
+    path: "CitizenSRDoc",
+    component: CitizenSRDoc,
   },
   // Add other routes here
 ];

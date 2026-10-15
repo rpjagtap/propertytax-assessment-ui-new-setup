@@ -273,7 +273,7 @@ const PropertyTaxDocumentBundle = () => {
             // dedicated savePahani(...) endpoint once the backend contract is
             // confirmed, same as the saveProposal note above.
             await saveSr({
-                documentName: "पाहणी अहवाल",
+                documentName: "SR1",
                 srNumber: sr1Data?.srNumber,
                 transactionId: sr1Data?.transactionId,
                 documentURLbase64: pahaniPdfBase64,

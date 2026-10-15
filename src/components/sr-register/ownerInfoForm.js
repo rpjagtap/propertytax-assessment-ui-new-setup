@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Avatar, Box, Card, CardContent, Divider, Stack, Typography } from "@mui/material";
 import PersonOutline from "@mui/icons-material/PersonOutline";
 import { GridRow, FormLabel, FormValue } from "../common/custom-form-grid";
 import TextInput from "../form-fields/text-input";
 import { labels } from "../../lang/labels";
+import { useSearchParams } from "react-router-dom";
+import { useFormikContext } from "formik";
+import { getApplicationDetail } from "../../services/assessment-services";
 
 // Theme tokens — same values used across the other redesigned pages.
 const NAVY = "#12233F";
@@ -29,6 +32,32 @@ const GroupCaption = ({ children }) => (
 
 const OwnerInfoForm = React.memo(() => {
   const lang = useSelector((state) => state.userDetails?.lang);
+  const [searchParams] = useSearchParams();
+  const applicationId = searchParams.get("applicationNo");
+  const { setFieldValue } = useFormikContext();
+
+    const fetchApplicationDetail = async () => {
+    try {
+      const response = await getApplicationDetail({ applicationId });
+      const data = response.propertyTransactionVO?.[0];
+
+      if (!data) {
+        console.log("Application details not found");
+        return;
+      }
+      setFieldValue("marFirstOwnerName", data.applicantName || "");
+      setFieldValue("ownerMobile", data.applicantMobile || "");
+      setFieldValue("ownerEmail", data.applicantEmail || "");
+    } catch (error) {
+      console.error("Error fetching application detail:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (applicationId) {
+      fetchApplicationDetail();
+    }
+  }, [applicationId]);
 
   return (
     <Box>

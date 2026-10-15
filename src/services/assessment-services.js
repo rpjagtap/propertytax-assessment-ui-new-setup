@@ -825,7 +825,25 @@ export const deactivateUserApi = async(body) => {
   const response = await apiClient.post(`userdetails/deactivate-user` ,body);
   return response.data;
 }
+export const citizenSRDoc = async (pdfDocId) => {
+  const response = await apiClient.get(`/property-transactions/get-citizen-sr-doc?applicationNo=${pdfDocId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/pdf",
+      },
+    },
+  );
+  return response.data;
+};
 
+export const getApplicationDetail = async (body) => {
+  const response = await apiClient.post(
+    `/property-transactions/get-application-detail`,
+    body,
+  );
+  return response.data;
+};
 
 
 
