@@ -39,6 +39,14 @@ const NAVY = "#12233F";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
+// ---------------------------------------------------------
+// Returns the value SelectInput uses for an option.
+// ADJUST this to match your API item shape (e.g. item.zoneKey, item.gatKey)
+// and keep it consistent with what SelectInput reads as option value.
+// ---------------------------------------------------------
+const getOptionValue = (item) =>
+  item?.value ?? item?.id ?? item?.key ?? "";
+
 // Small caption
 const GroupCaption = ({ children }) => (
   <Typography
@@ -70,14 +78,12 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
 
   const [searchParams] = useSearchParams();
 
-  const transactionTypeIdFromURL =
-    searchParams.get("transactionTypeId");
-
-  const propertyCodeFromURL =
-    searchParams.get("propertyCode");
+  const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
+  const propertyCodeFromURL = searchParams.get("propertyCode");
 
   // =========================================================
   // Initial API calls
+  // Also auto-selects the Zone when only ONE zone is returned
   // =========================================================
   useEffect(() => {
     let mounted = true;
@@ -100,11 +106,18 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
 
         if (!mounted) return;
 
-        setZoneKeys(zonesRes?.zoneLst || []);
+        const zones = zonesRes?.zoneLst || [];
+        setZoneKeys(zones);
 
-        setFinancialYear(
-          financialYearRes?.lstSpecialOccupant || []
-        );
+        // Only one zone -> select it by default
+        if (zones.length === 1) {
+          const onlyZone = getOptionValue(zones[0]);
+
+          formik.setFieldValue("zoneKey", onlyZone);
+          setZoneKey?.(onlyZone); // keep parent in sync
+        }
+
+        setFinancialYear(financialYearRes?.lstSpecialOccupant || []);
 
         setSpecialOwnershipRes(
           specialOwnershipData?.lstSpecialOccupant || []
@@ -130,8 +143,27 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setLoading]);
 
+  // =========================================================
+  // Parent -> Formik sync
+  // If parent already has a zoneKey, make sure Formik has it too
+  // =========================================================
+  useEffect(() => {
+    if (
+      zoneKey &&
+      String(zoneKey) !== String(formik.values.zoneKey ?? "")
+    ) {
+      formik.setFieldValue("zoneKey", zoneKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoneKey]);
+
+  // =========================================================
+  // Load GAT list whenever Zone changes
+  // Auto-selects the GAT when only ONE GAT is returned
+  // =========================================================
   useEffect(() => {
     const selectedZoneKey = formik.values.zoneKey;
 
@@ -139,6 +171,8 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
       setGatKeys([]);
       return;
     }
+
+    let active = true; // ignore stale responses
 
     const loadGatData = async () => {
       try {
@@ -148,98 +182,73 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
           zoneKey: selectedZoneKey,
         });
 
-        setGatKeys(gatRes?.gatLst || []);
+        if (!active) return;
+
+        const gats = gatRes?.gatLst || [];
+        setGatKeys(gats);
+
+        // Only one GAT -> select it by default
+        if (gats.length === 1) {
+          formik.setFieldValue("gatKey", getOptionValue(gats[0]));
+        }
       } catch (error) {
-        showToastError(getErrorMsg(error));
+        if (active) showToastError(getErrorMsg(error));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     loadGatData();
 
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.zoneKey]);
 
   // =========================================================
   // Transaction type from URL
   // =========================================================
   useEffect(() => {
-    if (
-      transactionTypeIdFromURL &&
-      transactionsOptions.length > 0
-    ) {
+    if (transactionTypeIdFromURL && transactionsOptions.length > 0) {
       const match = transactionsOptions.find(
-        (item) =>
-          String(item.value) ===
-          String(transactionTypeIdFromURL)
+        (item) => String(item.value) === String(transactionTypeIdFromURL)
       );
 
       if (match) {
-        formik.setFieldValue(
-          "transactionType",
-          match.value
-        );
+        formik.setFieldValue("transactionType", match.value);
       }
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    transactionTypeIdFromURL,
-    transactionsOptions,
-  ]);
+  }, [transactionTypeIdFromURL, transactionsOptions]);
 
   // =========================================================
   // Property code from URL
   // =========================================================
   useEffect(() => {
     if (propertyCodeFromURL) {
-      formik.setFieldValue(
-        "PropertyNumber",
-        propertyCodeFromURL
-      );
+      formik.setFieldValue("PropertyNumber", propertyCodeFromURL);
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyCodeFromURL]);
 
   // =========================================================
-  // Zone change handler
-  //
-  // THIS is now the correct place to clear GAT.
-  // If user actually changes Zone, old GAT should be removed.
+  // Zone change handler (user-initiated change only)
+  // GAT list is loaded by the effect above, so no API call here.
   // =========================================================
-  const handleZoneChange = async (e) => {
+  const handleZoneChange = (e) => {
     const newZoneKey = e.target.value;
 
-    // Update Formik Zone
     formik.setFieldValue("zoneKey", newZoneKey);
 
-    // Keep parent state also updated
-    setZoneKey(newZoneKey);
-
-    // Since Zone changed, old GAT is no longer valid
+    // Old GAT is no longer valid for the new Zone
     formik.setFieldValue("gatKey", "");
-
-    // Clear old GAT dropdown immediately
     setGatKeys([]);
 
-    if (!newZoneKey) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const gatRes = await getGatByZonekey({
-        zoneKey: newZoneKey,
-      });
-
-      setGatKeys(gatRes?.gatLst || []);
-    } catch (error) {
-      showToastError(getErrorMsg(error));
-    } finally {
-      setLoading(false);
-    }
+    // Keep parent state updated
+    setZoneKey?.(newZoneKey);
   };
 
   return (
@@ -277,16 +286,10 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
 
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-
-          <GroupCaption>
-            {labels.TransactionAndLocation[lang]}
-          </GroupCaption>
+          <GroupCaption>{labels.TransactionAndLocation[lang]}</GroupCaption>
 
           <GridRow>
-
-            <FormLabel
-              label={labels.TransactionType[lang]}
-            />
+            <FormLabel label={labels.TransactionType[lang]} />
 
             <FormValue
               component={
@@ -298,9 +301,7 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
               }
             />
 
-            <FormLabel
-              label={labels.PropertyNumber[lang]}
-            />
+            <FormLabel label={labels.PropertyNumber[lang]} />
 
             <FormValue
               component={
@@ -311,15 +312,10 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
                 />
               }
             />
-
           </GridRow>
 
           <GridRow>
-
-            <FormLabel
-              label={labels.Zone[lang]}
-              required
-            />
+            <FormLabel label={labels.Zone[lang]} required />
 
             <FormValue
               component={
@@ -331,48 +327,25 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
               }
             />
 
-            <FormLabel
-              label={labels.Gat[lang]}
-              required
-            />
+            <FormLabel label={labels.Gat[lang]} required />
 
             <FormValue
-              component={
-                <SelectInput
-                  name="gatKey"
-                  options={gatKeys}
-                />
-              }
+              component={<SelectInput name="gatKey" options={gatKeys} />}
             />
-
           </GridRow>
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption>
-            {labels.Registrationdetails[lang]}
-          </GroupCaption>
+          <GroupCaption>{labels.Registrationdetails[lang]}</GroupCaption>
 
           <GridRow>
-
-            <FormLabel
-              label={labels.SRDate[lang]}
-              required
-            />
+            <FormLabel label={labels.SRDate[lang]} required />
 
             <FormValue
-              component={
-                <DateInput
-                  name="srDate"
-                  required
-                />
-              }
+              component={<DateInput name="srDate" required />}
             />
 
-            <FormLabel
-              label={labels.PropertyDescription[lang]}
-              required
-            />
+            <FormLabel label={labels.PropertyDescription[lang]} required />
 
             <FormValue
               component={
@@ -383,29 +356,18 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
                 />
               }
             />
-
           </GridRow>
 
           <GridRow>
-
-            <FormLabel
-              label={labels.FYear[lang]}
-              required
-            />
+            <FormLabel label={labels.FYear[lang]} required />
 
             <FormValue
               component={
-                <SelectInput
-                  name="fYear"
-                  options={financialYear}
-                />
+                <SelectInput name="fYear" options={financialYear} />
               }
             />
 
-            <FormLabel
-              label={labels.SpecialOwnership[lang]}
-              required
-            />
+            <FormLabel label={labels.SpecialOwnership[lang]} required />
 
             <FormValue
               component={
@@ -415,43 +377,21 @@ const PropertyInfoForm = ({ zoneKey, setZoneKey }) => {
                 />
               }
             />
-
           </GridRow>
 
           <Divider sx={{ my: 2.5 }} />
 
-          <GroupCaption>
-            {labels.WaterAndDrainage[lang]}
-          </GroupCaption>
+          <GroupCaption>{labels.WaterAndDrainage[lang]}</GroupCaption>
 
           <GridRow>
+            <FormLabel label={labels.WaterConnectionNumber[lang]} />
 
-            <FormLabel
-              label={
-                labels.WaterConnectionNumber[lang]
-              }
-            />
+            <FormValue component={<TextInput name="waterConnNo" />} />
 
-            <FormValue
-              component={
-                <TextInput name="waterConnNo" />
-              }
-            />
+            <FormLabel label={labels.DrainageNumber[lang]} />
 
-            <FormLabel
-              label={
-                labels.DrainageNumber[lang]
-              }
-            />
-
-            <FormValue
-              component={
-                <TextInput name="drainageNo" />
-              }
-            />
-
+            <FormValue component={<TextInput name="drainageNo" />} />
           </GridRow>
-
         </CardContent>
       </Card>
     </Box>
