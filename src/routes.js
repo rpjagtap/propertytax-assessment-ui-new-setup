@@ -320,6 +320,8 @@ const routes = [
   {
     path: "JahirNoticeDashboard",
     component: JahirNoticeDashboard,
+  },
+  {
     path: "CitizenSRDoc",
     component: CitizenSRDoc,
   },
