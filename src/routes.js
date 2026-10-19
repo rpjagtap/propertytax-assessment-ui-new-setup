@@ -65,6 +65,7 @@ import PropertyTransactionApplicationViewGP from "./components/property-transact
 import GenerateSR2 from "./components/generate-sr-2";
 import JahirNoticeDashboard from "./components/property-transfer-jahir-notice-dashboard";
 import CitizenSRDoc from "./components/citizen-sr-doc";
+import PropertyTransactionApplicationObjection from "./components/property-transaction-application-objection";
 
 const routes = [
   {
@@ -325,6 +326,10 @@ const routes = [
     path: "CitizenSRDoc",
     component: CitizenSRDoc,
   },
+  {
+    path: "propertyTransactionApplicationObjection",
+    component: PropertyTransactionApplicationObjection,
+  }
   // Add other routes here
 ];
 

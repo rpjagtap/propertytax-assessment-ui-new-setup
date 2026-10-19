@@ -200,11 +200,18 @@ const PropertyTransactionDashboardZo = () => {
     }
   };
 
-  const handleCountClick = (applicationId, propertyCode, transactionTypeId) => {
+  const handleCountClick = (applicationId, propertyCode, transactionTypeId, appStatus) => {
     const queryParams =
       `applicationNo=${encodeURIComponent(applicationId)}` +
       `&transactionTypeId=${encodeURIComponent(transactionTypeId)}` +
-      `&propertyCode=${encodeURIComponent(propertyCode)}`;
+      `&propertyCode=${encodeURIComponent(propertyCode)}` +
+      `&appStatus=${encodeURIComponent(appStatus)}`;
+
+    // Check appStatus first
+    if (appStatus === "Citizen Objection") {
+      navigate(`/propertyTransactionApplicationObjection?${queryParams}`);
+      return;
+    }
 
     const route = ROUTE_BY_TRANSACTION_TYPE[String(transactionTypeId)];
     if (route) navigate(`${route}?${queryParams}`);
@@ -462,7 +469,8 @@ const PropertyTransactionDashboardZo = () => {
                                   handleCountClick(
                                     item.applicationId,
                                     item.propertyCode,
-                                    item.transactionTypeKey
+                                    item.transactionTypeKey,
+                                    item.formStatus
                                   )
                                 }
                                 sx={{ fontWeight: 600, color: "#0F6E56" }}

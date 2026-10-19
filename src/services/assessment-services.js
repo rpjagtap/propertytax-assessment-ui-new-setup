@@ -867,5 +867,25 @@ export const ViewCitizenSRDoc = async ( documentId,documentName, documentURLbase
   return response.data;
 };
 
+export const citizenSRDocConsentApplications = async (body) => {
+  const response = await apiClient.post(
+    `/property-transactions/submit-citizen-application`,
+    body,
+  );
+  return response.data;
+};
 
+export const getObjectionHearingDetails = async (propertyTransactionId) => {
+  const response = await apiClient.get(
+    `/property-transactions/get-hearing-details?propertyTransactionId=${propertyTransactionId}`,
+  );
+  return response.data;
+};
 
+export const updateObjectionHearingDetails = async (body) => {
+  const response = await apiClient.post(
+    `property-transactions/update-hearing-details`,
+    body,
+  );
+  return response.data;
+};

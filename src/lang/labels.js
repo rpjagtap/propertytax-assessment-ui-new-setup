@@ -1828,67 +1828,67 @@ export const labels = {
     en: "Choose a document type and attach the file (PDF, JPG or PNG)",
     mr: "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा",
   },
-  SthapatyaVadhivPropertyDashboard:{
+  SthapatyaVadhivPropertyDashboard: {
     en: "Sthapatya Vadhiv Property Dashboard",
     ma: "स्थापत्य वाढीव प्रॉपर्टी डॅशबोर्ड",
   },
-    SthapatyaVadhivPropertySR1Dashboard:{
+  SthapatyaVadhivPropertySR1Dashboard: {
     en: "Sthapatya Vadhiv Property SR1 Dashboard",
     ma: "स्थापत्य वाढीव प्रॉपर्टी SR1 डॅशबोर्ड",
   },
-  ClickShowRecord: {   
-  en: "Select Zone and Gat, then click Show Record",
-  mr: "झोन आणि गट निवडा, नंतर रेकॉर्ड दाखवा वर क्लिक करा",
+  ClickShowRecord: {
+    en: "Select Zone and Gat, then click Show Record",
+    mr: "झोन आणि गट निवडा, नंतर रेकॉर्ड दाखवा वर क्लिक करा",
   },
-  Search:{
+  Search: {
     en: "Search",
-    ma: "शोधा",   
+    ma: "शोधा",
   },
-  PropertyType:{
+  PropertyType: {
     en: "Property Type",
-    ma: "मालमत्ता प्रकार",   
+    ma: "मालमत्ता प्रकार",
   },
   PropertyOrMobileNo: {
     en: "Property / Mobile No.",
     ma: "मालमत्ता क्र. / मोबाईल क्र.",
   },
-  ExistingOwnerOccupantInfo:{
+  ExistingOwnerOccupantInfo: {
     en: "Existing Owner, Occupant and Property Details",
     ma: "मालक, भोगवटधारक आणि मालमत्तेचा सध्याचा तपशील",
   },
-  CorrectedOwnerOccupantNames:{
+  CorrectedOwnerOccupantNames: {
     en: "Corrected Owner and Occupant Names",
-    ma: "मालक व भोगवटधारक यांची दुरुस्त केलेली नावे",   
+    ma: "मालक व भोगवटधारक यांची दुरुस्त केलेली नावे",
   },
-  RemarkRequiredToAcceptOrReject:{
+  RemarkRequiredToAcceptOrReject: {
     en: "Remark is required to accept or reject the application",
     ma: "अर्ज स्वीकारण्यासाठी किंवा नाकारण्यासाठी शेरा आवश्यक आहे.",
   },
-  ApplicationDetails:{
+  ApplicationDetails: {
     en: "Application Details",
     ma: "अर्जाचे तपशील",
   },
-  PropertyAndApplicationInfo:{
+  PropertyAndApplicationInfo: {
     en: "Property and application information",
     ma: "मालमत्ता आणि अर्जाची माहिती",
   },
-  OldAndNewOwnerAddress:{
+  OldAndNewOwnerAddress: {
     en: "Old and New Owner Address",
     ma: "जुना आणि नवीन मालकाचा पत्ता",
   },
-  OldAndNewOccupantAddress:{
+  OldAndNewOccupantAddress: {
     en: "Old and New Occupant Address",
     ma: "जुना आणि नवीन भोगवटधारकाचा पत्ता",
   },
-  OldAndNewPropertyAddress:{
+  OldAndNewPropertyAddress: {
     en: "Old and New Property Address",
     ma: "जुना आणि नवीन मालमत्तेचा पत्ता",
   },
-  DocumentsSubmittedWithApplication:{
+  DocumentsSubmittedWithApplication: {
     en: "Documents submitted with the application",
     ma: "अर्जासह सादर केलेली कागदपत्रे",
   },
-  CurrentContactAndRequestedChanges:{
+  CurrentContactAndRequestedChanges: {
     en: "Current contact details and requested changes",
     ma: "सध्याचे संपर्क तपशील आणि विनंती केलेले बदल",
   },
@@ -1923,86 +1923,86 @@ export const labels = {
     en: "Owner Info",
     ma: "मालकाचा तपशील",
   },
-  OccupantInfo  : {
+  OccupantInfo: {
     en: "Occupant Info",
     ma: "भोगवटधारकाचा तपशील",
   },
-  TransactionAndLocation:{
+  TransactionAndLocation: {
     en: "Transaction & Location",
     ma: "व्यवहार आणि स्थान",
   },
-  Registrationdetails:{
+  Registrationdetails: {
     en: "Registration Details",
     ma: "नोंदणी तपशील",
   },
-  WaterAndDrainage:{
+  WaterAndDrainage: {
     en: "Water & Drainage",
     ma: "पाणी आणि सांडपाणी",
   },
-  PropertyTransactions:{
+  PropertyTransactions: {
     en: "Property Transactions",
     ma: "मालमत्ता व्यवहार",
   },
-  next:{
-    en:"next",
-    ma:"पुढील",
+  next: {
+    en: "next",
+    ma: "पुढील",
   },
-  Submit:{
-    en:"Submit",
-    ma:"संचय करा",
+  Submit: {
+    en: "Submit",
+    ma: "संचय करा",
   },
-  Previous:{
-    en:"Previous",
-    ma:"मागील",
+  Previous: {
+    en: "Previous",
+    ma: "मागील",
   },
-  Step:{
-    en:"Step",
-    ma:"पायरी",
+  Step: {
+    en: "Step",
+    ma: "पायरी",
   },
   Contact: {
     en: "Contact",
     ma: "संपर्क",
   },
-  Identity:{
-    en:"Identity",
-    ma:"ओळख",
+  Identity: {
+    en: "Identity",
+    ma: "ओळख",
   },
-  Unitdetails:{
-    en:"Unit Details",
-    ma:"युनिट तपशील",
+  Unitdetails: {
+    en: "Unit Details",
+    ma: "युनिट तपशील",
   },
   BuildingAndsociety:
   {
-    en:"Building & society",
-    ma:"इमारत आणि सोसायटी"
+    en: "Building & society",
+    ma: "इमारत आणि सोसायटी"
   },
-  Locality:{
-    en:"Locality",
-    ma:"परिसर"
+  Locality: {
+    en: "Locality",
+    ma: "परिसर"
   },
-  FullAddress:{
-    en:"Full Address",
-    ma:"पूर्ण पत्ता",
+  FullAddress: {
+    en: "Full Address",
+    ma: "पूर्ण पत्ता",
   },
-  PropertyAddressDetails:{
-    en:"Property Address Details",
-    ma:"मालमत्तेचा पत्ता तपशील"
+  PropertyAddressDetails: {
+    en: "Property Address Details",
+    ma: "मालमत्तेचा पत्ता तपशील"
   },
-  BillRate:{
-    en:"Bill Rate",
-    ma:"बिल दर"
+  BillRate: {
+    en: "Bill Rate",
+    ma: "बिल दर"
   },
-  ConstructionStatus:{
-    en:"Construction Status",
-    ma:"बांधकाम स्थिती"
+  ConstructionStatus: {
+    en: "Construction Status",
+    ma: "बांधकाम स्थिती"
   },
-  AddMore:{
-    en:"Add More",
-    ma:"अधिक जोडा"
+  AddMore: {
+    en: "Add More",
+    ma: "अधिक जोडा"
   },
-  Remove:{
-    en:"Remove",
-    ma:"काढा"
+  Remove: {
+    en: "Remove",
+    ma: "काढा"
   },
   PropertyAssessmentDashboard: {
     en: "Property Assessment Dashboard",
@@ -2036,13 +2036,13 @@ export const labels = {
     en: "Search",
     ma: "शोधा",
   },
-  TrackPropertyTransactionApplication : {
+  TrackPropertyTransactionApplication: {
     en: "Track Property Transaction Application",
-    ma: "मालमत्ता व्यवहार अर्ज ट्रॅक करा", 
+    ma: "मालमत्ता व्यवहार अर्ज ट्रॅक करा",
   },
   BrowseOnlineTransactionExcel: {
     en: "Browse Online Transaction Excel",
-    ma: "ऑनलाइन व्यवहार एक्सेल ब्राउझ करा",   
+    ma: "ऑनलाइन व्यवहार एक्सेल ब्राउझ करा",
   },
   UploadanExcel: {
     en: "Upload an Excel file (.xls or .xlsx) to preview and reconcile online transactions.",
@@ -2080,4 +2080,48 @@ export const labels = {
     en: "Online Transaction Report",
     ma: "ऑनलाइन व्यवहार अहवाल",
   },
+  View: {
+    en: "View",
+    ma: "पहा",
+  },
+  Hearings: {
+    ma: "सुनावणी",
+    en: "Hearing's",
+  },
+  HearingDate: {
+    ma: "सुनावणी दिनांक",
+    en: "Hearing Date",
+  },
+  HearingTime: {
+    ma: "सुनावणी वेळ",
+    en: "Hearing Time",
+  },
+  HearingStatus: {
+    ma: "सुनावणी स्थिती",
+    en: "Hearing Status",
+  },
+  InviteRemark: {
+    ma: "सुनावणीसाठी शेरा",
+    en: "Invite Remark",
+  },
+  HearingRemark: {
+    ma: "सुनावणी शेरा",
+    en: "Hearing Remark",
+  },
+  HearingAction: {
+    ma: "सुनावणी क्रिया",
+    en: "Hearing Action",
+  },
+  Delete: {
+    ma: "काढा",
+    en: "Delete",
+  },
+  ScheduleOrReschedule: {
+    ma: "अनुसूची ठेवा किंवा पुन्हा अनुसूची ठेवा",
+    en: "Schedule or Reschedule",
+  },
+  SaveHearing: {
+    ma: "सुनावणी जतन करा",
+    en: "Save Hearing",
+  }
 };

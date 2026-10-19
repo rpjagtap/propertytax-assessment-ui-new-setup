@@ -24,7 +24,7 @@ import DashboardHeader from "../layout/dashboard-header";
 import { useSearchParams } from "react-router-dom";
 import {
   citizenSRDoc,
-  citizenConsentApplication,
+  citizenSRDocConsentApplications,
   objList,
   ViewProTransactionDoc,
 } from "../../services/assessment-services";
@@ -156,7 +156,7 @@ const CitizenSRDoc = () => {
         ],
       };
       //console.log("Request Data:", requestData);
-      await citizenConsentApplication(requestData);
+      await citizenSRDocConsentApplications(requestData);
 
       if (action === "Accept") {
         setUserResponse("accepted");
