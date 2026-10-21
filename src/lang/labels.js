@@ -2086,7 +2086,7 @@ export const labels = {
   },
   Hearings: {
     ma: "सुनावणी",
-    en: "Hearing's",
+    en: "Hearings",
   },
   HearingDate: {
     ma: "सुनावणी दिनांक",

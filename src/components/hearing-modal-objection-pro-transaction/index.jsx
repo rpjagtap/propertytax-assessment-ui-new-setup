@@ -275,7 +275,7 @@ const HearingSectionObjection = ({
                         border: "1px solid grey",
                       }}
                     >
-                        {labels.NoRecordsFound[lang]}
+                        {labels.NoRecordFound[lang]}
                     </TableCell>
                   </TableRow>
                 )}
