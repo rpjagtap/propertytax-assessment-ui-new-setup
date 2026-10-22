@@ -336,7 +336,7 @@ const PropertyTransactionApplicationViewGP = () => {
 
   // Determine whether Accept/Reject should be enabled
   const isActionDisabled =
-    !formik.values.remarkType?.trim() ||
+    //!formik.values.remarkType?.trim() ||
     !formik.values.remarks?.trim() ||
     (formik.values.remarkType === "citizen_objection" &&
       !formik.values.hearingDate);
@@ -730,7 +730,7 @@ const PropertyTransactionApplicationViewGP = () => {
         >
           <Grid container spacing={2}>
             {/* Remark type dropdown */}
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
               <FormControl fullWidth required>
                 <InputLabel id="remarkType-label">
                   {labels.Remark[lang]}
@@ -751,7 +751,7 @@ const PropertyTransactionApplicationViewGP = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
+            </Grid> */}
 
             {/* Remark text */}
             <Grid item xs={12}>

@@ -66,6 +66,7 @@ import GenerateSR2 from "./components/generate-sr-2";
 import JahirNoticeDashboard from "./components/property-transfer-jahir-notice-dashboard";
 import CitizenSRDoc from "./components/citizen-sr-doc";
 import PropertyTransactionApplicationObjection from "./components/property-transaction-application-objection";
+import HearingLetterPage from "./components/hearing-letter-pdf";
 
 const routes = [
   {
@@ -329,6 +330,10 @@ const routes = [
   {
     path: "propertyTransactionApplicationObjection",
     component: PropertyTransactionApplicationObjection,
+  },
+  {
+    path: "hearing-letter",
+    component: HearingLetterPage,
   }
   // Add other routes here
 ];

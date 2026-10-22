@@ -889,3 +889,11 @@ export const updateObjectionHearingDetails = async (body) => {
   );
   return response.data;
 };
+
+export const saveHearing = async (body) => {
+  const response = await apiClient.post(
+    `/property-transactions/save-hearing`,
+    body,
+  );
+  return response.data;
+};
