@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import axios from "axios";
-import { useLocation, useNavigate } from "react-router-dom";
-// import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Grid,
   Paper,
@@ -10,28 +8,26 @@ import {
   TextField,
   Box,
   Autocomplete,
+  Select,
+  MenuItem,
+  Snackbar,
 } from "@mui/material";
 import { labels } from "../../lang/labels";
 import { GridRow, FormValue } from "../common/custom-form-grid";
 import { useFormik, FormikProvider, Form } from "formik";
-import TextInput from "../form-fields/text-input";
 import DashBoardContainer from "../layout/dashboard-container";
 import LanguageSelector from "../form-fields/language-selector";
 import Loader from "../loader/loader";
 import useApiState from "../common/useApiState";
 import { useSelector } from "react-redux";
-import { Select, MenuItem } from "@mui/material";
-import { useSearchParams } from "react-router-dom";
-// import SelectInput from "../form-fields/select-input";
-
-
-import { getAssessmentDocuments, getPropertyDetailsForTransfer } from "../../services/assessment-services";
 
 import {
+  getAssessmentDocuments,
+  getPropertyDetailsForTransfer,
   submitCitizenPropertyUpdateApplication,
-  getAllProTransactions
+  getAllProTransactions,
 } from "../../services/assessment-services";
-import { showToastError, showToastSuccess } from "../common/toastHelper";
+import { showToastError } from "../common/toastHelper";
 import { getApiErrorMessage, getErrorMsg } from "../../utils/helpers";
 import FormButtons from "../common/buttons";
 import { toast } from "react-toastify";
@@ -69,7 +65,6 @@ const FormTitle = ({ title }) => {
       justifyContent="flex-start"
       alignContent={"space-around"}
       style={{ background: "#e4f0f4", height: "40px", width: "100%" }}
-      // mt="15px"
       paddingLeft="13%"
       fontSize="larger"
       fontWeight={800}
@@ -78,6 +73,119 @@ const FormTitle = ({ title }) => {
     </Grid>
   );
 };
+
+// Glossy alert (written inside this file)
+const GlossyAlert = ({ open, severity = "error", message, onClose }) => {
+  const [from, to, symbol, title] = {
+    error: ["#ff6b6b", "#c62828", "✕", "Validation Error"],
+    warning: ["#ffb74d", "#ef6c00", "!", "Attention"],
+    success: ["#4cd98a", "#1b8a4b", "✓", "Success"],
+  }[severity] || ["#ff6b6b", "#c62828", "✕", "Validation Error"];
+
+  return (
+    <Snackbar
+      open={open}
+      autoHideDuration={4500}
+      onClose={(e, reason) => reason !== "clickaway" && onClose()}
+      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+    >
+      <Box
+        sx={{
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          minWidth: 320,
+          maxWidth: 480,
+          px: 2.5,
+          py: 1.5,
+          borderRadius: 3,
+          color: "#fff",
+          background: `linear-gradient(135deg, ${from}, ${to})`,
+          border: "1px solid rgba(255,255,255,0.35)",
+          boxShadow:
+            "0 12px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5)",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "50%",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0))",
+            pointerEvents: "none",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 800,
+            fontSize: 18,
+            background: "rgba(255,255,255,0.25)",
+            boxShadow: "inset 0 1px 2px rgba(255,255,255,0.6)",
+            flexShrink: 0,
+            zIndex: 1,
+          }}
+        >
+          {symbol}
+        </Box>
+        <Box sx={{ flex: 1, zIndex: 1 }}>
+          <Box sx={{ fontWeight: 700, fontSize: 14 }}>{title}</Box>
+          <Box sx={{ fontSize: 13, opacity: 0.95 }}>{message}</Box>
+        </Box>
+        <Box
+          onClick={onClose}
+          sx={{ cursor: "pointer", fontSize: 18, zIndex: 1, px: 0.5 }}
+        >
+          ×
+        </Box>
+      </Box>
+    </Snackbar>
+  );
+};
+
+// "", only spaces, "-" or a single "." are not real text
+const isJunk = (v) => {
+  const t = (v ?? "").toString().trim();
+  return t === "" || t === "-" || t === ".";
+};
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Safe UUID generator for browsers and Node
+function generateUUID() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const buf = new Uint8Array(16);
+    crypto.getRandomValues(buf);
+
+    // Per RFC 4122 section 4.4
+    buf[6] = (buf[6] & 0x0f) | 0x40;
+    buf[8] = (buf[8] & 0x3f) | 0x80;
+
+    return [...buf]
+      .map((b, i) =>
+        [4, 6, 8, 10].includes(i)
+          ? "-" + b.toString(16).padStart(2, "0")
+          : b.toString(16).padStart(2, "0")
+      )
+      .join("");
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 const CitizenApplication = () => {
   const navigate = useNavigate();
@@ -99,45 +207,84 @@ const CitizenApplication = () => {
     ownerName: "",
     newOwnerName: "",
     propertyDetailsROLst: [],
-
   };
-
 
   const [allTrsactions, setAllTrsactions] = useState([]);
   const [searchParams] = useSearchParams();
   const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
   const { loading, setLoading, error, setError, success, setSuccess } =
     useApiState();
-  // const [isCopyAddressChecked, setIsCopyAddressChecked] = useState(false);
 
+  // ---------- Alert state (uses shared AlertMsg) ----------
+  const [alertState, setAlertState] = useState({
+    open: false,
+    severity: "error",
+    message: "",
+  });
+  const showAlert = (message, severity = "error") =>
+    setAlertState({ open: true, severity, message });
+  const closeAlert = () => setAlertState((p) => ({ ...p, open: false }));
 
-  // Safe UUID generator for browsers and Node
-  function generateUUID() {
-    if (typeof crypto !== "undefined" && crypto.randomUUID) {
-      return crypto.randomUUID(); // Native browser / Node support
+  const lang = useSelector((state) => state.userDetails.lang);
+  const formik = useFormik({
+    initialValues: initialState,
+  });
+  const [properyDetails, setProperyDetails] = useState({});
+
+  const updateDetail = (key, value) =>
+    setProperyDetails((prev) => ({ ...prev, [key]: value }));
+
+  const [PropertyNumberoptions, setPropertyNumberOptions] = useState([""]);
+  const [PropertyHolderNameoptions, setPropertyHolderNameOptions] = useState([""]);
+  const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
+  const [propertyAddress, setPropertyAddress] = useState("");
+  const [mobile, setMobile] = useState("");
+
+  // for row logic
+  const initialRow = {
+    documentType: "",
+    documentURL: "",
+  };
+  const [rows, setRows] = useState([initialRow]);
+
+  // ---------- Validation ----------
+  const validateForm = () => {
+    const v = formik.values;
+    const code = (properyDetails.propertyCode || "").toString().trim();
+    const mobileVal = (properyDetails.propertyMobileNo || "").toString().trim();
+
+    if (isJunk(code) || code.length < 13)
+      return "Please enter a valid Property Number.";
+    if (isJunk(properyDetails.propertyName))
+      return "Property Holder Name is required.";
+    if (isJunk(properyDetails.propertyAddress))
+      return "Property Address is required.";
+    if (!/^\d{10}$/.test(mobileVal))
+      return "Mobile number must be exactly 10 digits (numbers only).";
+    if (!v.transactionType) return "Please select a Type.";
+    if (v.email && !emailRegex.test(v.email.trim()))
+      return "Please enter a valid email address (must contain @).";
+
+    const hasAnyDoc = rows.some((r) => r.documentId || r.documentURLbase64);
+    if (!hasAnyDoc) return "Please upload at least one document.";
+
+    for (let i = 0; i < rows.length; i++) {
+      if (!rows[i].documentId)
+        return `Please select Document Type in row ${i + 1}.`;
+      if (!rows[i].documentURLbase64)
+        return `Please upload file (PDF) in row ${i + 1}.`;
     }
-    if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-      // Fallback for browsers without randomUUID
-      const buf = new Uint8Array(16);
-      crypto.getRandomValues(buf);
+    return null;
+  };
 
-      // Per RFC 4122 section 4.4
-      buf[6] = (buf[6] & 0x0f) | 0x40;
-      buf[8] = (buf[8] & 0x3f) | 0x80;
-
-      return [...buf].map((b, i) =>
-        [4, 6, 8, 10].includes(i) ? "-" + b.toString(16).padStart(2, "0") : b.toString(16).padStart(2, "0")
-      ).join("");
-    }
-    // Last resort: Math.random-based (less secure)
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-      const r = Math.random() * 16 | 0;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  }
   const handleSubmitButtonClick = async (e) => {
     e.preventDefault();
+
+    const errorMsg = validateForm();
+    if (errorMsg) {
+      showAlert(errorMsg, "error");
+      return;
+    }
 
     formik.setFieldValue("propertyTransferDetails", rows);
     try {
@@ -156,45 +303,32 @@ const CitizenApplication = () => {
             applicantEmail: values.email,
             propertyCode: values.propertyCode,
 
-            documentVOs: rows.map((row) => {
-              const selected = documentTypeOptions.find(
-                (opt) => opt.label === row.documentType
-              );
-
-              return {
-                documentId: row.documentId,
-                documentURLbase64: row.documentURLbase64,
-              };
-            }),
-          }]
-
-
+            documentVOs: rows.map((row) => ({
+              documentId: row.documentId,
+              documentURLbase64: row.documentURLbase64,
+            })),
+          },
+        ],
       };
 
       setLoading(true);
 
-
-      // try {
-      setLoading(true);
-
       const response = await submitCitizenPropertyUpdateApplication(body);
 
-
       if (response?.applicationNo) {
-        showToastSuccess(`Thank you for your application. Your application number is ${response.applicationNo}. You will be redirected in 10 seconds...`);
+        showAlert(
+          `Thank you for your application. Your application number is ${response.applicationNo}. You will be redirected in 10 seconds...`,
+          "success"
+        );
         setTimeout(() => {
           navigate("/CitizenApplication");
         }, 10000);
 
         formik.resetForm();
-
-        // Optional: also clear your rows array if used
-        setRows([]);
+        setRows([initialRow]);
       } else {
-        showToastError("Error occurred. Please try again.");
+        showAlert("Error occurred. Please try again.", "error");
       }
-
-
     } catch (error) {
       showToastError(getApiErrorMessage(error));
     } finally {
@@ -206,22 +340,6 @@ const CitizenApplication = () => {
     window.location.reload();
   };
 
-  const lang = useSelector((state) => state.userDetails.lang);
-  const formik = useFormik({
-    initialValues: initialState,
-  });
-  const { setValues } = formik;
-  const [properyDetails, setProperyDetails] = useState({});
-
-  const [PropertyNumberoptions, setPropertyNumberOptions] = useState([""]);
-  const [PropertyHolderNameoptions, setPropertyHolderNameOptions] = useState(["",]);
-
-  const [documentTypeOptions, setDocumentTypeOptions] = useState([]);
-
-  const [propertyAddress, setPropertyAddress] = useState("");
-  const [mobile, setMobile] = useState("");
-
-
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const propertyCodeFromURL = queryParams.get("propertyCode");
@@ -232,9 +350,10 @@ const CitizenApplication = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [allProTransactionsRes] = await Promise.all([getAllProTransactions()]);
+        const [allProTransactionsRes] = await Promise.all([
+          getAllProTransactions(),
+        ]);
         setAllTrsactions(allProTransactionsRes);
-
       } catch (error) {
         showToastError(getErrorMsg(error));
       } finally {
@@ -245,27 +364,25 @@ const CitizenApplication = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  const transactionsOptions = useMemo(() =>
-    allTrsactions.map(item => ({
-      value: item.id,
-      label: item.marTransactionTypeName,
-    })), [allTrsactions]
+  const transactionsOptions = useMemo(
+    () =>
+      allTrsactions.map((item) => ({
+        value: item.id,
+        label: item.marTransactionTypeName,
+      })),
+    [allTrsactions]
   );
-
 
   useEffect(() => {
     const fetchTypes = async () => {
       const res = await getAssessmentDocuments();
-      setDocumentTypeOptions(res); // must be [{label: "..."}]
+      setDocumentTypeOptions(res);
     };
     fetchTypes();
   }, []);
 
-  //////new code for property details api call on property number change
+  // property details api call on property number change
   useEffect(() => {
-    const propertyCodeFromURL = PropertyNumberoptions[0];   // 🔥 Get propertyCode from dropdown or URL
-
     const apiGetPropertyDetails = async (propertyCode) => {
       if (!propertyCode || propertyCode.trim() === "" || propertyCode.length < 13)
         return;
@@ -276,8 +393,6 @@ const CitizenApplication = () => {
         });
 
         setProperyDetails(details);
-
-        const roList = details.propertyDetailsROLst || [];
 
         const updatedValues = {
           ...formik.values,
@@ -308,91 +423,39 @@ const CitizenApplication = () => {
       }
     };
 
-    //  VERY IMPORTANT — CALL THE FUNCTION HERE
     if (PropertyNumberoptions[0]) {
       apiGetPropertyDetails(PropertyNumberoptions[0]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [PropertyNumberoptions]);
 
-  const propertyErrorToastId = "propertyErrorToast";
-  const mobileErrorToastId = "mobileErrorToastId";
-  const emailErrorToastId = "emailErrorToastId";
-
-
-  const handleFieldChange = async (event) => {
+  const handleFieldChange = (event) => {
     const { name, value } = event.target;
 
-    const handleFieldChange = (e) => {
-      const { name, value } = e.target;
-
-      // Email validation
-      if (name === "email") {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        // If invalid
-        if (value.trim() !== "" && !emailRegex.test(value)) {
-          if (!toast.isActive(emailErrorToastId)) {
-            toast.error("Please enter a valid email address.", {
-              toastId: emailErrorToastId,
-              autoClose: false,
-            });
-          }
-
-          return;
-        }
-
-        // If valid → remove toast
-        toast.dismiss(emailErrorToastId);
-      }
-
-      // ✅ If valid → update formik
-      formik.setFieldValue(name, value);
-
-      // ✅ Trigger formik validation
-      formik.validateField(name);
-    };
-
-
-
-
-    if (name === "propertyNumber") {
-      try {
-        if (value.length > 13) {
-          const res = await getPropertyDetailsForTransfer({
-            propertyCode: value,
-          });
-        }
-      } catch (error) {
-        toast.error(
-          error?.response?.data?.message || //
-          error?.message ||
-          "Something went wrong checking property number.",
-          {
-            toastId: "propertyNumberError",
-            autoClose: 5000,
-          }
-        );
-      }
+    // mobile: digits only, max 10
+    if (name === "propertyOwnerMobileNumber") {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      updateDetail("propertyMobileNo", digits);
+      formik.setFieldValue(name, digits);
+      return;
     }
+    if (name === "propertyCode") updateDetail("propertyCode", value);
+    if (name === "propertyHolderName") updateDetail("propertyName", value);
+    if (name === "propertyAddress") updateDetail("propertyAddress", value);
 
     formik.setFieldValue(name, value);
   };
 
-  const handleBlur = async (e) => {
+  const handleBlur = (e) => {
     const { name, value } = e.target;
+    if (name === "email" && value.trim() !== "" && !emailRegex.test(value.trim())) {
+      showAlert("Please enter a valid email address (must contain @).", "warning");
+    }
+    formik.handleBlur(e);
   };
 
-  // for row logic
-  const initialRow = {
-    documentType: "",
-    documentURL: "",
-
-  };
-
-  const [rows, setRows] = useState([initialRow]);
   useEffect(() => {
     if (formik.values.transferType === "propertyTransfer") {
-      // Clear all added buyer rows and keep only one blank
       setRows([
         {
           newOwnerName: "",
@@ -407,27 +470,19 @@ const CitizenApplication = () => {
   }, [formik.values.transferType]);
 
   const handleAddRow = () => {
-    setRows([...rows, { ...initialRow }]);
+    setRows((prev) => [...prev, { ...initialRow }]);
   };
 
   const handleDeleteRow = (index) => {
     if (rows.length > 1) {
-      const updated = [...rows];
-      updated.splice(index, 1);
-      setRows(updated);
+      setRows((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
-
-  const handleChange = (index, field, value) => {
-    const updated = [...rows];
-    updated[index][field] = value;
-    setRows(updated);
-  };
-
-
-
-  // for row logic
+  const handleChange = (index, field, value) =>
+    setRows((prev) =>
+      prev.map((r, i) => (i === index ? { ...r, [field]: value } : r))
+    );
 
   return (
     <DashBoardContainer>
@@ -438,6 +493,12 @@ const CitizenApplication = () => {
         <Form>
           {success && <Alert severity="success">{success}</Alert>}
           {loading && <Loader />}
+          <GlossyAlert
+            open={alertState.open}
+            severity={alertState.severity}
+            message={alertState.message}
+            onClose={closeAlert}
+          />
           <Paper
             elevation={4}
             sx={{
@@ -445,24 +506,18 @@ const CitizenApplication = () => {
               width: "100%",
               margin: "auto",
               pb: "10px",
-              // pt: "15px",
             }}
           >
-            {/* <FormTitle title={labels.ApplicantDetails[lang]} /> */}
             <Grid>
               <GridRow
                 sx={{
-                  gap: 10, // space between two boxes
-                  p: 2, // padding around the entire row
+                  gap: 10,
+                  p: 2,
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
                 }}
-              >
-
-              </GridRow>
-
-
+              ></GridRow>
 
               <FormTitle title={labels.PropertyDetails[lang]} />
               <GridRow
@@ -473,16 +528,8 @@ const CitizenApplication = () => {
                   alignItems: "center",
                 }}
               >
-
-                <GridRow
-                  sx={{
-                    display: "flex",
-                    gap: 4,          // space between two fields
-                    p: 2,
-                  }}
-                >
-
-                  {/*  LEFT FIELD */}
+                <GridRow sx={{ display: "flex", gap: 4, p: 2 }}>
+                  {/* LEFT FIELD */}
                   <FormValue
                     sx={{ width: "50%" }}
                     component={
@@ -492,12 +539,10 @@ const CitizenApplication = () => {
                           required
                           sx={{ mb: 1, display: "block" }}
                         />
-
                         <TextField
                           fullWidth
                           variant="standard"
-                          // label="Property Code"
-                          value={properyDetails.propertyCode || ""} // value from API
+                          value={properyDetails.propertyCode || ""}
                           onChange={(e) => {
                             handleFieldChange({
                               target: { name: "propertyCode", value: e.target.value },
@@ -506,12 +551,11 @@ const CitizenApplication = () => {
                           placeholder="Enter Property Code"
                           InputProps={{ sx: { p: 0 } }}
                         />
-
                       </Box>
                     }
                   />
 
-                  {/*  RIGHT FIELD */}
+                  {/* RIGHT FIELD */}
                   <FormValue
                     sx={{ width: "50%" }}
                     component={
@@ -521,14 +565,11 @@ const CitizenApplication = () => {
                           required
                           sx={{ mb: 1, display: "block" }}
                         />
-
                         <TextField
                           fullWidth
                           variant="standard"
-                          // label="Property Holder Name"
-                          value={properyDetails.propertyName || ""} // property name from API
+                          value={properyDetails.propertyName || ""}
                           onChange={(e) => {
-                            // If you want to allow editing, update formik too
                             handleFieldChange({
                               target: { name: "propertyHolderName", value: e.target.value },
                             });
@@ -536,22 +577,13 @@ const CitizenApplication = () => {
                           InputProps={{ sx: { p: 0 } }}
                           placeholder="Enter Property Holder Name"
                         />
-
                       </Box>
                     }
                   />
-
                 </GridRow>
 
-                <GridRow
-                  sx={{
-                    display: "flex",
-                    gap: 4,          // space between two fields
-                    p: 2,
-                  }}
-                >
-
-                  {/*  LEFT FIELD */}
+                <GridRow sx={{ display: "flex", gap: 4, p: 2 }}>
+                  {/* LEFT FIELD */}
                   <FormValue
                     sx={{ width: "50%" }}
                     component={
@@ -561,14 +593,11 @@ const CitizenApplication = () => {
                           required
                           sx={{ mb: 1, display: "block" }}
                         />
-
                         <TextField
                           fullWidth
                           variant="standard"
-                          // label="Property Address"
-                          value={properyDetails.propertyAddress || ""} // property Address from API
+                          value={properyDetails.propertyAddress || ""}
                           onChange={(e) => {
-                            // If you want to allow editing, update formik too
                             handleFieldChange({
                               target: { name: "propertyAddress", value: e.target.value },
                             });
@@ -576,12 +605,11 @@ const CitizenApplication = () => {
                           InputProps={{ sx: { p: 0 } }}
                           placeholder="Enter Property Address"
                         />
-
                       </Box>
                     }
                   />
 
-                  {/*  RIGHT FIELD */}
+                  {/* RIGHT FIELD */}
                   <FormValue
                     sx={{ width: "50%" }}
                     component={
@@ -591,17 +619,19 @@ const CitizenApplication = () => {
                           required
                           sx={{ mb: 1, display: "block" }}
                         />
-
                         <TextField
                           fullWidth
                           variant="standard"
-                          // label="Property Owner Mobile No"
-                          value={properyDetails.propertyMobileNo || ""} // correct key
+                          value={properyDetails.propertyMobileNo || ""}
                           onChange={(e) => {
                             handleFieldChange({
-                              target: { name: "propertyOwnerMobileNumber", value: e.target.value },
+                              target: {
+                                name: "propertyOwnerMobileNumber",
+                                value: e.target.value,
+                              },
                             });
                           }}
+                          inputProps={{ inputMode: "numeric", maxLength: 10 }}
                           InputProps={{ sx: { p: 0 } }}
                           placeholder="Enter Property Owner Mobile Number"
                         />
@@ -618,7 +648,6 @@ const CitizenApplication = () => {
                           required
                           sx={{ mb: 1, display: "block" }}
                         />
-
                         <Select
                           fullWidth
                           variant="standard"
@@ -634,7 +663,6 @@ const CitizenApplication = () => {
                           <MenuItem value="" disabled>
                             Select Type
                           </MenuItem>
-
                           {transactionsOptions.map((item) => (
                             <MenuItem key={item.value} value={item.value}>
                               {item.label}
@@ -653,22 +681,19 @@ const CitizenApplication = () => {
                           label={labels.Email[lang]}
                           sx={{ mb: 1, display: "block" }}
                         />
-
                         <TextField
                           fullWidth
                           variant="standard"
                           name="email"
                           value={formik.values.email || ""}
                           onChange={handleFieldChange}
-                          onBlur={formik.handleBlur}   // <-- IMPORTANT
+                          onBlur={handleBlur}
                           InputProps={{ sx: { p: 0 } }}
                           placeholder="Enter Email"
                         />
-
                       </Box>
                     }
                   />
-
                 </GridRow>
               </GridRow>
 
@@ -676,19 +701,16 @@ const CitizenApplication = () => {
                 title={
                   <Box
                     display="flex"
-                    justifyContent="flex-start" //  align everything to the left
+                    justifyContent="flex-start"
                     alignItems="center"
                     width="100%"
-                    gap={4} // spacing between label and radios
-                  // pl="10px" //  shift whole group 20px from the left
+                    gap={4}
                   >
-                    {/* Left side: title */}
                     <span>{labels.DocumentDetails[lang]}</span>
                   </Box>
                 }
               />
 
-              {/* <FormTitle title={labels.BuyerDetail[lang]} /> */}
               <Box sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
                 {rows.map((row, index) => (
                   <Box
@@ -701,7 +723,6 @@ const CitizenApplication = () => {
                     }}
                   >
                     {[
-
                       {
                         name: "documentType",
                         label: labels.DocumentType[lang],
@@ -709,12 +730,9 @@ const CitizenApplication = () => {
                       },
                       {
                         name: "documentURL",
-                        // label: labels.UploadDocument(index2)[lang],
                         label: labels.UploadDocument[lang],
-
                         value: row.documentURL,
                       },
-
                     ].map((field) => (
                       <Box key={field.name} sx={{ flex: 1, minWidth: 150 }}>
                         {index === 0 && (
@@ -729,29 +747,24 @@ const CitizenApplication = () => {
                           />
                         )}
 
-                        {/* Handle documentType dropdown */}
                         {field.name === "documentType" ? (
-
-
                           <Autocomplete
                             options={documentTypeOptions}
                             getOptionLabel={(option) => option.marDocumentName || ""}
-
                             value={
-                              documentTypeOptions.find((opt) => opt.id === row.documentId) || null
+                              documentTypeOptions.find(
+                                (opt) => opt.id === row.documentId
+                              ) || null
                             }
-
                             onChange={(event, newValue) => {
                               handleChange(index, "documentId", newValue ? newValue.id : "");
                             }}
-
                             onBlur={() => {
                               if (!row.documentId) {
                                 handleChange(index, "documentId", "");
                                 handleChange(index, "documentType", "");
                               }
                             }}
-
                             renderInput={(params) => (
                               <TextField
                                 {...params}
@@ -762,50 +775,34 @@ const CitizenApplication = () => {
                               />
                             )}
                           />
-                        ) : //
-                          field.name === "documentURL" ? (
-                            <>
-                              <input
-                                type="file"
-                                accept=".pdf"
-                                // accept=".pdf,.jpg,.jpeg,.png"
-                                onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (file) {
-                                    const fileName = file.name;
-                                    handleChange(index, field.name, fileName);
+                        ) : (
+                          <>
+                            <input
+                              type="file"
+                              accept=".pdf"
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (!file) return;
 
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => {
-                                      const base64String = reader.result;
-                                      // Save base64 string in state (rows)
-                                      handleChange(
-                                        index,
-                                        field.name + "base64",
-                                        base64String
-                                      );
-                                    };
-                                    reader.readAsDataURL(file);
-                                  }
-                                }}
-                                style={{ fontSize: "0.875rem", width: "100%" }}
-                              />
-                            </>
-                          ) : (
-                            <TextField
-                              name={field.marDocumentName}
-                              value={field.marDocumentName}
-                              onChange={(e) =>
-                                handleChange(index, field.marDocumentName, e.target.marDocumentName)
-                              }
-                              onBlur={handleBlur}
-                              variant="standard"
-                              fullWidth
-                              placeholder={field.marDocumentName}
-                              InputProps={{ sx: { p: 0 } }}
-                              sx={{ "& .MuiInputBase-root": { p: 0 } }}
+                                if (file.type !== "application/pdf") {
+                                  showAlert("Only PDF files are allowed.", "error");
+                                  e.target.value = "";
+                                  return;
+                                }
+
+                                handleChange(index, field.name, file.name);
+
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  handleChange(index, field.name + "base64", reader.result);
+                                  showAlert("File uploaded successfully.", "success");
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                              style={{ fontSize: "0.875rem", width: "100%" }}
                             />
-                          )}
+                          </>
+                        )}
                       </Box>
                     ))}
 
@@ -822,11 +819,7 @@ const CitizenApplication = () => {
                     >
                       <Button
                         variant="contained"
-                        disabled={
-                          formik.values.transferType == "propertyTransfer"
-                            ? true
-                            : false
-                        }
+                        disabled={formik.values.transferType == "propertyTransfer"}
                         onClick={handleAddRow}
                       >
                         +
@@ -837,7 +830,7 @@ const CitizenApplication = () => {
                         disabled={
                           formik.values.transferType == "propertyTransfer"
                             ? true
-                            : rows.length === 1 || false
+                            : rows.length === 1
                         }
                         onClick={() => handleDeleteRow(index)}
                       >

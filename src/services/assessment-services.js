@@ -642,6 +642,14 @@ export const submitPropertyInfoChange = async (body) => {
   return response.data;
 };
 
+export const rejectPropertyInfoChange = async (body) => {
+  const response = await apiClient.post(
+    `/property-transactions/revert-application`,  
+  body,
+  );
+  return response.data;
+}
+
 export const getPropertyUpadateDetails = async (body) => {
   const response = await apiClient.post(
     `/property-transactions/pending-property-update-details`,

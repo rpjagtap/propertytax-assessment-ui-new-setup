@@ -19,7 +19,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
 import EditLocationAltOutlined from "@mui/icons-material/EditLocationAltOutlined";
-import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { addressChangeApplicationSchema } from "../../utils/validation-schema";
@@ -30,6 +29,14 @@ import { getErrorMsg } from "../../utils/helpers";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
 import PropertyDocumentsForm from "../sr-register/propertyDocumentsForm";
 import FormButtons from "../common/buttons";
+import GlossyAlert from "../common/glossyAlert/glossyAlert";
+import useFormAlert from "../common/useFormAlert/useFormAlert";
+import {
+  checkText,
+  checkSelect,
+  checkDocuments,
+  cleanInput,
+} from "../common/formValidation/formValidation";
 
 import {
   getAllProTransactions,
@@ -45,10 +52,37 @@ const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
+/* ------------------------------------------------------------------ */
+/*  Page rules (the checks themselves live in utils/form-validation)   */
+/* ------------------------------------------------------------------ */
+/** Returns { fieldName: "message" } - empty object when everything is valid. */
+const validateForm = (values) => {
+  const errors = {};
+  const set = (field, err) => {
+    if (err) errors[field] = err;
+  };
+
+  set("zoneKey", checkSelect(values.zoneKey, "a zone"));
+  set("gatKey", checkSelect(values.gatKey, "a gat"));
+  set("remark", checkText(values.remark, "Remark", 3));
+  set("marOwnerAddress", checkText(values.marOwnerAddress, "New owner address (Marathi)"));
+  set("engOwnerAddress", checkText(values.engOwnerAddress, "New owner address (English)"));
+  set("marOccupantAddress", checkText(values.marOccupantAddress, "New occupant address (Marathi)"));
+  set("engOccupantAddress", checkText(values.engOccupantAddress, "New occupant address (English)"));
+  set("marPropertyAddress", checkText(values.marPropertyAddress, "New property address (Marathi)"));
+  set("engPropertyAddress", checkText(values.engPropertyAddress, "New property address (English)"));
+  set("documents", checkDocuments(values.documents));
+
+  return errors;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Small layout components                                            */
+/* ------------------------------------------------------------------ */
 const FieldRow = ({ label, children }) => (
   <Grid item xs={12} md={6}>
-    <Box display="flex" alignItems="center">
-      <Box minWidth={160}>
+    <Box display="flex" alignItems="flex-start">
+      <Box minWidth={160} pt={0.5}>
         <Typography fontWeight={600} fontSize={14} color={NAVY}>
           {label}:
         </Typography>
@@ -60,18 +94,22 @@ const FieldRow = ({ label, children }) => (
 
 const SectionCard = ({ icon, title, subtitle, children, footer }) => (
   <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
-    <CardHeader
-      avatar={
-        <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
-          {icon}
-        </Avatar>
-      }
-      title={title}
-      titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
-      subheader={subtitle}
-      sx={{ pb: 1 }}
-    />
-    <Divider />
+    {title && (
+      <>
+        <CardHeader
+          avatar={
+            <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
+              {icon}
+            </Avatar>
+          }
+          title={title}
+          titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
+          subheader={subtitle}
+          sx={{ pb: 1 }}
+        />
+        <Divider />
+      </>
+    )}
     <CardContent sx={{ p: 3 }}>{children}</CardContent>
     {footer && (
       <>
@@ -108,6 +146,9 @@ function generateUUID() {
   });
 }
 
+/* ------------------------------------------------------------------ */
+/*  Main component                                                     */
+/* ------------------------------------------------------------------ */
 const PropertyTraAppforadd = () => {
   const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading, error, setError } = useApiState();
@@ -129,8 +170,9 @@ const PropertyTraAppforadd = () => {
   const [oldMarPropertyAddress, setOldMarPropertyAddress] = useState("");
   const [oldMarOccupantAddress, setoldMarOccupantAddress] = useState("");
 
-  // Static initial values; prefill is done with resetForm below so that
-  // zoneKey / gatKey are not wiped when API data arrives.
+  // red field errors + glossy alert state
+  const { fieldErrors, alertState, showErrors, closeAlert, clearFieldError, registerRef } = useFormAlert();
+
   const initialState = {
     marOwnerAddress: "",
     marOccupantAddress: "",
@@ -257,7 +299,6 @@ const PropertyTraAppforadd = () => {
           setoldMarOccupantAddress(response.oldMarOccupantAddress || "");
         }
       } catch (error) {
-        // clear old details if this zone/gat combination is not valid for the property
         setPropertyOwnerDetails("");
         setMobileNo("");
         setOccupant("");
@@ -280,7 +321,6 @@ const PropertyTraAppforadd = () => {
   ]);
 
   // Prefill the new-address fields with the current addresses.
-  // resetForm keeps `dirty` false until the user actually edits something.
   useEffect(() => {
     if (oldMarOwnerAddress || oldMarOccupantAddress || oldMarPropertyAddress) {
       formik.resetForm({
@@ -295,8 +335,20 @@ const PropertyTraAppforadd = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oldMarOwnerAddress, oldMarOccupantAddress, oldMarPropertyAddress]);
 
+  /* ---------- field change helper ---------- */
+  const handleTextChange = (e) => {
+    const { name, value } = e.target;
+    formik.setFieldValue(name, cleanInput(name, value, "text"));
+    clearFieldError(name);
+  };
+
+  /* ---------- submit ---------- */
   const handleSubmit = async () => {
     const values = formik.values;
+
+    const errors = validateForm(values);
+    if (showErrors(errors)) return; // opens the alert and stops
+
     const body = {
       requestId: generateUUID(),
       channelName: "PropertyTax",
@@ -307,7 +359,7 @@ const PropertyTraAppforadd = () => {
           zoneKey: values.zoneKey,
           gatKey: values.gatKey,
           orderNo: values.orderNo,
-          remark: values.remark,
+          remark: values.remark.trim(),
           applicationId: applicationNoFromURL,
           oldEngOwnerName: values.occupantName, // NOTE: not a formik field, so this is undefined
           oldMarOwnerAddress: oldMarOwnerAddress,
@@ -315,18 +367,20 @@ const PropertyTraAppforadd = () => {
           // mobileNo: mobileNo,
           oldMarOwnerName: propertyOwnerDetails,
           oldMarOccupantName: occupant,
-          newMarOwnerAddress: values.marOwnerAddress,
-          newEngOwnerAddress: values.engOwnerAddress,
-          newMarOccupantAddress: values.marOccupantAddress,
-          newEngOccupantAddress: values.engOccupantAddress,
-          newMarPropertyAddress: values.marPropertyAddress,
-          newEngPropertyAddress: values.engPropertyAddress,
+          newMarOwnerAddress: values.marOwnerAddress.trim(),
+          newEngOwnerAddress: values.engOwnerAddress.trim(),
+          newMarOccupantAddress: values.marOccupantAddress.trim(),
+          newEngOccupantAddress: values.engOccupantAddress.trim(),
+          newMarPropertyAddress: values.marPropertyAddress.trim(),
+          newEngPropertyAddress: values.engPropertyAddress.trim(),
           oldMarPropertyAddress: oldMarPropertyAddress,
           oldMarOccupantAddress: oldMarOccupantAddress,
-          documentVOs: values.documents.map((doc) => ({
-            documentId: doc.documentId,
-            documentURLbase64: doc.documentURLbase64,
-          })),
+          documentVOs: values.documents
+            .filter((doc) => doc.documentId && doc.documentURLbase64)
+            .map((doc) => ({
+              documentId: doc.documentId,
+              documentURLbase64: doc.documentURLbase64,
+            })),
         },
       ],
     };
@@ -348,6 +402,7 @@ const PropertyTraAppforadd = () => {
     }
   };
 
+  // editable text field with inline error
   const editableField = (name) => (
     <TextField
       variant="standard"
@@ -355,8 +410,11 @@ const PropertyTraAppforadd = () => {
       name={name}
       required
       value={formik.values[name]}
-      onChange={formik.handleChange}
+      inputRef={registerRef(name)}
+      onChange={handleTextChange}
       onBlur={formik.handleBlur}
+      error={Boolean(fieldErrors[name])}
+      helperText={fieldErrors[name] || ""}
       sx={{ width: "100%" }}
     />
   );
@@ -375,6 +433,15 @@ const PropertyTraAppforadd = () => {
 
       <ScrollBottom />
       <ScrollTop />
+
+      {/* Glossy validation alert */}
+      <GlossyAlert
+        open={alertState.open}
+        title="Please complete the form"
+        messages={alertState.messages}
+        buttonText="Got it"
+        onClose={closeAlert}
+      />
 
       <Box sx={{ p: 2 }}>
         <FormikProvider value={formik}>
@@ -399,7 +466,7 @@ const PropertyTraAppforadd = () => {
               <Box>
                 <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
                   {labels?.AddressChangeApplicationType?.[lang] || "Address Change Application"}
-                </Typography>                
+                </Typography>
               </Box>
             </Box>
 
@@ -422,8 +489,7 @@ const PropertyTraAppforadd = () => {
             {/* ---------- Current details (read-only) ---------- */}
             <SectionCard
               icon={<HomeWorkOutlined fontSize="small" />}
-              // title="Current property details"   
-              title={labels?.CurentPropertyDetails?.[lang] || "Curent Property Details"}          
+              title={labels?.CurentPropertyDetails?.[lang] || "Curent Property Details"}
             >
               <Grid container spacing={3}>
                 <FieldRow label={labels.Type[lang]}>
@@ -472,8 +538,10 @@ const PropertyTraAppforadd = () => {
             <SectionCard
               icon={<EditLocationAltOutlined fontSize="small" />}
               title={labels?.NewDetails?.[lang] || "New details"}
-              // subtitle="Enter the updated owner, occupant and property addresses in both languages"
-             subtitle= {labels?.UpdatedAddressesInfo?.[lang] ||  "मालक, भोगवटादार आणि मालमत्तेचे अद्ययावत पत्ते दोन्ही भाषांमध्ये प्रविष्ट करा"}
+              subtitle={
+                labels?.UpdatedAddressesInfo?.[lang] ||
+                "मालक, भोगवटादार आणि मालमत्तेचे अद्ययावत पत्ते दोन्ही भाषांमध्ये प्रविष्ट करा"
+              }
             >
               <Grid container spacing={3}>
                 <FieldRow label={labels.OwnerAddress[lang]}>
@@ -503,10 +571,12 @@ const PropertyTraAppforadd = () => {
             </SectionCard>
 
             {/* ---------- Documents + submit ---------- */}
-            <SectionCard             
+            <SectionCard
               footer={
                 <FormButtons
-                  disabled={!formik.isValid || !formik.dirty}
+                  // !formik.isValid removed so the click always reaches
+                  // handleSubmit and the alert can be shown.
+                  disabled={!formik.dirty}
                   handleSubmitButtonClick={handleSubmit}
                   resetForm={() => {
                     window.location.reload();
@@ -522,6 +592,12 @@ const PropertyTraAppforadd = () => {
                   <PropertyDocumentsForm />
                 </Grid>
               </Grid>
+
+              {fieldErrors.documents && (
+                <Typography color="error" variant="body2" align="center" sx={{ mt: 2 }}>
+                  {fieldErrors.documents}
+                </Typography>
+              )}
             </SectionCard>
           </Form>
         </FormikProvider>

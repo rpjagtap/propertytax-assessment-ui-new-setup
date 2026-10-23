@@ -23,12 +23,11 @@ import AttachFileOutlined from "@mui/icons-material/AttachFileOutlined";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import SelectInput from "../form-fields/select-input";
 import useApiState from "../common/useApiState";
-import { showToastError } from "../common/toastHelper";
+import { showToastError, showToastSuccess } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
 import { labels } from "../../lang/labels";
 import { getAssessmentDocuments } from "../../services/assessment-services";
 
-// Theme tokens — same values used across the other redesigned pages.
 const NAVY = "#12233F";
 const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
@@ -43,20 +42,14 @@ const headCellSx = {
   whiteSpace: "nowrap",
 };
 
-/**
- * `showHeader` — set to false when this form is already rendered inside a
- * card that has its own "Document details" header (e.g. the address-change
- * application page), so the title isn't shown twice.
- */
 const PropertyDocumentsForm = ({ showHeader = true }) => {
   const formik = useFormikContext();
   const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading } = useApiState();
   const [documents, setDocuments] = useState([]);
 
-  // File names are kept locally (keyed by row index) rather than in
-  // Formik, so no extra field ends up inside the `documents` objects that
-  // are sent to the backend as `documentVOs`.
+  // File names are kept locally (keyed by row index) so no extra field
+  // ends up inside the `documents` objects sent to the backend.
   const [fileNames, setFileNames] = useState({});
 
   const documentOptions = useMemo(
@@ -92,7 +85,6 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
     const file = e.target.files[0];
 
     if (!file) {
-      // File picker was cancelled/cleared — drop any previously stored file.
       formik.setFieldValue(`documents[${index}].documentURLbase64`, "");
       setFileNames((prev) => {
         const next = { ...prev };
@@ -107,12 +99,15 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
       const base64String = reader.result.split(",")[1]; // remove data-URL prefix
       formik.setFieldValue(`documents[${index}].documentURLbase64`, base64String);
       setFileNames((prev) => ({ ...prev, [index]: file.name }));
+      showToastSuccess("File uploaded successfully");
     };
+    reader.onerror = () => showToastError("File could not be read, please try again");
     reader.readAsDataURL(file);
+
+    // allow selecting the same file again later
+    e.target.value = "";
   };
 
-  // Removes a row and shifts the stored file names down so each name still
-  // lines up with the right row.
   const handleRemove = (index, remove) => {
     remove(index);
     setFileNames((prev) => {
@@ -138,10 +133,8 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
               {labels?.DocumentDetails?.[lang] || "Document Details"}
             </Typography>
             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-              {/* Choose a document type and attach the file (PDF, JPG or PNG) */}
               {labels?.ChooseDocTypeAndAttach?.[lang] ||
-                "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा"}
-              Choose a document type and attach the file (PDF or JPG)
+                "Choose a document type and attach the file (PDF or JPG)"}
             </Typography>
           </Box>
         </Stack>
@@ -183,7 +176,6 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                       hover
                       sx={{ "& td": { padding: "10px 12px", verticalAlign: "middle" } }}
                     >
-                      {/* Document type */}
                       <TableCell>
                         <SelectInput
                           name={`documents[${index}].documentId`}
@@ -191,7 +183,6 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                         />
                       </TableCell>
 
-                      {/* File upload */}
                       <TableCell>
                         <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
                           <Button
@@ -221,12 +212,7 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                               size="small"
                               icon={<AttachFileOutlined sx={{ color: `${MINT} !important` }} />}
                               label={fileLabel}
-                              sx={{
-                                bgcolor: MINT_BG,
-                                color: MINT,
-                                fontWeight: 600,
-                                maxWidth: 200,
-                              }}
+                              sx={{ bgcolor: MINT_BG, color: MINT, fontWeight: 600, maxWidth: 200 }}
                             />
                           ) : (
                             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
@@ -236,7 +222,6 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                         </Stack>
                       </TableCell>
 
-                      {/* Remove */}
                       <TableCell align="center">
                         {formik.values.documents.length > 1 && (
                           <Button
@@ -254,16 +239,10 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                   );
                 })}
 
-                {/* Add More row — part of the table, like the original */}
                 <TableRow>
                   <TableCell colSpan={3} sx={{ padding: "10px 12px", bgcolor: "#FAFBFD" }}>
                     <Button
-                      onClick={() =>
-                        push({
-                          documentId: "",
-                          documentURLbase64: "",
-                        })
-                      }
+                      onClick={() => push({ documentId: "", documentURLbase64: "" })}
                       startIcon={<AddCircleOutline />}
                       variant="contained"
                       size="small"
