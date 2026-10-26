@@ -47,6 +47,9 @@ const AssessmentTable = ({
   const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading } = useApiState();
   const { setFieldValue, values } = useFormikContext();
+  
+const effectiveZoneKey = zoneKey || values?.zoneKey;
+const effectiveGatKey = gatKey || values?.gatKey;
 
   const [zoneKeys, setZoneKeys] = useState([]);
   const [financialYear, setFinancialYear] = useState([]);
@@ -289,14 +292,14 @@ const AssessmentTable = ({
         subUseTypeId: Number(subUseType),
         constructionTypeId: Number(constructionType),
         areaInSqmt: Number(areaInSqmt),
-        zoneKey: Number(zoneKey),
-        gatKey: Number(gatKey),
+        zoneKey: Number(effectiveZoneKey),
+        gatKey: Number(effectiveGatKey),
       };
 
 
       const response = await getRatebaleValueCalculation(body);
 
-      console.log("RATE API RESPONSE:", response);
+      //console.log("RATE API RESPONSE:", response);
 
       return {
         ratableValue: response?.ratableValue ?? 0,
@@ -372,14 +375,10 @@ const AssessmentTable = ({
         updatedRow?.areaInSqmt !== "" &&
         updatedRow?.areaInSqmt !== null &&
         updatedRow?.areaInSqmt !== undefined &&
-        zoneKey !== "" &&
-        zoneKey !== null &&
-        zoneKey !== undefined &&
-        gatKey !== "" &&
-        gatKey !== null &&
-        gatKey !== undefined &&
+        !!effectiveZoneKey &&
+        !!effectiveGatKey &&
         Number(updatedRow.areaInSqmt) > 0;
-
+console.log("rate inputs", { zoneKey, gatKey, formZone: values?.zoneKey, formGat: values?.gatKey });
       if (hasValidRateInputs) {
         try {
           const rateData = await fetchTaxAmount(

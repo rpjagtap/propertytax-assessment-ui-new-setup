@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useFormikContext, FieldArray } from "formik";
+import { useSearchParams } from "react-router-dom";
 import {
   Avatar,
   Box,
@@ -67,6 +68,9 @@ const base64ToBlob = (b64, type) => {
  */
 const PropertyDocumentsForm = ({ showHeader = true }) => {
   const formik = useFormikContext();
+  // "View document" is only for the edit flow (?mode=edit), not for new records
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get("mode") === "edit";
   const lang = useSelector((state) => state.userDetails?.lang);
   const { setLoading } = useApiState();
   const [documents, setDocuments] = useState([]);
@@ -173,9 +177,9 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
       const base64String = reader.result.split(",")[1]; // remove data-URL prefix
       formik.setFieldValue(`documents[${index}].documentURLbase64`, base64String);
       // Saved document replaced with a new file -> tell the backend.
-      // Rows that are not re-uploaded keep reuploaded = false and are sent as they are.
+      // Rows that are not re-uploaded keep isReuploaded = false and are sent as they are.
       if (isSavedDoc) {
-        formik.setFieldValue(`documents[${index}].reuploaded`, true);
+        formik.setFieldValue(`documents[${index}].isReuploaded`, true);
       }
       setFileNames((prev) => ({ ...prev, [index]: file.name }));
     };
@@ -323,6 +327,7 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                           </Button>
 
                           {hasFile ? (
+                            isEditMode && (
                             <Link
                               component="button"
                               type="button"
@@ -341,6 +346,7 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                               <VisibilityOutlined sx={{ fontSize: 18 }} />
                               View document
                             </Link>
+                            )
                           ) : (
                             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
                               No file chosen

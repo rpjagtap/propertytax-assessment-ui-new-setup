@@ -21,7 +21,6 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import ArrowBack from "@mui/icons-material/ArrowBack";
 import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
 import EditLocationAltOutlined from "@mui/icons-material/EditLocationAltOutlined";
-import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { namChangeApplicationSchema } from "../../utils/validation-schema";
@@ -32,6 +31,15 @@ import { getErrorMsg } from "../../utils/helpers";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
 import PropertyDocumentsForm from "../sr-register/propertyDocumentsForm";
 import FormButtons from "../common/buttons";
+import GlossyAlert from "../common/glossyAlert/glossyAlert";
+import useFormAlert from "../common/useFormAlert/useFormAlert";
+import {
+    checkText,
+    checkName,
+    checkSelect,
+    checkDocuments,
+    cleanInput,
+} from "../common/formValidation/formValidation";
 
 import {
     getAllProTransactions,
@@ -48,10 +56,53 @@ const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
+/* ------------------------------------------------------------------ */
+/*  Page rules (the checks themselves live in utils/form-validation)   */
+/* ------------------------------------------------------------------ */
+const NAME_FIELDS = [
+    "marPropertyName",
+    "engPropertyName",
+    "marPropertyOccupantName",
+    "engPropertyOccupantName",
+];
+
+/**
+ * Returns { fieldName: "message" } - empty object when everything is valid.
+ * uploadMode = true  -> user uploads new documents (applicationFromId === "2")
+ * uploadMode = false -> documents come from the API (existingDocsCount)
+ */
+const validateForm = (values, uploadMode, existingDocsCount) => {
+    const errors = {};
+    const set = (field, err) => {
+        if (err) errors[field] = err;
+    };
+
+    set("zoneKey", checkSelect(values.zoneKey, "a zone"));
+    set("gatKey", checkSelect(values.gatKey, "a gat"));
+    set("remark", checkText(values.remark, "Remark", 3));
+    set("marPropertyName", checkName(values.marPropertyName, "New owner name (Marathi)"));
+    set("engPropertyName", checkName(values.engPropertyName, "New owner name (English)"));
+    set("marPropertyOccupantName", checkName(values.marPropertyOccupantName, "New occupant name (Marathi)"));
+    set("engPropertyOccupantName", checkName(values.engPropertyOccupantName, "New occupant name (English)"));
+    set(
+        "documents",
+        uploadMode
+            ? checkDocuments(values.documents)
+            : existingDocsCount === 0
+                ? "No document is attached to this application. At least one document is required."
+                : null
+    );
+
+    return errors;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Small layout components                                            */
+/* ------------------------------------------------------------------ */
 const FieldRow = ({ label, children }) => (
     <Grid item xs={12} md={6}>
-        <Box display="flex" alignItems="center">
-            <Box minWidth={160}>
+        <Box display="flex" alignItems="flex-start">
+            <Box minWidth={160} pt={0.5}>
                 <Typography fontWeight={600} fontSize={14} color={NAVY}>
                     {label}:
                 </Typography>
@@ -63,18 +114,22 @@ const FieldRow = ({ label, children }) => (
 
 const SectionCard = ({ icon, title, subtitle, children, footer }) => (
     <Card elevation={3} sx={{ borderRadius: 3, mb: 3, overflow: "hidden" }}>
-        <CardHeader
-            avatar={
-                <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
-                    {icon}
-                </Avatar>
-            }
-            title={title}
-            titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
-            subheader={subtitle}
-            sx={{ pb: 1 }}
-        />
-        <Divider />
+        {title && (
+            <>
+                <CardHeader
+                    avatar={
+                        <Avatar sx={{ bgcolor: MINT_BG, color: MINT, width: 36, height: 36 }}>
+                            {icon}
+                        </Avatar>
+                    }
+                    title={title}
+                    titleTypographyProps={{ fontWeight: 700, fontSize: 16, color: NAVY }}
+                    subheader={subtitle}
+                    sx={{ pb: 1 }}
+                />
+                <Divider />
+            </>
+        )}
         <CardContent sx={{ p: 3 }}>{children}</CardContent>
         {footer && (
             <>
@@ -107,6 +162,9 @@ function generateUUID() {
     });
 }
 
+/* ------------------------------------------------------------------ */
+/*  Main component                                                     */
+/* ------------------------------------------------------------------ */
 const PropertyTranApplication = () => {
     const lang = useSelector((state) => state.userDetails.lang);
     const { setLoading, error, setError } = useApiState();
@@ -121,11 +179,13 @@ const PropertyTranApplication = () => {
     const applicationNoFromURL = searchParams.get("applicationNo");
     const applicationFromIdFromURL = searchParams.get("applicationFromId");
 
-    // FIX: string instead of [] (it holds a name)
     const [propertyOwnerDetails, setPropertyOwnerDetails] = useState("");
     const [mobileNo, setMobileNo] = useState("");
     const [occupant, setOccupant] = useState("");
     const [ResponseData, setResponseData] = useState([]);
+
+    // red field errors + glossy alert state
+    const { fieldErrors, alertState, showErrors, closeAlert, clearFieldError, registerRef } = useFormAlert();
 
     const initialState = {
         marPropertyName: "",
@@ -150,7 +210,6 @@ const PropertyTranApplication = () => {
 
     const formik = useFormik({
         initialValues: initialState,
-        // FIX: was true. It reset zoneKey/gatKey every time the API data changed.
         enableReinitialize: false,
         validationSchema: namChangeApplicationSchema,
         validateOnMount: true,
@@ -229,7 +288,7 @@ const PropertyTranApplication = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formik.values.zoneKey]);
 
-    // FIX: fetch property only when propertyCode, zoneKey AND gatKey are all available
+    // Fetch property only when propertyCode, zoneKey AND gatKey are all available
     useEffect(() => {
         if (!propertyCodeFromURL || !formik.values.zoneKey || !formik.values.gatKey) {
             return;
@@ -247,14 +306,11 @@ const PropertyTranApplication = () => {
 
                 if (ownerResponse) {
                     setPropertyOwnerDetails(ownerResponse.oldMarOwnerName || "");
-                    // setMobileNo(ownerResponse.propertyMobileNo || "");
                     setOccupant(ownerResponse.oldMarOccupantName || "");
                     setResponseData(ownerResponse?.documentVOs || []);
                 }
             } catch (error) {
-                // clear old details if this zone/gat combination is not valid for the property
                 setPropertyOwnerDetails("");
-                // setMobileNo("");
                 setOccupant("");
                 setResponseData([]);
                 showToastError(getErrorMsg(error));
@@ -273,7 +329,6 @@ const PropertyTranApplication = () => {
     ]);
 
     // Prefill the new-name fields with the current names.
-    // resetForm keeps `dirty` false until the user actually edits something.
     useEffect(() => {
         if (propertyOwnerDetails || occupant) {
             formik.resetForm({
@@ -288,6 +343,7 @@ const PropertyTranApplication = () => {
     }, [propertyOwnerDetails, occupant]);
 
     const documents = ResponseData;
+    const uploadMode = applicationFromIdFromURL === "2";
 
     const handleDownload = async (documentName, documentURLbase64) => {
         try {
@@ -306,8 +362,21 @@ const PropertyTranApplication = () => {
         }
     };
 
+    /* ---------- field change helper ---------- */
+    const handleTextChange = (e) => {
+        const { name, value } = e.target;
+        const kind = NAME_FIELDS.includes(name) ? "name" : "text";
+        formik.setFieldValue(name, cleanInput(name, value, kind));
+        clearFieldError(name);
+    };
+
+    /* ---------- submit ---------- */
     const handleSubmit = async () => {
         const values = formik.values;
+
+        const errors = validateForm(values, uploadMode, documents.length);
+        if (showErrors(errors)) return; // opens the alert and stops
+
         const body = {
             requestId: generateUUID(),
             channelName: "PropertyTax",
@@ -317,26 +386,26 @@ const PropertyTranApplication = () => {
                     propertyCode: propertyCodeFromURL,
                     zoneKey: values.zoneKey,
                     gatKey: values.gatKey,
-                    newMarOwnerName: values.marPropertyName,
-                    newEngOwnerName: values.engPropertyName,
-                    newMarOccupantName: values.marPropertyOccupantName,
-                    newEngOccupantName: values.engPropertyOccupantName,
-                    remark: values.remark,
+                    newMarOwnerName: values.marPropertyName.trim(),
+                    newEngOwnerName: values.engPropertyName.trim(),
+                    newMarOccupantName: values.marPropertyOccupantName.trim(),
+                    newEngOccupantName: values.engPropertyOccupantName.trim(),
+                    remark: values.remark.trim(),
                     applicationId: applicationNoFromURL,
                     oldEngOwnerName: values.occupantName, // NOTE: not a formik field, so this is undefined
-                    // mobileNo: mobileNo,
                     oldMarOwnerName: propertyOwnerDetails,
                     oldMarOccupantName: occupant,
-                    documentVOs:
-                        applicationFromIdFromURL === "2"
-                            ? values.documents.map(doc => ({
+                    documentVOs: uploadMode
+                        ? values.documents
+                            .filter(doc => doc.documentId && doc.documentURLbase64)
+                            .map(doc => ({
                                 documentId: doc.documentId,
                                 documentURLbase64: doc.documentURLbase64,
                             }))
-                            : documents.map(doc => ({
-                                documentId: doc.documentId,
-                                documentURL: doc.documentURLbase64,
-                            })),
+                        : documents.map(doc => ({
+                            documentId: doc.documentId,
+                            documentURL: doc.documentURLbase64,
+                        })),
                 }
             ]
         };
@@ -359,6 +428,23 @@ const PropertyTranApplication = () => {
         }
     };
 
+    // editable text field with inline error
+    const renderEditable = (name) => (
+        <TextField
+            variant="standard"
+            size="small"
+            name={name}
+            required
+            value={formik.values[name]}
+            inputRef={registerRef(name)}
+            onChange={handleTextChange}
+            onBlur={formik.handleBlur}
+            error={Boolean(fieldErrors[name])}
+            helperText={fieldErrors[name] || ""}
+            sx={{ width: "100%" }}
+        />
+    );
+
     return (
         <DashBoardContainer>
             {error && (
@@ -373,6 +459,15 @@ const PropertyTranApplication = () => {
 
             <ScrollBottom />
             <ScrollTop />
+
+            {/* Glossy validation alert */}
+            <GlossyAlert
+                open={alertState.open}
+                title="Please complete the form"
+                messages={alertState.messages}
+                buttonText="Got it"
+                onClose={closeAlert}
+            />
 
             <Box sx={{ p: 2 }}>
                 <FormikProvider value={formik}>
@@ -397,7 +492,7 @@ const PropertyTranApplication = () => {
                             <Box>
                                 <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>
                                     {labels?.NameCorrectionApplicationType?.[lang] || "Name Correction Application"}
-                                </Typography>                                
+                                </Typography>
                             </Box>
                         </Box>
 
@@ -420,7 +515,7 @@ const PropertyTranApplication = () => {
                         {/* ---------- Current details ---------- */}
                         <SectionCard
                             icon={<HomeWorkOutlined fontSize="small" />}
-                            title="Current property details"                            
+                            title="Current property details"
                         >
                             <Grid container spacing={3}>
                                 <FieldRow label={labels.Type[lang]}>
@@ -448,16 +543,7 @@ const PropertyTranApplication = () => {
                                 </FieldRow>
 
                                 <FieldRow label={labels.RemarkForProperty[lang]}>
-                                    <TextField
-                                        variant="standard"
-                                        size="small"
-                                        name="remark"
-                                        required
-                                        value={formik.values.remark}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        sx={{ width: "100%" }}
-                                    />
+                                    {renderEditable("remark")}
                                 </FieldRow>
                             </Grid>
                         </SectionCard>
@@ -465,59 +551,23 @@ const PropertyTranApplication = () => {
                         {/* ---------- New details ---------- */}
                         <SectionCard
                             icon={<EditLocationAltOutlined fontSize="small" />}
-                            title={labels?.NewDetails?.[lang] || "New details"}                            
+                            title={labels?.NewDetails?.[lang] || "New details"}
                         >
                             <Grid container spacing={3}>
                                 <FieldRow label={labels.PropertyNameMar[lang]}>
-                                    <TextField
-                                        variant="standard"
-                                        size="small"
-                                        name="marPropertyName"
-                                        required
-                                        sx={{ width: "100%" }}
-                                        value={formik.values.marPropertyName}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                    />
+                                    {renderEditable("marPropertyName")}
                                 </FieldRow>
 
                                 <FieldRow label={labels.PropertyNameEng[lang]}>
-                                    <TextField
-                                        variant="standard"
-                                        size="small"
-                                        name="engPropertyName"
-                                        required
-                                        value={formik.values.engPropertyName}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        sx={{ width: "100%" }}
-                                    />
+                                    {renderEditable("engPropertyName")}
                                 </FieldRow>
 
                                 <FieldRow label={labels.PropertyOccupantNameMar[lang]}>
-                                    <TextField
-                                        variant="standard"
-                                        size="small"
-                                        name="marPropertyOccupantName"
-                                        required
-                                        sx={{ width: "100%" }}
-                                        value={formik.values.marPropertyOccupantName}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                    />
+                                    {renderEditable("marPropertyOccupantName")}
                                 </FieldRow>
 
                                 <FieldRow label={labels.PropertyOccupantNameEng[lang]}>
-                                    <TextField
-                                        variant="standard"
-                                        size="small"
-                                        name="engPropertyOccupantName"
-                                        required
-                                        value={formik.values.engPropertyOccupantName}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        sx={{ width: "100%" }}
-                                    />
+                                    {renderEditable("engPropertyOccupantName")}
                                 </FieldRow>
                             </Grid>
                         </SectionCard>
@@ -526,7 +576,9 @@ const PropertyTranApplication = () => {
                         <SectionCard
                             footer={
                                 <FormButtons
-                                    disabled={!formik.isValid || !formik.dirty}
+                                    // !formik.isValid removed so the click always reaches
+                                    // handleSubmit and the alert can be shown.
+                                    disabled={!formik.dirty}
                                     handleSubmitButtonClick={handleSubmit}
                                     resetForm={() => { window.location.reload(); }}
                                     submitBtnLabel="Submit"
@@ -535,7 +587,7 @@ const PropertyTranApplication = () => {
                                 />
                             }
                         >
-                            {applicationFromIdFromURL === "2" ? (
+                            {uploadMode ? (
                                 <Grid container spacing={3}>
                                     <Grid container item spacing={3} xs={12}>
                                         <PropertyDocumentsForm />
@@ -579,6 +631,17 @@ const PropertyTranApplication = () => {
                                         ))}
                                     </TableBody>
                                 </Table>
+                            )}
+
+                            {fieldErrors.documents && (
+                                <Typography
+                                    color="error"
+                                    variant="body2"
+                                    align="center"
+                                    sx={{ mt: 2 }}
+                                >
+                                    {fieldErrors.documents}
+                                </Typography>
                             )}
                         </SectionCard>
                     </Form>

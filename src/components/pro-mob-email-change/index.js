@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
 import ScrollTop from "../common/scrollTop";
@@ -8,22 +8,17 @@ import {
     Paper,
     Box,
     Typography,
-    TextField
+    TextField,
 } from "@mui/material";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from "react-router-dom";
 import useApiState from "../common/useApiState";
 import AlertMsg from "../common/alert";
 import { mobileEmailChangeApplicationSchema } from "../../utils/validation-schema";
-import FormTitle from "../form-fields/form-title";
 import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
-import { FormLabel, FormValue, GridRow } from "../common/custom-form-grid";
 import SelectInput from "../form-fields/select-input";
 import { getErrorMsg } from "../../utils/helpers";
 import { showToastError, showToastSuccess } from "../common/toastHelper";
-import TextInput from "../form-fields/text-input";
-import { useSearchParams } from "react-router-dom";
-// import { useFormikContext } from "formik";
 import PropertyDocumentsForm from "../sr-register/propertyDocumentsForm";
 
 import {
@@ -31,18 +26,78 @@ import {
     getGatByZonekey,
     getZoneByProfile,
     getPropertyForUpadate,
-    submitPropertyInfoChange
+    submitPropertyInfoChange,
 } from "../../services/assessment-services";
 import FormButtons from "../common/buttons";
+import GlossyAlert from "../common/glossyAlert/glossyAlert";
+import useFormAlert from "../common/useFormAlert/useFormAlert";
+import {
+    checkText,
+    checkSelect,
+    checkMobile,
+    checkEmail,
+    checkDocuments,
+    cleanInput,
+} from "../common/formValidation/formValidation";
 
+/* ------------------------------------------------------------------ */
+/*  Page rules (the checks themselves live in utils/form-validation)   */
+/* ------------------------------------------------------------------ */
+/** Returns { fieldName: "message" } - empty object when everything is valid. */
+const validateForm = (values) => {
+    const errors = {};
+    const set = (field, err) => {
+        if (err) errors[field] = err;
+    };
 
+    set("zoneKey", checkSelect(values.zoneKey, "a zone"));
+    set("gatKey", checkSelect(values.gatKey, "a gat"));
+    set("remark", checkText(values.remark, "Remark", 3));
+    set("newOwnerMobile", checkMobile(values.newOwnerMobile, "New owner mobile number"));
+    set("newOwnerEmail", checkEmail(values.newOwnerEmail, "New owner email"));
+    set("newOccupantMobile", checkMobile(values.newOccupantMobile, "New occupant mobile number"));
+    set("newOccupantEmail", checkEmail(values.newOccupantEmail, "New occupant email"));
+    set("documents", checkDocuments(values.documents));
 
+    return errors;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Safe UUID generator for browsers and Node                          */
+/* ------------------------------------------------------------------ */
+function generateUUID() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const buf = new Uint8Array(16);
+        crypto.getRandomValues(buf);
+        // Per RFC 4122 section 4.4
+        buf[6] = (buf[6] & 0x0f) | 0x40;
+        buf[8] = (buf[8] & 0x3f) | 0x80;
+        return [...buf]
+            .map((b, i) =>
+                [4, 6, 8, 10].includes(i)
+                    ? "-" + b.toString(16).padStart(2, "0")
+                    : b.toString(16).padStart(2, "0")
+            )
+            .join("");
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main component                                                     */
+/* ------------------------------------------------------------------ */
 const PropertyTraAppforContact = () => {
-
-
-
     const lang = useSelector((state) => state.userDetails.lang);
     const { setLoading, error, setError } = useApiState();
+    const navigate = useNavigate();
+
     const [allTrsactions, setAllTrsactions] = useState([]);
     const [zoneKeys, setZoneKeys] = useState([]);
     const [gatKeys, setGatKeys] = useState([]);
@@ -50,64 +105,61 @@ const PropertyTraAppforContact = () => {
     const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
     const propertyCodeFromURL = searchParams.get("propertyCode");
     const applicationNoFromURL = searchParams.get("applicationNo");
+
     const [propertyOwnerDetails, setPropertyOwnerDetails] = useState([]);
     const [oldOwnerMobileNo, setMobileNo] = useState("");
     const [email, setEmail] = useState("");
     const [occupant, setOccupant] = useState("");
     const [oldMarOwnerAddress, setOldMarOwnerAddress] = useState("");
     const [oldEngOwnerAddress, setOldEngOwnerAddress] = useState("");
-    const [newOwnerMobile, setNewOwnerMobile] = useState(" ");
-    const [newOwnerEmail, setNewOwnerEmail] = useState(" ");
-    const [newOccupantMobile, setNewOccupantMobile] = useState(" ");
-    const [newOccupantEmail, setNewOccupantEmail] = useState(" ");
     const [oldOccMobile, setOldOccMobile] = useState("");
     const [oldOccEmail, setOldOccEmail] = useState("");
 
-    const initialState = useMemo(() => ({
-        transactionTypeId: "",
-        zoneKey: zoneKeys.length === 1 ? zoneKeys[0].value : "",
-        gatKey: "",
-        propertyCode: propertyCodeFromURL || "",
-        applicantFirstName: "",
-        applicantMiddleName: "",
-        applicantLastName: "",
-        applicantMobile: "",
-        remark: "",
-        applicationId: applicationNoFromURL || "",
-        newOwnerMobile: oldOwnerMobileNo,
-        newOwnerEmail: "",
-        newOccupantMobile: "",
-        newOccupantEmail: "",
-        documents: [
-            {
-                documentId: "",
-                documentURLbase64: "",
-            },
-        ],
-    }), [
-        zoneKeys,
-        propertyCodeFromURL,
-        applicationNoFromURL,
-        oldOwnerMobileNo
-    ]);
+    // red field errors + glossy alert state
+    const { fieldErrors, alertState, showErrors, closeAlert, clearFieldError, registerRef } = useFormAlert();
+
+    const initialState = useMemo(
+        () => ({
+            transactionTypeId: "",
+            zoneKey: zoneKeys.length === 1 ? zoneKeys[0].value : "",
+            gatKey: "",
+            propertyCode: propertyCodeFromURL || "",
+            applicantFirstName: "",
+            applicantMiddleName: "",
+            applicantLastName: "",
+            applicantMobile: "",
+            remark: "",
+            applicationId: applicationNoFromURL || "",
+            newOwnerMobile: oldOwnerMobileNo,
+            newOwnerEmail: "",
+            newOccupantMobile: "",
+            newOccupantEmail: "",
+            documents: [
+                {
+                    documentId: "",
+                    documentURLbase64: "",
+                },
+            ],
+        }),
+        [zoneKeys, propertyCodeFromURL, applicationNoFromURL, oldOwnerMobileNo]
+    );
 
     const formik = useFormik({
         initialValues: initialState,
-        //enableReinitialize: true,
         validationSchema: mobileEmailChangeApplicationSchema,
         onSubmit: (values) => {
             alert(JSON.stringify(values, null, 2));
         },
     });
 
-    const transactionsOptions = useMemo(() =>
-        allTrsactions.map(item => ({
-            value: item.id,
-            label: item.marTransactionTypeName,
-        })), [allTrsactions]
+    const transactionsOptions = useMemo(
+        () =>
+            allTrsactions.map((item) => ({
+                value: item.id,
+                label: item.marTransactionTypeName,
+            })),
+        [allTrsactions]
     );
-
-
 
     useEffect(() => {
         if (transactionTypeIdFromURL && transactionsOptions.length > 0) {
@@ -115,48 +167,52 @@ const PropertyTraAppforContact = () => {
                 (item) => String(item.value) === String(transactionTypeIdFromURL)
             );
             if (match) {
-                formik.setFieldValue("transactionTypeId", match.value); // only id if formik expects id
+                formik.setFieldValue("transactionTypeId", match.value);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [transactionTypeIdFromURL, transactionsOptions]);
 
     useEffect(() => {
-    const { zoneKey, gatKey } = formik.values;
-    if (!propertyCodeFromURL || !zoneKey || !gatKey) return;
+        const { zoneKey, gatKey } = formik.values;
+        if (!propertyCodeFromURL || !zoneKey || !gatKey) return;
 
-    const loadPropertyDetails = async () => {
-        try {
-            setLoading(true);
-            const response = await getPropertyForUpadate({
-                propertyCode: propertyCodeFromURL,
-                zoneKey,
-                gatKey,
-            });
-            if (response) {
-                setPropertyOwnerDetails(response.oldMarOwnerName);
-                setMobileNo(response.oldOwnerMobileNo);
-                setEmail(response.oldOwnerEmail);
-                setOccupant(response.oldMarOccupantName);
-                setOldMarOwnerAddress(response.oldMarOwnerAddress);
-                setOldEngOwnerAddress(response.oldEngOwnerAddress);
-                setOldOccMobile(response.oldOccupantMobileNo);
-                setOldOccEmail(response.oldOccupantEmail);
+        const loadPropertyDetails = async () => {
+            try {
+                setLoading(true);
+                const response = await getPropertyForUpadate({
+                    propertyCode: propertyCodeFromURL,
+                    zoneKey,
+                    gatKey,
+                });
+                if (response) {
+                    setPropertyOwnerDetails(response.oldMarOwnerName);
+                    setMobileNo(response.oldOwnerMobileNo);
+                    setEmail(response.oldOwnerEmail);
+                    setOccupant(response.oldMarOccupantName);
+                    setOldMarOwnerAddress(response.oldMarOwnerAddress);
+                    setOldEngOwnerAddress(response.oldEngOwnerAddress);
+                    setOldOccMobile(response.oldOccupantMobileNo);
+                    setOldOccEmail(response.oldOccupantEmail);
+                }
+            } catch (error) {
+                showToastError(getErrorMsg(error));
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            showToastError(getErrorMsg(error));
-        } finally {
-            setLoading(false);
-        }
-    };
-    loadPropertyDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [propertyCodeFromURL, formik.values.zoneKey, formik.values.gatKey]);
+        };
+        loadPropertyDetails();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [propertyCodeFromURL, formik.values.zoneKey, formik.values.gatKey]);
 
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
-                const [allProTransactionsRes, zonesRes] = await Promise.all([getAllProTransactions(), getZoneByProfile()]);
+                const [allProTransactionsRes, zonesRes] = await Promise.all([
+                    getAllProTransactions(),
+                    getZoneByProfile(),
+                ]);
                 setAllTrsactions(allProTransactionsRes);
                 setZoneKeys(zonesRes.zoneLst);
                 if (zonesRes.zoneLst.length === 1) {
@@ -171,10 +227,6 @@ const PropertyTraAppforContact = () => {
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-
-
-
 
     useEffect(() => {
         formik.setFieldValue("gatKey", "");
@@ -200,39 +252,44 @@ const PropertyTraAppforContact = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formik.values.zoneKey]);
-    const navigate = useNavigate();
 
-    // Safe UUID generator for browsers and Node
-    function generateUUID() {
-        if (typeof crypto !== "undefined" && crypto.randomUUID) {
-            return crypto.randomUUID(); // Native browser / Node support
+    useEffect(() => {
+        if (oldOwnerMobileNo || email || oldOccMobile || oldOccEmail) {
+            formik.setValues((prev) => ({
+                ...prev,
+                newOwnerMobile: oldOwnerMobileNo || prev.newOwnerMobile,
+                newOwnerEmail: email || prev.newOwnerEmail,
+                newOccupantMobile: oldOccMobile || prev.newOccupantMobile,
+                newOccupantEmail: oldOccEmail || prev.newOccupantEmail,
+            }));
         }
-        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-            // Fallback for browsers without randomUUID
-            const buf = new Uint8Array(16);
-            crypto.getRandomValues(buf);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [oldOwnerMobileNo, email, oldOccMobile, oldOccEmail]);
 
-            // Per RFC 4122 section 4.4
-            buf[6] = (buf[6] & 0x0f) | 0x40;
-            buf[8] = (buf[8] & 0x3f) | 0x80;
+    /* ---------- field change helpers ---------- */
+    // Mobile: digits only, max 10
+    const handleMobileChange = (e) => {
+        const { name, value } = e.target;
+        formik.setFieldValue(name, cleanInput(name, value, "mobile"));
+        clearFieldError(name);
+    };
 
-            return [...buf].map((b, i) =>
-                [4, 6, 8, 10].includes(i) ? "-" + b.toString(16).padStart(2, "0") : b.toString(16).padStart(2, "0")
-            ).join("");
-        }
-        // Last resort: Math.random-based (less secure)
-        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            const v = c === "x" ? r : (r & 0x3) | 0x8;
-            return v.toString(16);
-        });
-    }
+    // Text / email: email has no spaces, other text has no leading space
+    const handleTextChange = (e) => {
+        const { name, value } = e.target;
+        const kind = name.toLowerCase().includes("email") ? "email" : "text";
+        formik.setFieldValue(name, cleanInput(name, value, kind));
+        clearFieldError(name);
+    };
 
-
+    /* ---------- submit ---------- */
     const handleSubmit = async () => {
         const values = formik.values;
-        const body = {
 
+        const errors = validateForm(values);
+        if (showErrors(errors)) return; // opens the alert and stops
+
+        const body = {
             requestId: generateUUID(),
             channelName: "PropertyTax",
             propertyUpdateVOs: [
@@ -241,11 +298,8 @@ const PropertyTraAppforContact = () => {
                     propertyCode: propertyCodeFromURL,
                     zoneKey: values.zoneKey,
                     gatKey: values.gatKey,
-                    // orderNo: values.orderNo,
-                    remark: values.remark,
+                    remark: values.remark.trim(),
                     applicationId: applicationNoFromURL,
-                    oldMarOwnerName: values.propertyOwnerName,
-                    oldEngOwnerName: values.occupantName,
                     oldMarOwnerAddress: oldMarOwnerAddress,
                     oldEngOwnerAddress: oldEngOwnerAddress,
                     oldOwnerMobileNo: oldOwnerMobileNo,
@@ -253,23 +307,27 @@ const PropertyTraAppforContact = () => {
                     oldMarOwnerName: propertyOwnerDetails,
                     oldMarOccupantName: occupant,
                     oldEngOwnerName: values.occupantName,
-                    newOwnerMobileNo: values.newOwnerMobile,
-                    newOwnerEmail: values.newOwnerEmail,
-                    newOccupantMobileNo: values.newOccupantMobile,
-                    newOccupantEmail: values.newOccupantEmail,
-                    documentVOs: values.documents.map(doc => ({
-                        documentId: doc.documentId,
-                        documentURLbase64: doc.documentURLbase64,
-                    })),
-                }
-            ]
+                    newOwnerMobileNo: values.newOwnerMobile.trim(),
+                    newOwnerEmail: values.newOwnerEmail.trim(),
+                    newOccupantMobileNo: values.newOccupantMobile.trim(),
+                    newOccupantEmail: values.newOccupantEmail.trim(),
+                    documentVOs: values.documents
+                        .filter((doc) => doc.documentId && doc.documentURLbase64)
+                        .map((doc) => ({
+                            documentId: doc.documentId,
+                            documentURLbase64: doc.documentURLbase64,
+                        })),
+                },
+            ],
         };
         try {
             setLoading(true);
             const response = await submitPropertyInfoChange(body);
 
-            if (response?.responseStatus === 'Success') {
-                showToastSuccess(`Thank you for your application. You will be redirected in 5 seconds...`);
+            if (response?.responseStatus === "Success") {
+                showToastSuccess(
+                    `Thank you for your application. You will be redirected in 5 seconds...`
+                );
                 setTimeout(() => {
                     navigate("/PropertyTransactionsDashBoard");
                 }, 5000);
@@ -283,20 +341,71 @@ const PropertyTraAppforContact = () => {
         }
     };
 
-    const [isPropertyCodeDisabled, setIsPropertyCodeDisabled] = useState(true);
+    const paperSx = {
+        width: "90%",
+        padding: 5,
+        marginLeft: "1.5%",
+        borderRadius: 5,
+    };
 
-    useEffect(() => {
-        if (oldOwnerMobileNo || email || oldOccMobile || oldOccEmail) {
-            formik.setValues(prev => ({
-                ...prev,
-                newOwnerMobile: oldOwnerMobileNo || prev.newOwnerMobile,
-                newOwnerEmail: email || prev.newOwnerEmail,
-                newOccupantMobile: oldOccMobile || prev.newOccupantMobile,
-                newOccupantEmail: oldOccEmail || prev.newOccupantEmail,
-            }));
-        }
-    }, [oldOwnerMobileNo, email, oldOccMobile, oldOccEmail]);
+    const sectionTitleProps = {
+        variant: "h5",
+        fontWeight: "bolder",
+        align: "center",
+        paddingBottom: 2,
+        paddingTop: 2,
+    };
 
+    // disabled "old value" row
+    const renderReadOnlyField = (label, name, value, multiline = false) => (
+        <Grid item xs={12} md={6}>
+            <Box display="flex" alignItems="center">
+                <Box minWidth={140}>
+                    <Typography fontWeight="bold">{label}:</Typography>
+                </Box>
+                <TextField
+                    fullWidth={false}
+                    variant="standard"
+                    size="small"
+                    multiline={multiline}
+                    name={name}
+                    disabled
+                    value={value}
+                    sx={{ width: "100%" }}
+                />
+            </Box>
+        </Grid>
+    );
+
+    // editable "new value" row; type = "mobile" | "email"
+    const renderNewField = (label, name, type) => (
+        <Grid item xs={12} md={6}>
+            <Box display="flex" alignItems="flex-start">
+                <Box minWidth={140} pt={0.5}>
+                    <Typography fontWeight="bold">{label}:</Typography>
+                </Box>
+                <TextField
+                    fullWidth={false}
+                    variant="standard"
+                    size="small"
+                    name={name}
+                    required
+                    value={formik.values[name] || ""}
+                    inputRef={registerRef(name)}
+                    onChange={type === "mobile" ? handleMobileChange : handleTextChange}
+                    onBlur={formik.handleBlur}
+                    inputProps={
+                        type === "mobile"
+                            ? { inputMode: "numeric", pattern: "[0-9]*", maxLength: 10 }
+                            : { inputMode: "email" }
+                    }
+                    error={Boolean(fieldErrors[name])}
+                    helperText={fieldErrors[name] || ""}
+                    sx={{ width: "100%" }}
+                />
+            </Box>
+        </Grid>
+    );
 
     return (
         <DashBoardContainer>
@@ -312,6 +421,16 @@ const PropertyTraAppforContact = () => {
 
             <ScrollBottom />
             <ScrollTop />
+
+            {/* Glossy validation alert */}
+            <GlossyAlert
+                open={alertState.open}
+                title="Please complete the form"
+                messages={alertState.messages}
+                buttonText="Got it"
+                onClose={closeAlert}
+            />
+
             <Box
                 sx={{
                     minHeight: "100vh",
@@ -321,31 +440,18 @@ const PropertyTraAppforContact = () => {
                     alignItems: "center",
                     padding: 4,
                     margin: 5,
-                    borderRadius: 4
+                    borderRadius: 4,
                 }}
             >
                 <Grid>
                     <FormikProvider value={formik}>
-                        <Typography
-                            variant="h5"
-                            fontWeight="bolder"
-                            align="center"
-                            paddingBottom={2}
-                            paddingTop={2}
-                        >
+                        <Typography {...sectionTitleProps}>
                             {labels?.MobileEmailChangeApplicationType?.[lang] || ""}
                         </Typography>
                         <Form>
+                            {/* ------------ Old details ------------ */}
                             <Box>
-                                <Paper
-                                    elevation={3}
-                                    sx={{
-                                        width: "90%",
-                                        padding: 5,
-                                        marginLeft: "1.5%",
-                                        borderRadius: 5,
-                                    }}
-                                >
+                                <Paper elevation={3} sx={paperSx}>
                                     <Grid container spacing={3}>
                                         <Grid container item spacing={3} xs={12}>
                                             <Grid item xs={12} md={6}>
@@ -355,7 +461,11 @@ const PropertyTraAppforContact = () => {
                                                             {labels.Type[lang]}:
                                                         </Typography>
                                                     </Box>
-                                                    <SelectInput name="transactionTypeId" options={transactionsOptions} disabled />
+                                                    <SelectInput
+                                                        name="transactionTypeId"
+                                                        options={transactionsOptions}
+                                                        disabled
+                                                    />
                                                 </Box>
                                             </Grid>
 
@@ -366,12 +476,18 @@ const PropertyTraAppforContact = () => {
                                                             {labels.PropertyNumber[lang]}:
                                                         </Typography>
                                                     </Box>
-                                                    <TextField fullWidth variant="standard" size="small" name="propertyCode" disabled value={propertyCodeFromURL} />
+                                                    <TextField
+                                                        fullWidth
+                                                        variant="standard"
+                                                        size="small"
+                                                        name="propertyCode"
+                                                        disabled
+                                                        value={propertyCodeFromURL || ""}
+                                                    />
                                                 </Box>
                                             </Grid>
                                         </Grid>
 
-                                        {/* row 2: occupantName in english and marathi  */}
                                         <Grid container item spacing={3} xs={12}>
                                             <Grid item xs={12} md={6}>
                                                 <Box display="flex" alignItems="center">
@@ -395,140 +511,61 @@ const PropertyTraAppforContact = () => {
                                                 </Box>
                                             </Grid>
                                         </Grid>
-                                        {/* Row 2: Mobile Number full width */}
-                                        <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.ownerName[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="propertyOwnerName" disabled value={propertyOwnerDetails}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
 
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.PropertyAddress[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        multiline={true}
-                                                        name="propertyAddress" disabled value={oldMarOwnerAddress}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
                                         <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.occupantName[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="occupantName" disabled value={occupant}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
+                                            {renderReadOnlyField(
+                                                labels.ownerName[lang],
+                                                "propertyOwnerName",
+                                                propertyOwnerDetails
+                                            )}
+                                            {renderReadOnlyField(
+                                                labels.PropertyAddress[lang],
+                                                "propertyAddress",
+                                                oldMarOwnerAddress,
+                                                true
+                                            )}
                                         </Grid>
 
                                         <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.OwnerMobilNo[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="mobileNo" disabled value={oldOwnerMobileNo}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.OwnerEmail[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        multiline={true}
-                                                        name="email" disabled value={email}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
+                                            {renderReadOnlyField(
+                                                labels.occupantName[lang],
+                                                "occupantName",
+                                                occupant
+                                            )}
                                         </Grid>
 
                                         <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.OccMobileNo[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="mobileNo" disabled value={oldOccMobile}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.OccupantEmail[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        multiline={true}
-                                                        name="email" disabled value={oldOccEmail}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
+                                            {renderReadOnlyField(
+                                                labels.OwnerMobilNo[lang],
+                                                "mobileNo",
+                                                oldOwnerMobileNo
+                                            )}
+                                            {renderReadOnlyField(
+                                                labels.OwnerEmail[lang],
+                                                "email",
+                                                email,
+                                                true
+                                            )}
                                         </Grid>
 
+                                        <Grid container item spacing={3} xs={12}>
+                                            {renderReadOnlyField(
+                                                labels.OccMobileNo[lang],
+                                                "occMobileNo",
+                                                oldOccMobile
+                                            )}
+                                            {renderReadOnlyField(
+                                                labels.OccupantEmail[lang],
+                                                "occEmail",
+                                                oldOccEmail,
+                                                true
+                                            )}
+                                        </Grid>
+
+                                        {/* Remark */}
                                         <Grid item xs={12}>
-                                            <Box display="flex" alignItems="center">
-                                                <Box minWidth={140}>
+                                            <Box display="flex" alignItems="flex-start">
+                                                <Box minWidth={140} pt={0.5}>
                                                     <Typography fontWeight="bold">
                                                         {labels.RemarkForProperty[lang]}:
                                                     </Typography>
@@ -537,9 +574,14 @@ const PropertyTraAppforContact = () => {
                                                     fullWidth={false}
                                                     variant="standard"
                                                     size="small"
-                                                    name="remark" required
-                                                    onChange={formik.handleChange}
+                                                    name="remark"
+                                                    required
+                                                    inputRef={registerRef("remark")}
+                                                    value={formik.values.remark}
+                                                    onChange={handleTextChange}
                                                     onBlur={formik.handleBlur}
+                                                    error={Boolean(fieldErrors.remark)}
+                                                    helperText={fieldErrors.remark || ""}
                                                     sx={{ width: "35.5%" }}
                                                 />
                                             </Box>
@@ -548,132 +590,61 @@ const PropertyTraAppforContact = () => {
                                 </Paper>
                             </Box>
 
-                            <Typography
-                                variant="h5"
-                                fontWeight="bolder"
-                                align="center"
-                                paddingBottom={2}
-                                paddingTop={2}
-                            >
+                            {/* ------------ New details ------------ */}
+                            <Typography {...sectionTitleProps}>
                                 {labels?.NewDetails?.[lang] || ""}
                             </Typography>
 
                             <Box>
-                                <Paper
-                                    elevation={3}
-                                    sx={{
-                                        width: "90%",
-                                        padding: 5,
-                                        marginLeft: "1.5%",
-                                        borderRadius: 5,
-                                    }}
-                                >
+                                <Paper elevation={3} sx={paperSx}>
                                     <Grid container spacing={3}>
-                                        {/* Row 1: Owner Name and Occupant Name side by side */}
                                         <Grid container item spacing={3} xs={12}>
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.newOwnerMobilNo[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="newOwnerMobile" required
-                                                        value={formik.values.newOwnerMobile}
-                                                        sx={{ width: "100%" }}
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.newOwnerEmallId[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="newOwnerEmail" required
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.newOccupantMobileNo[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="newOccupantMobile" required
-                                                        value={formik.values.newOccupantMobile}
-                                                        sx={{ width: "100%" }}
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                    />
-                                                </Box>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={6}>
-                                                <Box display="flex" alignItems="center">
-                                                    <Box minWidth={140}>
-                                                        <Typography fontWeight="bold">
-                                                            {labels.newOccupantEmailId[lang]}:
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth={false}
-                                                        variant="standard"
-                                                        size="small"
-                                                        name="newOccupantEmail" required
-                                                        onChange={formik.handleChange}
-                                                        onBlur={formik.handleBlur}
-                                                        sx={{ width: "100%" }}
-                                                    />
-                                                </Box>
-                                            </Grid>
+                                            {renderNewField(
+                                                labels.newOwnerMobilNo[lang],
+                                                "newOwnerMobile",
+                                                "mobile"
+                                            )}
+                                            {renderNewField(
+                                                labels.newOwnerEmallId[lang],
+                                                "newOwnerEmail",
+                                                "email"
+                                            )}
+                                            {renderNewField(
+                                                labels.newOccupantMobileNo[lang],
+                                                "newOccupantMobile",
+                                                "mobile"
+                                            )}
+                                            {renderNewField(
+                                                labels.newOccupantEmailId[lang],
+                                                "newOccupantEmail",
+                                                "email"
+                                            )}
                                         </Grid>
                                     </Grid>
                                 </Paper>
                             </Box>
-                            <Typography
-                                variant="h5"
-                                fontWeight="bolder"
-                                align="center"
-                                paddingBottom={2}
-                                paddingTop={2}
-                            >
+
+                            {/* ------------ Documents ------------ */}
+                            <Typography {...sectionTitleProps}>
                                 {labels?.DocumentDetails?.[lang] || ""}
                             </Typography>
                             <Box>
-                                <Paper
-                                    elevation={3}
-                                    sx={{
-                                        width: "90%",
-                                        padding: 5,
-                                        marginLeft: "1.5%",
-                                        borderRadius: 5,
-                                    }}
-                                >
+                                <Paper elevation={3} sx={paperSx}>
                                     <Grid container spacing={3}>
                                         <PropertyDocumentsForm />
                                     </Grid>
+
+                                    {fieldErrors.documents && (
+                                        <Typography
+                                            color="error"
+                                            variant="body2"
+                                            align="center"
+                                            sx={{ mt: 1 }}
+                                        >
+                                            {fieldErrors.documents}
+                                        </Typography>
+                                    )}
+
                                     <Grid container justifyContent="center" alignItems="center">
                                         <Grid
                                             item
@@ -684,9 +655,13 @@ const PropertyTraAppforContact = () => {
                                             p={2}
                                         >
                                             <FormButtons
-                                                disabled={!formik.isValid || !formik.dirty}
+                                                // !formik.isValid removed so the click always reaches
+                                                // handleSubmit and the alert can be shown.
+                                                disabled={!formik.dirty}
                                                 handleSubmitButtonClick={handleSubmit}
-                                                resetForm={() => { window.location.reload(); }}
+                                                resetForm={() => {
+                                                    window.location.reload();
+                                                }}
                                                 submitBtnLabel="Submit"
                                                 isSubmitIcon={false}
                                                 cancelRedirect="/PropertyTransactionsDashBoard"
@@ -694,7 +669,7 @@ const PropertyTraAppforContact = () => {
                                         </Grid>
                                     </Grid>
                                 </Paper>
-                            </Box>l                          
+                            </Box>
                         </Form>
                     </FormikProvider>
                 </Grid>
@@ -702,4 +677,5 @@ const PropertyTraAppforContact = () => {
         </DashBoardContainer>
     );
 };
+
 export default PropertyTraAppforContact;
