@@ -719,28 +719,10 @@ const PropertyTransactionApplicationSR3 = () => {
 
         {/* ---------- Remark + actions ---------- */}
         <SectionCard
-          icon={<ChatBubbleOutline fontSize="small" />}
-          title={labels.Remark[lang]}
+          
           footer={
             <>
-              <Button
-                variant="contained"
-                color="success"
-                onClick={() => handleSubmit("accept")}
-                disabled={isActionDisabled}
-                sx={{ textTransform: "none", fontWeight: 600 }}
-              >
-                Submit
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => handleSubmit("reject")}
-                disabled={isActionDisabled}
-                sx={{ textTransform: "none", fontWeight: 600 }}
-              >
-                Reject
-              </Button>
+              
               <Button
                 variant="outlined"
                 color="secondary"
@@ -752,8 +734,8 @@ const PropertyTransactionApplicationSR3 = () => {
             </>
           }
         >
-          <Grid container spacing={2}>
-            {/* Remark type dropdown */}
+          {/* <Grid container spacing={2}>
+            {/* Remark type dropdown *}
             {/* <Grid item xs={12}>
               <FormControl fullWidth required>
                 <InputLabel id="remarkType-label">
@@ -777,7 +759,7 @@ const PropertyTransactionApplicationSR3 = () => {
               </FormControl>
             </Grid> */}
 
-            {/* Remark text */}
+            {/* Remark text *}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -793,8 +775,8 @@ const PropertyTransactionApplicationSR3 = () => {
               />
             </Grid>
 
-            {/* Citizen Objection - Hearing Details */}
-            {formik.values.remarkType === "citizen_objection" && (
+            {/* Citizen Objection - Hearing Details *}
+            {/* {formik.values.remarkType === "citizen_objection" && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -819,7 +801,7 @@ const PropertyTransactionApplicationSR3 = () => {
                   </Box>
 
                   <Grid container spacing={2}>
-                    {/* Hearing Date */}
+                    {/* Hearing Date *}
                     <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
@@ -838,8 +820,8 @@ const PropertyTransactionApplicationSR3 = () => {
                   </Grid>
                 </Box>
               </Grid>
-            )}
-          </Grid>
+            )} *}
+          </Grid> */}
         </SectionCard>
       </Box>
     </DashBoardContainer>

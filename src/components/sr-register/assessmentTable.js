@@ -378,7 +378,7 @@ const effectiveGatKey = gatKey || values?.gatKey;
         !!effectiveZoneKey &&
         !!effectiveGatKey &&
         Number(updatedRow.areaInSqmt) > 0;
-console.log("rate inputs", { zoneKey, gatKey, formZone: values?.zoneKey, formGat: values?.gatKey });
+
       if (hasValidRateInputs) {
         try {
           const rateData = await fetchTaxAmount(
