@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import DashBoardContainer from "../layout/dashboard-container";
 import { Form, FormikProvider, useFormik } from "formik";
@@ -28,7 +28,10 @@ import AlertMsg from "../common/alert";
 import { srRegisterFullFormSchema } from "../../utils/validation-schema";
 import { getCurrentDate, getErrorMsg } from "../../utils/helpers";
 import { showToastError } from "../common/toastHelper";
-import { submitPropertyTransaction } from "../../services/assessment-services";
+import {
+  submitPropertyTransaction,
+  viewPendingApplications,
+} from "../../services/assessment-services";
 
 import PropertyInfoForm from "./propertyInfoForm";
 import OwnerInfoForm from "./ownerInfoForm";
@@ -45,7 +48,6 @@ const NAVY_LIGHT = "#1B3A63";
 const MINT = "#0F6E56";
 const MINT_BG = "#E1F5EE";
 
-
 // =============================
 // Wizard Component
 // =============================
@@ -55,10 +57,8 @@ const WizardWrapper = ({ step, setStep, steps, handleSubmitButtonClick }) => {
   const isLast = step === steps.length - 1;
   const lang = useSelector((state) => state.userDetails?.lang);
 
-
   return (
     <>
-    
       {/* Step tabs */}
       <Box sx={{ px: { xs: 1, md: 3 }, pt: 2.5, pb: 2 }}>
         <Tabs
@@ -176,11 +176,28 @@ const SrRegister = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const applicationNoFromURL = searchParams.get("applicationNo");
+  const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
+  const propertyCodeFromURL = searchParams.get("propertyCode");
+  const modeFromURL = searchParams.get("mode");
+
+  // True only when we've arrived here via the "Edit Application" link on the view page.
+  // The plain "New Application" flow never sets mode=edit, so it is completely unaffected.
+  const isEditMode =
+    modeFromURL === "edit" && !!applicationNoFromURL && !!transactionTypeIdFromURL;
 
   const { loading, setLoading, error, setError } = useApiState();
 
   const [zoneKey, setZoneKey] = useState("");
+  const [gatKey, setGatKey] = useState("");
   const [step, setStep] = useState(0);
+  // AssessmentTable keeps its own local row state seeded from this prop - formik.values
+  // is not read by it directly, so prefilled assessment rows must flow through here.
+  const [assessmentInitialRows, setAssessmentInitialRows] = useState([]);
+  const [propertyTransactionId, setPropertyTransactionId] = useState("");
+  const [propertyTransactionDetailsId, setPropertyTransactionDetailsId] = useState("");
+  const [ownerTransactionId, setOwnerTransactionId] = useState("");
+  const [occupantTransactionId, setOccupantTransactionId] = useState("");
+  const [addressTransactionId, setAddressTransactionId] = useState("");
 
   // -----------------------------
   // Initial form values
@@ -280,6 +297,169 @@ const SrRegister = () => {
   });
 
   // -----------------------------
+  // Edit mode: fetch the existing application and prefill the form
+  // (same logic as the working backup)
+  // -----------------------------
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    const loadApplicationForEdit = async () => {
+      try {
+        setLoading(true);
+        const payload = {
+          transactionTypeKey: transactionTypeIdFromURL,
+          applicationId: applicationNoFromURL,
+        };
+
+        const response = await viewPendingApplications(payload);
+        const vo = response?.propertyTransactionVO?.[0];
+        if (!vo) {
+          showToastError("Could not find application details to edit.");
+          return;
+        }
+
+        const ownerInfo = vo.ownerVO || {};
+        const occupantInfo = vo.occupantVO || {};
+        const addressInfo = vo.addressVO || {};
+        const fetchedDetails = vo.propertyTransactionDetailsVO || [];
+        const fetchedDocs = vo.documentVOs || [];
+
+        const details = vo.propertyTransactionDetailsVO?.[0] || {};
+        setPropertyTransactionId(vo.propertyTransactionId ?? "");
+        setPropertyTransactionDetailsId(details.propertyTransactionDetailsId ?? "");
+        setOwnerTransactionId(vo.ownerVO?.ownerTransactionId ?? "");
+        setOccupantTransactionId(vo.occupantVO?.occupantTransactionId ?? "");
+        setAddressTransactionId(vo.addressVO?.addressTransactionId ?? "");
+        setZoneKey(vo.zoneKey || "");
+        setGatKey(vo.gatKey || "");
+
+        formik.setValues({
+          ...formik.values,
+
+          transactionType: vo.transactionTypeKey || transactionTypeIdFromURL || "",
+          PropertyNumber: vo.propertyCode || propertyCodeFromURL || "",
+          zoneKey: vo.zoneKey || "",
+          gatKey: vo.gatKey || "",
+          srDate: vo.sr1Date || initialState.srDate,
+          propertyDescription: vo.description || "",
+          fYear: vo.financialYearKey || "",
+          specialOwnership: vo.specialOwnershipId || "",
+          waterConnNo: vo.waterConnNo || "",
+          drainageNo: vo.drainageNo || "",
+          finalConstructionType: vo.finalConstructionType || "",
+          finalUseType: vo.finalUseType || "",
+
+          // Owner - the view API returns a single combined name, so it lands in the
+          // "first name" field. Split it into first/middle/last here if
+          // OwnerInfoForm needs them separated.
+          marFirstOwnerName: ownerInfo.marOwnerName || "",
+          marMiddleOwnerName: "",
+          marLastOwnerName: "",
+          engFirstOwnerName: ownerInfo.engOwnerName || "",
+          engMiddleOwnerName: "",
+          engLastOwnerName: "",
+          ownerMobile: ownerInfo.ownerMobile || "",
+          ownerEmail: ownerInfo.ownerEmail || "",
+          ownerAdharNo: ownerInfo.ownerAdharNo || "",
+
+          // Occupant - same single-name caveat as owner above
+          engFirstOccupantName: occupantInfo.engOccupantName || "",
+          engMiddleOccupantName: "",
+          engLastOccupantName: "",
+          marFirstOccupantName: occupantInfo.marOccupantName || "",
+          marMiddleOccupantName: "",
+          marLastOccupantName: "",
+          occupantMobile: occupantInfo.occupantMobile || "",
+          occupantEmail: occupantInfo.occupantEmail || "",
+          occupantAdharNo: occupantInfo.occupantAdharNo || "",
+
+          // Address - field names match 1:1 between the view API and this form
+          flatNo: addressInfo.flatNo || "",
+          blockNo: addressInfo.blockNo || "",
+          floorMarathi: addressInfo.floorMarathi || "",
+          floor: addressInfo.floor || "",
+          buildingNo: addressInfo.buildingNo || "",
+          wingNameMarathi: addressInfo.wingNameMarathi || "",
+          wingName: addressInfo.wingName || "",
+          societyNameMarathi: addressInfo.societyNameMarathi || "",
+          societyName: addressInfo.societyName || "",
+          landmarkMarathi: addressInfo.landmarkMarathi || "",
+          landmark: addressInfo.landmark || "",
+          towerNameMarathi: addressInfo.towerNameMarathi || "",
+          towerName: addressInfo.towerName || "",
+          villageMarathi: addressInfo.villageMarathi || "",
+          village: addressInfo.village || "",
+          pinCode: addressInfo.pinCode || "",
+          marPropertyAddress: addressInfo.marPropertyAddress || "",
+          engPropertyAddress: addressInfo.engPropertyAddress || "",
+
+          // Documents - re-shaped to what PropertyDocumentsForm / submit expect.
+          // isReuploaded stays false until the user picks a new file for the row
+          // (PropertyDocumentsForm sets it to true in that case).
+          documents: fetchedDocs.length
+            ? fetchedDocs.map((doc) => ({
+              documentId: doc.documentId || "",
+              documentName: doc.documentName || "",
+              documentURLbase64: doc.documentURLbase64 || "",
+              transactionDocumentId: doc.transactionDocumentId || "",
+              reuploaded: false,
+            }))
+            : initialState.documents,
+
+          // Assessment rows - also set on formik for consistency; AssessmentTable
+          // overwrites it from its own state once it mounts.
+          propertyTransactionDetailsVO: fetchedDetails.map((row) => ({
+            propertyTransactionDetailsId: row.propertyTransactionDetailsId,
+            useType: row.useType,
+            subUseType: row.subUseType,
+            constructionType: row.constructionType,
+            occupancy: row.occuapncy,
+            specialResidents: row.specialOccupant,
+            assessmentDate: row.assessmentDate,
+            areaType: row.areaType || "",
+            areaInSqmt: row.area,
+            rVValue: row.rateableValue,
+            isToilet: !!row.toilet,
+            isIllegal: !!row.permision,
+            floor: row.florage || "",
+          })),
+        });
+
+        // AssessmentTable seeds its own state from this "initialRows" prop. Its
+        // mapApiToRow() expects *Name-suffixed label fields, "Y"/"N" for toilet,
+        // and propertyDetailsKey instead of propertyTransactionDetailsId.
+        setAssessmentInitialRows(
+          fetchedDetails.map((row) => ({
+            useTypeName: row.useType,
+            subuseTypeName: row.subUseType,
+            constructionTypeName: row.constructionType,
+            occupancyName: row.occuapncy,
+            specialOccupantName: row.specialOccupant,
+            assessmentDate: row.assessmentDate,
+            area: row.area,
+            areaType: row.areaType,
+            propertyDetailsKey: row.propertyTransactionDetailsId,
+            ratableValue: row.rateableValue,
+            toilet: row.toilet ? "Y" : "N",
+            permission: row.permision ? "N" : "Y", // legalStatusOptions: "Y"=Legal, "N"=Illegal
+            floor: row.floor,
+            billRate: row.rate,
+          })),
+        );
+      } catch (err) {
+        showToastError(getErrorMsg(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadApplicationForEdit();
+    // Only re-run if the identifying query params change; formik/initialState are
+    // stable references we intentionally don't want to re-trigger this fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, applicationNoFromURL, transactionTypeIdFromURL]);
+
+  // -----------------------------
   // Generate UUID
   // -----------------------------
   function generateUUID() {
@@ -297,12 +477,12 @@ const SrRegister = () => {
   const handleSubmitButtonClick = async (e) => {
     e.preventDefault();
     const values = formik.values;
-
     const body = {
       requestId: generateUUID(),
       channelName: "PropertyTax",
       propertyTransactionVO: [
         {
+          propertyTransactionId: propertyTransactionId,
           transactionTypeId: values.transactionType,
           oldPropertyKey: values.PropertyNumber,
           propertyCode: values.PropertyNumber,
@@ -324,6 +504,7 @@ const SrRegister = () => {
             ownerMobile: values.ownerMobile,
             ownerEmail: values.ownerEmail,
             ownerAdharNo: values.ownerAdharNo,
+            ownerTransactionId: ownerTransactionId,
           },
 
           occupantVO: {
@@ -332,6 +513,7 @@ const SrRegister = () => {
             occupantMobile: values.occupantMobile,
             occupantEmail: values.occupantEmail,
             occupantAdharNo: values.occupantAdharNo,
+            occupantTransactionId: occupantTransactionId,
           },
 
           addressVO: {
@@ -353,6 +535,7 @@ const SrRegister = () => {
             pinCode: values.pinCode,
             marPropertyAddress: values.marPropertyAddress,
             engPropertyAddress: values.engPropertyAddress,
+            addressTransactionId: addressTransactionId,
           },
 
           documentVOs: values.documents,
@@ -371,6 +554,7 @@ const SrRegister = () => {
             toiletFlag: row.isToilet ? "Y" : "N",
             permission: row.isIllegal,
             floor: row.floor,
+            propertyTransactionDetailsId: propertyTransactionDetailsId,
           })),
         },
       ],
@@ -379,10 +563,16 @@ const SrRegister = () => {
     try {
       setLoading(true);
       const response = await submitPropertyTransaction(body);
+
       if (response?.applicationId) {
         localStorage.setItem("applicationId", response.applicationId);
         localStorage.setItem("transactionTypeId", values.transactionType);
-        navigate("/assessment-document");
+
+        if (response?.responseMsg === "SR3") {
+          navigate("/sr3-document");     // SR3 flow
+        } else {
+          navigate("/assessment-document"); // existing flow, unchanged
+        }
       } else {
         showToastError("Error occurred. Please try again.");
       }
@@ -395,14 +585,35 @@ const SrRegister = () => {
 
   // =============================
   // Wizard Steps Definition
+  // (props match the working backup: gatKey/setGatKey for PropertyInfoForm,
+  //  gatKey + initialRows for AssessmentTable)
   // =============================
   const steps = [
-    { label: labels.PropertyDetails[lang], component: (<PropertyInfoForm zoneKey={zoneKey} setZoneKey={setZoneKey} />), },
-    { label: labels.ownerInfo[lang], component: <OwnerInfoForm />, },
-    { label: labels.OccupantInfo[lang], component: <OccupantInfoForm />, },
-    { label: labels.PropertyAddress[lang], component: <PropertyAddressForm />, },
-    { label: labels.docs[lang], component: <PropertyDocumentsForm />, },
-    { label: labels.PropertyAssessment[lang], component: (<AssessmentTable zoneKey={zoneKey} gatKey={formik.values.gatKey} />), },
+    {
+      label: labels.PropertyDetails[lang],
+      component: (
+        <PropertyInfoForm
+          zoneKey={zoneKey}
+          setZoneKey={setZoneKey}
+          gatKey={gatKey}
+          setGatKey={setGatKey}
+        />
+      ),
+    },
+    { label: labels.ownerInfo[lang], component: <OwnerInfoForm /> },
+    { label: labels.OccupantInfo[lang], component: <OccupantInfoForm /> },
+    { label: labels.PropertyAddress[lang], component: <PropertyAddressForm /> },
+    { label: labels.docs[lang], component: <PropertyDocumentsForm /> },
+    {
+      label: labels.PropertyAssessment[lang],
+      component: (
+        <AssessmentTable
+          zoneKey={zoneKey}
+          gatKey={gatKey}
+          initialRows={assessmentInitialRows}
+        />
+      ),
+    },
   ];
 
   // =============================
@@ -452,6 +663,15 @@ const SrRegister = () => {
                           {labels.PropertyTransactions[lang]}
                         </Typography>
                       </Box>
+
+                      {/* Shown only when opened from "Edit Application" */}
+                      {isEditMode && (
+                        <Chip
+                          label="Edit Application"
+                          sx={{ bgcolor: "#fff", color: NAVY, fontWeight: 600 }}
+                        />
+                      )}
+
                       <Chip
                         label={`${steps[step].label}`}
                         sx={{ bgcolor: MINT_BG, color: MINT, fontWeight: 600 }}

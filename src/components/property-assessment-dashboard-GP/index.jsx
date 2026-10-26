@@ -239,10 +239,16 @@ const PropertyAssessmentDashboardGP = () => {
     }
   };
 
-  const handleCountClick = (applicationId, propertyCode, transactionTypeId) => {
+  const handleCountClick = (applicationId, propertyCode, transactionTypeId, appStatus) => {
     const queryParams = `applicationNo=${encodeURIComponent(applicationId)}&transactionTypeId=${encodeURIComponent(
       transactionTypeId
-    )}&propertyCode=${encodeURIComponent(propertyCode)}`;
+    )}&propertyCode=${encodeURIComponent(propertyCode)}&appStatus=${encodeURIComponent(appStatus)}`;
+
+        // Check appStatus first
+    if (appStatus === "SR3 Pending") {
+      navigate(`/propertyTransactionApplicationSR3?${queryParams}`);
+      return;
+    }
 
     // Note: the original also had a second `["1"]` branch that navigated to
     // /SRDashboardForZo — it could never run because the first `["1"]`
@@ -429,7 +435,7 @@ const PropertyAssessmentDashboardGP = () => {
                               <TableCell align="center">
                                 <Link
                                   onClick={() =>
-                                    handleCountClick(item.applicationId, item.propertyCode, item.transactionTypeKey)
+                                    handleCountClick(item.applicationId, item.propertyCode, item.transactionTypeKey, item.formStatus)
                                   }
                                   component="button"
                                   sx={{ fontWeight: 600, color: MINT }}

@@ -5,7 +5,7 @@ import {
   Avatar,
   Box,
   Button,
-  Chip,
+  Link,
   Paper,
   Stack,
   Table,
@@ -19,14 +19,17 @@ import {
 import AddCircleOutline from "@mui/icons-material/AddCircleOutline";
 import RemoveCircleOutline from "@mui/icons-material/RemoveCircleOutline";
 import CloudUploadOutlined from "@mui/icons-material/CloudUploadOutlined";
-import AttachFileOutlined from "@mui/icons-material/AttachFileOutlined";
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import VisibilityOutlined from "@mui/icons-material/VisibilityOutlined";
 import SelectInput from "../form-fields/select-input";
 import useApiState from "../common/useApiState";
 import { showToastError } from "../common/toastHelper";
 import { getErrorMsg } from "../../utils/helpers";
 import { labels } from "../../lang/labels";
-import { getAssessmentDocuments } from "../../services/assessment-services";
+import {
+  getAssessmentDocuments,
+  ViewProTransactionDoc,
+} from "../../services/assessment-services";
 
 // Theme tokens — same values used across the other redesigned pages.
 const NAVY = "#12233F";
@@ -43,6 +46,20 @@ const headCellSx = {
   whiteSpace: "nowrap",
 };
 
+const mimeFromName = (name = "") => {
+  const ext = name.split(".").pop()?.toLowerCase();
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return "application/pdf";
+};
+
+const base64ToBlob = (b64, type) => {
+  const bytes = atob(b64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type });
+};
+
 /**
  * `showHeader` — set to false when this form is already rendered inside a
  * card that has its own "Document details" header (e.g. the address-change
@@ -54,9 +71,8 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
   const { setLoading } = useApiState();
   const [documents, setDocuments] = useState([]);
 
-  // File names are kept locally (keyed by row index) rather than in
-  // Formik, so no extra field ends up inside the `documents` objects that
-  // are sent to the backend as `documentVOs`.
+  // File names of files picked in THIS session (keyed by row index). Kept locally so
+  // no extra field ends up inside the `documents` objects sent as `documentVOs`.
   const [fileNames, setFileNames] = useState({});
 
   const documentOptions = useMemo(
@@ -88,11 +104,61 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
     };
   }, [setLoading]);
 
+  // ---- Edit mode: preselect the dropdown for saved documents.
+  // 1) if the row already has an id, make sure its type matches the option ids
+  //    (e.g. "5" vs 5), otherwise the select shows blank
+  // 2) if it has no id, match by name (ignoring case, spaces and file extension)
+  useEffect(() => {
+    if (!documents.length) return;
+    const current = formik.values.documents || [];
+    let changed = false;
+
+    const clean = (v) =>
+      String(v ?? "")
+        .replace(/\.(pdf|jpe?g|png)$/i, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+    const next = current.map((doc) => {
+      // 1) id already matches an option (same type or "5" vs 5): nothing to match by name
+      if (doc.documentId !== "" && doc.documentId != null) {
+        if (documents.some((d) => d.id === doc.documentId)) return doc;
+        const loose = documents.find((d) => String(d.id) === String(doc.documentId));
+        if (loose) {
+          changed = true;
+          return { ...doc, documentId: loose.id };
+        }
+        // otherwise the saved id is a transaction-document id (e.g. 634), not a
+        // document-type id, so fall through and match by name
+      }
+
+      // 2) match by name
+      if (!doc.documentName) return doc;
+      const target = clean(doc.documentName);
+      const match = documents.find(
+        (d) =>
+          clean(d.marDocumentName) === target ||
+          clean(d.engDocumentName) === target ||
+          clean(d.documentName) === target
+      );
+      if (!match) return doc;
+      changed = true;
+      return { ...doc, documentId: match.id };
+    });
+
+    if (changed) formik.setFieldValue("documents", next);
+    // eslint-disable-next-line
+  }, [documents, formik.values.documents]);
+
   const handleFileChange = (e, index) => {
     const file = e.target.files[0];
+    const row = formik.values.documents?.[index] || {};
+    const isSavedDoc = Boolean(row.transactionDocumentId); // came from the server
 
     if (!file) {
-      // File picker was cancelled/cleared — drop any previously stored file.
+      // Picker cancelled. Never wipe a saved document because of that.
+      if (isSavedDoc) return;
       formik.setFieldValue(`documents[${index}].documentURLbase64`, "");
       setFileNames((prev) => {
         const next = { ...prev };
@@ -106,9 +172,39 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
     reader.onloadend = () => {
       const base64String = reader.result.split(",")[1]; // remove data-URL prefix
       formik.setFieldValue(`documents[${index}].documentURLbase64`, base64String);
+      // Saved document replaced with a new file -> tell the backend.
+      // Rows that are not re-uploaded keep reuploaded = false and are sent as they are.
+      if (isSavedDoc) {
+        formik.setFieldValue(`documents[${index}].reuploaded`, true);
+      }
       setFileNames((prev) => ({ ...prev, [index]: file.name }));
     };
     reader.readAsDataURL(file);
+  };
+
+  // Opens the document in a new tab.
+  // - file picked in this session: the base64 is in memory, so open it directly
+  // - saved document: ask the server for it, same call the view page uses
+  const handleView = async (doc, index) => {
+    const win = window.open("", "_blank"); // opened inside the click so it isn't blocked
+    try {
+      let blob;
+      if (fileNames[index]) {
+        blob = base64ToBlob(doc.documentURLbase64, mimeFromName(fileNames[index]));
+      } else {
+        const response = await ViewProTransactionDoc(
+          doc.documentName,
+          doc.documentURLbase64
+        );
+        blob = new Blob([response], { type: response?.type || "application/pdf" });
+      }
+      const url = window.URL.createObjectURL(blob);
+      if (win) win.location.href = url;
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      if (win) win.close();
+      showToastError(getErrorMsg(err));
+    }
   };
 
   // Removes a row and shifts the stored file names down so each name still
@@ -138,10 +234,8 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
               {labels?.DocumentDetails?.[lang] || "Document Details"}
             </Typography>
             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
-              {/* Choose a document type and attach the file (PDF, JPG or PNG) */}
               {labels?.ChooseDocTypeAndAttach?.[lang] ||
-                "दस्तऐवजाचा प्रकार निवडा आणि फाईल (PDF, JPG किंवा PNG) संलग्न करा"}
-              Choose a document type and attach the file (PDF or JPG)
+                "Choose a document type and attach the file (PDF, JPG or PNG)"}
             </Typography>
           </Box>
         </Stack>
@@ -162,11 +256,11 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
             <Table sx={{ width: "100%", minWidth: 560 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ ...headCellSx, width: "40%" }}>
+                  <TableCell sx={{ ...headCellSx, width: "38%" }}>
                     {labels?.DocumentDetails?.[lang] || "Document"}
                   </TableCell>
-                  <TableCell sx={{ ...headCellSx, width: "40%" }}>File</TableCell>
-                  <TableCell align="center" sx={{ ...headCellSx, width: "20%" }}>
+                  <TableCell sx={{ ...headCellSx, width: "38%" }}>File</TableCell>
+                  <TableCell align="center" sx={{ ...headCellSx, width: "24%" }}>
                     Action
                   </TableCell>
                 </TableRow>
@@ -175,7 +269,9 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
               <TableBody>
                 {formik.values.documents.map((doc, index) => {
                   const hasFile = Boolean(doc.documentURLbase64);
-                  const fileLabel = fileNames[index] || (hasFile ? "File attached" : "");
+                  // new file name, else the saved document's name, else a generic label
+                  const fileLabel =
+                    fileNames[index] || doc.documentName || (hasFile ? "File attached" : "");
 
                   return (
                     <TableRow
@@ -185,10 +281,20 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                     >
                       {/* Document type */}
                       <TableCell>
-                        <SelectInput
-                          name={`documents[${index}].documentId`}
-                          options={documentOptions}
-                        />
+                        {documents.length > 0 &&
+                        doc.documentName &&
+                        !documentOptions.some((o) => o.id === doc.documentId) ? (
+                          // saved document whose name is not in the dropdown list
+                          // (e.g. SR1, स्थळ पाहणी अहवाल): show it as read-only text
+                          <Typography sx={{ fontSize: 14, fontWeight: 600, color: NAVY }}>
+                            {doc.documentName}
+                          </Typography>
+                        ) : (
+                          <SelectInput
+                            name={`documents[${index}].documentId`}
+                            options={documentOptions}
+                          />
+                        )}
                       </TableCell>
 
                       {/* File upload */}
@@ -217,17 +323,24 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                           </Button>
 
                           {hasFile ? (
-                            <Chip
-                              size="small"
-                              icon={<AttachFileOutlined sx={{ color: `${MINT} !important` }} />}
-                              label={fileLabel}
+                            <Link
+                              component="button"
+                              type="button"
+                              underline="hover"
+                              onClick={() => handleView(doc, index)}
+                              title={fileLabel}
                               sx={{
-                                bgcolor: MINT_BG,
-                                color: MINT,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                fontSize: 13,
                                 fontWeight: 600,
-                                maxWidth: 200,
+                                color: MINT,
                               }}
-                            />
+                            >
+                              <VisibilityOutlined sx={{ fontSize: 18 }} />
+                              View document
+                            </Link>
                           ) : (
                             <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
                               No file chosen
@@ -236,19 +349,21 @@ const PropertyDocumentsForm = ({ showHeader = true }) => {
                         </Stack>
                       </TableCell>
 
-                      {/* Remove */}
+                      {/* View / Remove */}
                       <TableCell align="center">
-                        {formik.values.documents.length > 1 && (
-                          <Button
-                            onClick={() => handleRemove(index, remove)}
-                            color="error"
-                            size="small"
-                            startIcon={<RemoveCircleOutline />}
-                            sx={{ textTransform: "none" }}
-                          >
-                            Remove
-                          </Button>
-                        )}
+                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                          {formik.values.documents.length > 1 && (
+                            <Button
+                              onClick={() => handleRemove(index, remove)}
+                              color="error"
+                              size="small"
+                              startIcon={<RemoveCircleOutline />}
+                              sx={{ textTransform: "none" }}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   );
