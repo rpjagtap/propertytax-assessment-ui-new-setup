@@ -77,7 +77,8 @@ const ProtectedRoute = ({ routeName, element: Component, ...rest }) => {
     routeName === "CitizenSRDoc" ||
     routeName === "propertyTransactionApplicationObjection" ||
     routeName === "hearing-letter" ||
-      routeName === "CitizenConcessionApplication" 
+      routeName === "CitizenConcessionApplication" ||
+    routeName === "propertyTransactionApplicationSR3"
   ) {
     return <Component {...rest} />;
   }

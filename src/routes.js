@@ -68,6 +68,7 @@ import CitizenSRDoc from "./components/citizen-sr-doc";
 import PropertyTransactionApplicationObjection from "./components/property-transaction-application-objection";
 import HearingLetterPage from "./components/hearing-letter-pdf";
 import CitizenConcessionApplication from "./components/citizen-concession-application/citizenConcessionApplication";
+import PropertyTransactionApplicationSR3 from "./components/property-transaction-application-sr3";
 
 const routes = [
   {
@@ -339,6 +340,10 @@ const routes = [
   {
     path: "CitizenConcessionApplication",
     component: CitizenConcessionApplication,
+  },
+  {
+    path: "propertyTransactionApplicationSR3",
+    component: PropertyTransactionApplicationSR3, 
   }
   // Add other routes here
 ];
