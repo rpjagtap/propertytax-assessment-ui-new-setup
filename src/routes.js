@@ -67,6 +67,7 @@ import JahirNoticeDashboard from "./components/property-transfer-jahir-notice-da
 import CitizenSRDoc from "./components/citizen-sr-doc";
 import PropertyTransactionApplicationObjection from "./components/property-transaction-application-objection";
 import HearingLetterPage from "./components/hearing-letter-pdf";
+import CitizenConcessionApplication from "./components/citizen-concession-application/citizenConcessionApplication";
 
 const routes = [
   {
@@ -334,6 +335,10 @@ const routes = [
   {
     path: "hearing-letter",
     component: HearingLetterPage,
+  },
+  {
+    path: "CitizenConcessionApplication",
+    component: CitizenConcessionApplication,
   }
   // Add other routes here
 ];
