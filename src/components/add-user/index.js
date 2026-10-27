@@ -58,7 +58,7 @@ import { showToastError, showToastSuccess } from "../common/toastHelper";
 import {
   getAllProfile,
   getAllZone,
-  getAllGatByZoneKey,
+  getGatByZonekey,
   getAddUser,
   getAllUserByUserCode,
   editUserApi,
@@ -308,7 +308,7 @@ const AddUser = () => {
       setLoading(true);
       const results = await Promise.all(
         zones.map(async (zoneKey) => {
-          const res = await getAllGatByZoneKey({ zoneKey });
+          const res = await getGatByZonekey({ zoneKey });
           return extractGatList(res).map((g) => ({ ...g, zoneKey: String(zoneKey) }));
         })
       );
