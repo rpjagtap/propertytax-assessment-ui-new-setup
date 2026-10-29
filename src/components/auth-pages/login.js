@@ -245,15 +245,15 @@ const Login = () => {
             <Box>
               <Typography
                 sx={{
-                  fontFamily: fontBody,
-                  fontSize: 12,
+                  fontFamily: fontDisplay,
+                  fontSize: 14,
                   fontWeight: 600,
                   letterSpacing: "0.18em",
                   color: palette.marigold,
                   textTransform: "uppercase",
                 }}
               >
-                PCMC Staff Portal
+                PCMC Property Tax Portal
               </Typography>
               <Typography
                 sx={{
@@ -265,7 +265,7 @@ const Login = () => {
                   maxWidth: 280,
                 }}
               >
-                Sign in to manage civic operations
+                Sign in to your Property Tax workspace
               </Typography>
               <Typography
                 sx={{
@@ -276,8 +276,7 @@ const Login = () => {
                   display: { xs: "none", md: "block" },
                 }}
               >
-                Authorized personnel access for zone, gat and counter
-                administration.
+                Manage new property registrations, ownership changes, objections and hearings and other work of property tax for PCMC, all in one place.
               </Typography>
             </Box>
 
