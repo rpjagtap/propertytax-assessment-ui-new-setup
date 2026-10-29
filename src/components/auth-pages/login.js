@@ -27,6 +27,7 @@ import { showToastError, showToastSuccess } from "../common/toastHelper";
 // bundle from pulling in the whole icon package regardless of tree-shaking config.
 import LoginOutlined from "@mui/icons-material/LoginOutlined";
 import Replay from "@mui/icons-material/Replay";
+import PoweredByFooter from "../layout/powered-by-footer";
 
 // ---- Visual tokens (civic identity: navy + marigold + teal) ----
 const palette = {
@@ -478,6 +479,7 @@ const Login = () => {
           </Box>
         </Box>
       </Box>
+      <PoweredByFooter />
     </Box>
   );
 };
