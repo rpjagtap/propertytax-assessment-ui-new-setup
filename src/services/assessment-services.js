@@ -691,10 +691,25 @@ export const submitCitizenPropertyUpdateApplication = async (body) => {
   return response.data;
 };
 
-export const get_redzone_data_for_zo = async () => {
-  const response = await apiClient.get(`/property/get_redzone_data_for_zo`);
+// export const getredzonedataforzo = async () => {
+//   const response = await apiClient.get(`/property/get_redzone_data_for_zo`);
+//   return response.data;
+// }
+
+export const getredzonedataforzo = async (zonekey) => {
+  const response = await apiClient.post(`/property/get_redzone_data_for_zo`, {
+    zonekey: Number(zonekey),
+  });
   return response.data;
-}
+};
+
+// export const getredzonedataforzo = async (zonekey) => {
+//   const response = await apiClient.post(
+//     `/property/get_redzone_data_for_zo`,
+//     { zonekey: Number(zonekey) } // body => {"zonekey": 7}
+//   );
+//   return response.data;
+// };
 
 export const approved_property_type = async (propertyKey, isChecked) => {
   const response = await apiClient.post(
