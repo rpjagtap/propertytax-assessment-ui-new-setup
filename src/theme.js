@@ -23,6 +23,9 @@ const colors = {
   tableRowZebra: "rgba(18,35,63,0.025)",
 };
 
+// Phones. Same value as MUI's default `sm` breakpoint (600px).
+const MOBILE = "@media (max-width:599.95px)";
+
 const theme = createTheme({
   palette: {
     primary: {
@@ -46,12 +49,30 @@ const theme = createTheme({
     button: { textTransform: "none", fontWeight: 600 },
   },
   components: {
+    /* ---------- NEW: global baseline (needs <CssBaseline /> in index.js) ---------- */
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          // Stops phones from auto-inflating text sizes
+          WebkitTextSizeAdjust: "100%",
+        },
+        body: {
+          // Safety net only: hides stray sideways scroll caused by one wide
+          // element. It does not fix that element, so find and fix it too.
+          overflowX: "hidden",
+        },
+        // Images/videos never exceed their container (sx height/width still wins)
+        "img, video": { maxWidth: "100%", height: "auto" },
+      },
+    },
+
     /* ---------- Text boxes ---------- */
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
           borderRadius: 10,
           backgroundColor: "#fff",
+          // 16px keeps iOS from zooming in when an input is tapped
           fontSize: 16,
           transition: "box-shadow 0.15s ease, border-color 0.15s ease",
           "& fieldset": { borderColor: colors.border },
@@ -97,6 +118,9 @@ const theme = createTheme({
           marginTop: 4,
           boxShadow: "0 8px 24px rgba(18,35,63,0.14)",
           border: "1px solid #EEF1F6",
+          // NEW: long dropdown lists scroll instead of running off the screen
+          maxHeight: "60vh",
+          maxWidth: "calc(100vw - 16px)",
         },
       },
     },
@@ -170,6 +194,8 @@ const theme = createTheme({
           border: "1px solid #EEF1F6",
           marginTop: 6,
           minWidth: 300,
+          // NEW: never wider than the phone screen
+          maxWidth: "calc(100vw - 16px)",
           overflow: "hidden",
         },
       },
@@ -220,6 +246,8 @@ const theme = createTheme({
           paddingInline: 20,
           paddingBlock: 8,
           boxShadow: "none",
+          // NEW: slightly tighter buttons on phones so button rows wrap less
+          [MOBILE]: { paddingInline: 14 },
         },
         contained: {
           // FIX 1: explicit text color so it doesn't fall back to
@@ -283,6 +311,35 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: { root: { borderRadius: 14 } },
     },
+    /* NEW: tighter card padding on phones */
+    MuiCardHeader: {
+      styleOverrides: {
+        root: { [MOBILE]: { padding: 12 } },
+      },
+    },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          [MOBILE]: {
+            padding: 12,
+            "&:last-child": { paddingBottom: 12 },
+          },
+        },
+      },
+    },
+    /* NEW: dialogs fit small screens */
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          [MOBILE]: {
+            margin: 8,
+            width: "calc(100% - 16px)",
+            maxWidth: "calc(100% - 16px)",
+            maxHeight: "calc(100% - 16px)",
+          },
+        },
+      },
+    },
     MuiChip: {
       styleOverrides: { root: { fontWeight: 600 } },
     },
@@ -302,7 +359,13 @@ const theme = createTheme({
         root: {
           borderRadius: 14,
           border: `1px solid ${colors.tableBorder}`,
-          overflow: "hidden",
+          // CHANGED: was `overflow: "hidden"`, which clipped wide tables on
+          // phones with no way to scroll. Now they scroll sideways, and the
+          // rounded corners still clip the content.
+          overflowX: "auto",
+          overflowY: "hidden",
+          maxWidth: "100%",
+          WebkitOverflowScrolling: "touch",
         },
       },
     },
@@ -337,6 +400,8 @@ const theme = createTheme({
           padding: "10px 16px",
           fontSize: 13.5,
           color: colors.navy,
+          // NEW: less side padding on phones so more columns fit
+          [MOBILE]: { padding: "8px 10px" },
         },
         head: {
           fontWeight: 700,
@@ -346,6 +411,7 @@ const theme = createTheme({
           letterSpacing: "0.03em",
           borderBottom: `1px solid ${colors.tableBorder}`,
           padding: "12px 16px",
+          [MOBILE]: { padding: "10px 10px" },
         },
       },
     },

@@ -5,7 +5,7 @@ import { Box, Link, Typography } from "@mui/material";
 const COMPANY_NAME = "tech9services";
 const COMPANY_URL = "http://tech9services.com/";
 
-const PoweredByFooter = () => (
+const PoweredByFooter = () => ( 
   <Box
     component="footer"
     sx={{

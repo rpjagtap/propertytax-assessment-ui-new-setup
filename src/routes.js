@@ -69,6 +69,7 @@ import PropertyTransactionApplicationObjection from "./components/property-trans
 import HearingLetterPage from "./components/hearing-letter-pdf";
 import CitizenConcessionApplication from "./components/citizen-concession-application/citizenConcessionApplication";
 import PropertyTransactionApplicationSR3 from "./components/property-transaction-application-sr3";
+import SthapatyaAddProperty from "./components/sthapatya-add-property";
 
 const routes = [
   {
@@ -344,6 +345,10 @@ const routes = [
   {
     path: "propertyTransactionApplicationSR3",
     component: PropertyTransactionApplicationSR3, 
+  },
+  {
+    path: "SthapatyaAddProperty",
+    component: SthapatyaAddProperty,
   }
   // Add other routes here
 ];

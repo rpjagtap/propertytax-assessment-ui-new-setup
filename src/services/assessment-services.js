@@ -905,3 +905,8 @@ export const saveHearing = async (body) => {
   );
   return response.data;
 };
+
+export const addsthapatyaProperty = async (body) => {
+  const response = await apiClient.post(`/sthapatya/add-property-data`, body);
+  return response.data;
+}
