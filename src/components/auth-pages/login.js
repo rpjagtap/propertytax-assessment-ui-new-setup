@@ -27,6 +27,7 @@ import { showToastError, showToastSuccess } from "../common/toastHelper";
 // bundle from pulling in the whole icon package regardless of tree-shaking config.
 import LoginOutlined from "@mui/icons-material/LoginOutlined";
 import Replay from "@mui/icons-material/Replay";
+import PoweredByFooter from "../layout/powered-by-footer";
 
 // ---- Visual tokens (civic identity: navy + marigold + teal) ----
 const palette = {
@@ -244,15 +245,15 @@ const Login = () => {
             <Box>
               <Typography
                 sx={{
-                  fontFamily: fontBody,
-                  fontSize: 12,
+                  fontFamily: fontDisplay,
+                  fontSize: 14,
                   fontWeight: 600,
                   letterSpacing: "0.18em",
                   color: palette.marigold,
                   textTransform: "uppercase",
                 }}
               >
-                PCMC Staff Portal
+                PCMC Property Tax Portal
               </Typography>
               <Typography
                 sx={{
@@ -264,7 +265,7 @@ const Login = () => {
                   maxWidth: 280,
                 }}
               >
-                Sign in to manage civic operations
+                Sign in to your Property Tax workspace
               </Typography>
               <Typography
                 sx={{
@@ -275,8 +276,7 @@ const Login = () => {
                   display: { xs: "none", md: "block" },
                 }}
               >
-                Authorized personnel access for zone, gat and counter
-                administration.
+                Manage new property registrations, ownership changes, objections and hearings and other work of property tax for PCMC, all in one place.
               </Typography>
             </Box>
 
@@ -478,6 +478,7 @@ const Login = () => {
           </Box>
         </Box>
       </Box>
+      <PoweredByFooter />
     </Box>
   );
 };

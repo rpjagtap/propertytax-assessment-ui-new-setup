@@ -26,6 +26,7 @@ import ResendOTPButton from "./resend-otp";
 // bundle lean regardless of tree-shaking config.
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
+import PoweredByFooter from "../layout/powered-by-footer";
 
 // Shared identity tokens — kept in sync with the login page and header.
 const palette = {
@@ -284,6 +285,7 @@ const VerifyOtp = () => {
           </Box>
         </Box>
       </Box>
+      <PoweredByFooter />
     </Box>
   );
 };
