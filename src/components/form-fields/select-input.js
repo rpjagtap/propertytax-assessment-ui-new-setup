@@ -16,7 +16,7 @@ const menuProps = {
   PaperProps: {
     style: {
       maxHeight: 300,
-      width: "20%", // You can set a fixed width or use 'auto'
+      width: "auto",
     },
   },
 };

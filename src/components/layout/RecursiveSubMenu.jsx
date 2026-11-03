@@ -1,9 +1,10 @@
 import React, { useRef, useState } from "react";
-import { Box, Paper, MenuItem } from "@mui/material";
+import { Box, Paper, MenuItem, useMediaQuery } from "@mui/material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 const RecursiveSubMenu = ({ items, parentMenu, onMenuClick }) => {
   const [activeMenu, setActiveMenu] = useState(null);
+  const canHover = useMediaQuery("(hover: hover) and (pointer: fine)");
   const openTimer = useRef(null);
   const closeTimer = useRef(null);
   return (
@@ -13,6 +14,7 @@ const RecursiveSubMenu = ({ items, parentMenu, onMenuClick }) => {
           key={item.interfaceId}
           sx={{ position: "relative", width: "100%", cursor: "pointer" }}
           onMouseEnter={() => {
+            if (!canHover) return;
             clearTimeout(closeTimer.current);
 
             openTimer.current = setTimeout(() => {
@@ -20,6 +22,7 @@ const RecursiveSubMenu = ({ items, parentMenu, onMenuClick }) => {
             }, 100);
           }}
           onMouseLeave={() => {
+            if (!canHover) return;
             clearTimeout(openTimer.current);
 
             closeTimer.current = setTimeout(() => {
@@ -29,7 +32,11 @@ const RecursiveSubMenu = ({ items, parentMenu, onMenuClick }) => {
         >
           <MenuItem
             onClick={() => {
-              if (!item.children.length) {
+              if (item.children.length) {
+                if (!canHover) {
+                  setActiveMenu((current) => current === item.interfaceId ? null : item.interfaceId);
+                }
+              } else {
                 onMenuClick(parentMenu, item.formName, item.enDisplayName);
               }
             }}
@@ -47,18 +54,20 @@ const RecursiveSubMenu = ({ items, parentMenu, onMenuClick }) => {
 
           {item.children.length > 0 && activeMenu === item.interfaceId && (
             <Paper
-              onMouseEnter={() => clearTimeout(closeTimer.current)}
+              onMouseEnter={() => canHover && clearTimeout(closeTimer.current)}
               onMouseLeave={() => {
+                if (!canHover) return;
                 closeTimer.current = setTimeout(() => {
                   setActiveMenu(null);
                 }, 150);
               }}
               elevation={6}
               sx={{
-                position: "absolute",
-                left: "100%",
+                position: { xs: "relative", md: "absolute" },
+                left: { xs: 0, md: "100%" },
                 top: 0,
-                minWidth: 260,
+                minWidth: { xs: "100%", md: 260 },
+                maxWidth: { xs: "calc(100vw - 32px)", md: "none" },
                 zIndex: 9999,
               }}
             >

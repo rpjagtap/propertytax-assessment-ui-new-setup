@@ -262,9 +262,10 @@ const DashboardHeader = () => {
             PaperProps={{
               elevation: 6,
               sx: {
-                minWidth: 260,
+                minWidth: { xs: 0, sm: 260 },
                 borderRadius: 2,
-                width:"340px",
+                width: { xs: "calc(100vw - 32px)", sm: 340 },
+                maxWidth: "calc(100vw - 32px)",
                 overflow: "visible", // IMPORTANT
               },
             }}
@@ -312,6 +313,7 @@ const DashboardHeader = () => {
       <PCMCHeader />
 
       <AppBar
+        className="dashboard-nav-appbar"
         position="static"
         sx={{
           maxHeight: "40px",
@@ -319,6 +321,7 @@ const DashboardHeader = () => {
         }}
       >
         <Toolbar
+          className="dashboard-nav-toolbar"
           sx={{
             justifyContent: "space-between",
             alignItems: "center",
