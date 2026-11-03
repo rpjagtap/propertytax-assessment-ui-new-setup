@@ -117,7 +117,10 @@ const getRoleKey = (label = "") => {
   // \bhod\b matches "HOD" as a whole word only (so "method" etc. won't match)
   if (/\bhod\b/.test(l) || l.includes("head of department")) return ROLE_HOD;
   if (l.includes("cashier")) return ROLE_CASHIER;
-  if (l.includes("zone") && l.includes("officer")) return ROLE_ZONE_OFFICER;
+  // if (l.includes("zone") && l.includes("officer")) return ROLE_ZONE_OFFICER;
+  if ((l.includes("zone") || l.includes("zonal")) && l.includes("officer")) return ROLE_ZONE_OFFICER;
+// optional: also match the short form
+if (/\bzo\b/.test(l)) return ROLE_ZONE_OFFICER;
   if (l.includes("gat")) return ROLE_GAT;
   return "other";
 };
@@ -260,7 +263,7 @@ const AddUser = () => {
   const isCashierRole = roleKey === ROLE_CASHIER; // single zone, cash counter
 
   // Roles that can be given access to more than one zone
-  const isMultiZoneRole = isAdminRole || isHodRole;
+  const isMultiZoneRole = isAdminRole || isHodRole || isZoneOfficerRole;
 
   const zoneMultiple = isMultiZoneRole;
   const showGatSelect = isGatRole;
@@ -1035,7 +1038,7 @@ const AddUser = () => {
                           : isHodRole
                           ? "HOD: select all zones this user should access"
                           : isZoneOfficerRole
-                          ? "Zone Officer: select the one zone this user belongs to"
+                          ? "Zone Officer: select all zones this user should access"
                           : isGatRole
                           ? "Gat: select the zone, then all gats this user should switch between"
                           : isCashierRole
