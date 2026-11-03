@@ -24,3 +24,9 @@
 .MuiTableCell-body {
     min-width: 150px !important;
 }
+
+@media (max-width: 600px) {
+  .MuiTableCell-body {
+    min-width: unset !important;
+  }
+}

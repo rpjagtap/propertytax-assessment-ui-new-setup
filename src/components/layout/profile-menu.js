@@ -64,7 +64,7 @@ export default function ProfileMenu({
                 sx={{
                   fontWeight: 600,
                   // color: "black",
-                  fontSize: "14px",
+                  fontSize: { xs: "12px", sm: "14px" },
                   letterSpacing: 0,
                   lineHeight: 1,
                 }}
@@ -76,6 +76,7 @@ export default function ProfileMenu({
                 sx={{
                   // color: "#666",
                   fontSize: "10px",
+                  display: { xs: "none", sm: "block" },
                   letterSpacing: 0,
                   lineHeight: 1,
                 }}

@@ -1,8 +1,84 @@
 body {
   margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+}
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Keep wide data tables usable on phones without letting them widen the page. */
+.MuiTableContainer-root {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.MuiDialog-paper {
+  max-width: calc(100% - 32px);
+}
+
+@media (max-width: 600px) {
+  .MuiDialog-paper {
+    margin: 16px;
+  }
+
+  .MuiTableCell-root {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .MuiFormControl-root,
+  .MuiTextField-root {
+    max-width: 100%;
+  }
 }
 
 code {
   
+}
+
+
+@media (max-width: 600px) {
+  /* Form grids should use one full-width field per row on phones. */
+  form .MuiGrid-container > .MuiGrid-item {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .MuiAppBar-root.dashboard-nav-appbar {
+    max-height: none !important;
+  }
+
+  .MuiToolbar-root.dashboard-nav-toolbar {
+    min-height: 52px !important;
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+    gap: 4px;
+  }
+
+  .MuiToolbar-root.dashboard-nav-toolbar > .MuiBox-root:first-of-type {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
 }
