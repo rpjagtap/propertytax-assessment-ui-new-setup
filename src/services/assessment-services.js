@@ -691,6 +691,14 @@ export const submitCitizenPropertyUpdateApplication = async (body) => {
   return response.data;
 };
 
+export const submitConcessionApplication = async (body) => {
+  const response = await apiClient.post(
+    `/concession/submit-concession-application`,
+    body,
+  );
+  return response.data;
+};
+
 // export const getredzonedataforzo = async () => {
 //   const response = await apiClient.get(`/property/get_redzone_data_for_zo`);
 //   return response.data;
