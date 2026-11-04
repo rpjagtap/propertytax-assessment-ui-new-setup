@@ -23,13 +23,9 @@ const ViewTransferFee = ({
   setPendingAppCountData,
   setOpenViewFee1,
 }) => {
-  //   const queryParams = new URLSearchParams(window.location.search);
-  //   const transferId = queryParams.get("transferId");
   const [feesData, setFeesData] = useState([]);
   const [applicationData, setApplicationData] = useState();
-  // const applicationData = JSON.parse(
-  //   sessionStorage.getItem("application_details")
-  // );
+
   const handleCalcuateDetails = () => {
     setPendingAppCountData((prev) =>
       prev.map((row) => ({
@@ -49,7 +45,7 @@ const ViewTransferFee = ({
         const res = await viewTransferFees(body);
         if (res) {
           setApplicationData(res);
-          setFeesData(res.feesCalculationRO);
+          setFeesData(res.feesCalculationRO || []);
           console.log("Application Data:", res);
         }
       } catch (error) {
@@ -66,59 +62,80 @@ const ViewTransferFee = ({
 
   const handlePrint = () => {
     const content = printRef.current.innerHTML;
-    const printWindow = window.open("", "_blank", "width=800,height=600");
+
+    // Today's date in Marathi (Devanagari digits), e.g. ०४/११/२०२६
+    const printDate = new Date().toLocaleDateString("mr-IN-u-nu-deva", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+
+    // 1. Collect MUI/Emotion styles (works in dev and production)
+    const inlineCss = Array.from(document.styleSheets)
+      .filter((sheet) => sheet.ownerNode && sheet.ownerNode.tagName === "STYLE")
+      .map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map((r) => r.cssText)
+            .join("\n");
+        } catch (e) {
+          return "";
+        }
+      })
+      .join("\n");
+
+    // 2. Collect linked stylesheets (global css, fonts, etc.)
+    const linkTags = Array.from(
+      document.querySelectorAll('link[rel="stylesheet"]')
+    )
+      .map((l) => l.outerHTML)
+      .join("\n");
+
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!printWindow) {
+      alert("Please allow pop-ups to print.");
+      return;
+    }
+
     printWindow.document.write(`
     <html>
       <head>
-        <title>Print</title>
+        <title>Transfer Fee</title>
+        <base href="${window.location.origin}/" />
+        ${linkTags}
+        <style>${inlineCss}</style>
         <style>
+          @page { size: A4; margin: 10mm; }
           body {
-            font-family: 'Arial', sans-serif;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
+            font-family: ${getComputedStyle(document.body).fontFamily};
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-          .header {
-            text-align: center;
-            margin-bottom: 20px;
-          }
-          .header img {
-            width: 100px;
-            height: auto;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-          }
-          th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: center;
-          }
-          th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-          }
-          .label {
-            font-weight: bold;
-            width: 200px;
-            display: inline-block;
-          }
-          .row {
-            margin-bottom: 8px;
+          .print-date {
+            margin-top: 12px;
+            text-align: left;
+            font-size: 14px;
           }
         </style>
       </head>
       <body>
-        <div class="header">
-          <img src="${window.location.origin}/pcmc_logo.png" alt="PCMC Logo" />
-          <h2>PCMC Official Document</h2>
-        </div>
         ${content}
+        <div class="print-date">
+          प्रिंट दिनांक: <strong>${printDate}</strong>
+        </div>
       </body>
     </html>
   `);
     printWindow.document.close();
-    printWindow.print();
+
+    // Wait for images/fonts/styles to load before printing
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
   };
 
   return (
@@ -131,33 +148,29 @@ const ViewTransferFee = ({
         <Box
           ref={printRef}
           sx={{
-            border: "2px solid #000", // Black border
-            borderRadius: "8px", // Rounded corners (optional)
-            padding: "16px", // Add padding inside the border
-            marginTop: "16px", // Add some margin on top
+            border: "2px solid #000",
+            borderRadius: "8px",
+            padding: "16px",
+            marginTop: "16px",
             width: "100%",
           }}
         >
-          <img
-            class="MuiBox-root"
-            height="80px"
-            src="/pcmclogo.jpeg"
-            alt="Logo"
-            style={{ marginLeft: "32%" }}
-          ></img>
-
-          <Typography
-            variant="h6"
-            align="center"
-            marginTop="-3.7em"
-            fontWeight={800}
-            gutterBottom
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            gap={2}
           >
-            पिंपरी चिंचवड महानगरपालिका
-          </Typography>
-          <Typography align="center" fontWeight={550} gutterBottom>
-            कर आकारणी व कर संकलन विभाग
-          </Typography>
+            <img src="/pcmclogo.jpeg" alt="Logo" style={{ height: 80 }} />
+            <Box textAlign="center">
+              <Typography variant="h6" fontWeight={800}>
+                पिंपरी चिंचवड महानगरपालिका
+              </Typography>
+              <Typography fontWeight={550}>
+                कर आकारणी व कर संकलन विभाग
+              </Typography>
+            </Box>
+          </Box>
 
           <Box mt={5}>
             <Typography
@@ -219,8 +232,6 @@ const ViewTransferFee = ({
                       marginLeft: "6px",
                     }}
                   >
-                    {/* {applicationData?.propertyTransferDetails?.[0]
-                      ?.transferArea || "-"} */}
                     {applicationData?.mobileNo}
                   </span>{" "}
                 </div>
@@ -257,8 +268,6 @@ const ViewTransferFee = ({
                       marginLeft: "6px",
                     }}
                   >
-                    {/* {applicationData?.propertyTransferDetails?.[0]
-                      ?.transferArea || "-"} */}
                     {applicationData?.applicantAddress}
                   </span>{" "}
                 </div>
@@ -345,8 +354,6 @@ const ViewTransferFee = ({
                       marginLeft: "6px",
                     }}
                   >
-                    {/* {applicationData?.propertyTransferDetails?.[0]
-                      ?.transferArea || "-"} */}
                     {applicationData?.totalArea}
                   </span>
                 </div>
@@ -383,8 +390,6 @@ const ViewTransferFee = ({
                       marginLeft: "6px",
                     }}
                   >
-                    {/* {applicationData?.propertyTransferDetails?.[0]
-                      ?.transferArea || "-"} */}
                     {applicationData?.propertyAddress}
                   </span>
                 </div>
@@ -399,16 +404,6 @@ const ViewTransferFee = ({
           {/* Dynamic Fee Sections */}
           {feesData.map((feeItem, index) => (
             <Box key={index} mt={4}>
-              {/* <Typography variant="body1" gutterBottom>
-                <strong>दस्त प्रकार:</strong> {feeItem.documentType}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>नोंदणी दिनांक:</strong> {feeItem.nondaniDate}
-              </Typography>
-              <Typography variant="body1" gutterBottom>
-                <strong>बाजार मूल्य:</strong> ₹{feeItem.bajarMulya}
-              </Typography> */}
-
               <TableContainer component={Paper} sx={{ mt: 2 }}>
                 <Grid item xs={6}>
                   <div className="row" style={{ display: "flex" }}>
@@ -422,8 +417,6 @@ const ViewTransferFee = ({
                         marginLeft: "6px",
                       }}
                     >
-                      {/* {applicationData?.propertyTransferDetails?.[0]
-                      ?.transferArea || "-"} */}
                       {feeItem?.documentType}
                     </span>
                   </div>
@@ -474,29 +467,9 @@ const ViewTransferFee = ({
                         <strong>{feeItem.totalAmount}</strong>
                       </TableCell>
                     </TableRow>
-
-                    {/* --- Row 2: Application total (below section total) --- */}
-                    {/* <TableRow>
-                      <TableCell colSpan={2} align="right">
-                        <strong>एकूण (संपूर्ण)</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>{applicationData?.totalAmnt}</strong>
-                      </TableCell>
-                    </TableRow> */}
                   </TableBody>
                 </Table>
               </TableContainer>
-
-              {/* <Box display="flex" justifyContent="center" mt={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  // onClick={handleSplitDetails}
-                >
-                  Save
-                </Button>
-              </Box> */}
             </Box>
           ))}
 
@@ -505,7 +478,6 @@ const ViewTransferFee = ({
               variant="h6"
               sx={{
                 fontWeight: "bold",
-                // border: "2px ssolid #000",
                 paddingRight: "19%",
                 borderRadius: "4px",
               }}
@@ -514,11 +486,12 @@ const ViewTransferFee = ({
             </Typography>
           </Box>
         </Box>
+
         <Button
           variant="contained"
           color="primary"
           onClick={handleCalcuateDetails}
-          sx={{ marginLeft: 50, marginTop: 2 }} // Adds margin-left and margin-top
+          sx={{ marginLeft: 50, marginTop: 2 }}
         >
           Recalculate
         </Button>
