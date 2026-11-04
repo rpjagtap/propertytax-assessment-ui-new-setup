@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./citizenConcessionApplication.css";
 import { AVATARS } from "./concessionAvtar";
+import WomenConcessionApplication from "./womenConcessionApplication";
 
 /**
  * CitizenConcessionApplication – Landing page
@@ -37,7 +38,10 @@ export default function CitizenConcessionApplication({ onSelect, onBack }) {
   const [picked, setPicked] = useState(null);
 
   const handleSelect = (id) => {
-    setPicked(id);
+    if (id === "women") {
+      setPicked(id);
+      return;
+    }
     if (typeof onSelect === "function") onSelect(id);
   };
 
@@ -79,6 +83,9 @@ export default function CitizenConcessionApplication({ onSelect, onBack }) {
       </header>
 
       <div className="cca-wrap">
+        {picked === "women" ? (
+          <WomenConcessionApplication onBack={() => setPicked(null)} />
+        ) : <>
         <div className="cca-bar">
           <div>
             <div className="cca-bar-mr">मालमत्ता करातील विविध सवलत योजना</div>
@@ -117,6 +124,7 @@ export default function CitizenConcessionApplication({ onSelect, onBack }) {
         <footer className="cca-foot">
           © Pimpri Chinchwad Municipal Corporation
         </footer>
+        </>}
       </div>
     </div>
   );
