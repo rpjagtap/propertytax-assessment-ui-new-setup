@@ -73,7 +73,7 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
    depends on the selected profile:
      - Prashashan Adhikari -> multiple zones, no gat, no counter
      - HOD                 -> multiple zones, no gat, no counter
-     - Zone Officer        -> exactly one zone, no gat, no counter
+     - Zone Officer        -> multiple zones, no gat, no counter
      - Gat (Gat Pramukh)   -> exactly one zone, multiple gats
      - Cashier             -> exactly one zone, one cash counter
 
@@ -97,7 +97,9 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
      - "Edit User Detail" -> admin searches an existing user by userCode
         (getAllUserByUserCode), picks one from the results, and the same
         form below gets populated (editUserApi) so it can be updated.
-        The password field is NOT shown on this tab.
+        The password field IS shown and REQUIRED on this tab too: the
+        backend save overwrites the password on every save, so the admin
+        must enter the password the user should log in with.
         A "Deactivate User" button is also available here, used
         when a user is transferred out of the department. The header
         shows an Active / Inactive chip on the right for the loaded user.
@@ -117,10 +119,10 @@ const getRoleKey = (label = "") => {
   // \bhod\b matches "HOD" as a whole word only (so "method" etc. won't match)
   if (/\bhod\b/.test(l) || l.includes("head of department")) return ROLE_HOD;
   if (l.includes("cashier")) return ROLE_CASHIER;
-  // if (l.includes("zone") && l.includes("officer")) return ROLE_ZONE_OFFICER;
-  if ((l.includes("zone") || l.includes("zonal")) && l.includes("officer")) return ROLE_ZONE_OFFICER;
-// optional: also match the short form
-if (/\bzo\b/.test(l)) return ROLE_ZONE_OFFICER;
+  if ((l.includes("zone") || l.includes("zonal")) && l.includes("officer"))
+    return ROLE_ZONE_OFFICER;
+  // optional: also match the short form
+  if (/\bzo\b/.test(l)) return ROLE_ZONE_OFFICER;
   if (l.includes("gat")) return ROLE_GAT;
   return "other";
 };
@@ -258,7 +260,7 @@ const AddUser = () => {
   const roleKey = getRoleKey(selectedProfile?.label);
   const isAdminRole = roleKey === ROLE_ADMIN; // Prashashan Adhikari -> multi zone, no gat
   const isHodRole = roleKey === ROLE_HOD; // HOD -> multi zone, no gat
-  const isZoneOfficerRole = roleKey === ROLE_ZONE_OFFICER; // single zone, no gat
+  const isZoneOfficerRole = roleKey === ROLE_ZONE_OFFICER; // multi zone, no gat
   const isGatRole = roleKey === ROLE_GAT; // single zone, multi gat
   const isCashierRole = roleKey === ROLE_CASHIER; // single zone, cash counter
 
@@ -369,9 +371,9 @@ const AddUser = () => {
   /* -------------------------------------------------------
      Whenever the role changes, drop any selections that no
      longer make sense for that role: trim zone down to one
-     for every role except the multi-zone roles (admin, HOD),
-     clear gat unless the role is Gat, and clear cash counter
-     unless the role is Cashier.
+     for every role except the multi-zone roles (admin, HOD,
+     zone officer), clear gat unless the role is Gat, and
+     clear cash counter unless the role is Cashier.
   ------------------------------------------------------- */
   useEffect(() => {
     if (!selectedProfile) return;
@@ -468,6 +470,14 @@ const AddUser = () => {
   const handleSave = async () => {
     const values = formik.values;
 
+    // Password is required on BOTH Add and Edit. The backend save
+    // overwrites the stored password every time, so the admin must
+    // enter the password the user should log in with.
+    if (!values.password || !values.password.trim()) {
+      showToastError("Please enter a password for this user.");
+      return;
+    }
+
     // Authoritative duplicate check, done fresh at save time so it
     // can never be blocked by a stale/slow background check.
     if (activeTab === TAB_ADD) {
@@ -502,17 +512,12 @@ const AddUser = () => {
         userName: values.userName,
         employeeId: Number(values.employeeId),
         userCode: values.userCode,
+        password: values.password, // always sent, on both Add and Edit
         profileId: values.profileId,
         emailAddress: values.emailAddress,
         mobileNumber: values.mobileNumber,
         userZoneGatVO: buildUserZoneGatVO(values),
       };
-
-      // Password is only entered on the Add tab. On Edit it is not shown
-      // and not sent, so the existing password stays unchanged.
-      if (activeTab === TAB_ADD && values.password) {
-        body.password = values.password;
-      }
 
       // counterKey only applies to the Cashier role
       if (isCashierRole && values.cashCounter) {
@@ -663,8 +668,9 @@ const AddUser = () => {
         setGatKeys([]);
       }
 
-      // Password is NOT loaded on Edit: the field is hidden and the
-      // existing password stays unchanged when the admin updates.
+      // Password is NOT prefilled on Edit (never load it from the API).
+      // The field starts empty and the admin types the password the user
+      // should log in with.
       formik.setValues({
         userName: res.userName || "",
         employeeId: res.employeeId ? String(res.employeeId) : "",
@@ -884,7 +890,7 @@ const AddUser = () => {
                 </Typography>
                 <Typography sx={{ color: "#B8C4D6", fontSize: 13 }}>
                   {isEditMode
-                    ? "Update role, zone/gat access or contact details."
+                    ? "Update role, zone/gat access or contact details, and enter the password the user will log in with."
                     : "Pick a role, then enter the login code and password manually. Zone and Gat support multiple selections."}
                 </Typography>
               </Box>
@@ -959,7 +965,7 @@ const AddUser = () => {
                       subheader={
                         activeTab === TAB_ADD
                           ? "Enter the login code and password for this user"
-                          : "Login code of this user"
+                          : "Login code of this user. Enter the password the user will log in with."
                       }
                       sx={{ pb: 0 }}
                     />
@@ -986,38 +992,37 @@ const AddUser = () => {
                         />
                       </GridRow>
 
-                      {/* Password is only shown when adding a new user */}
-                      {activeTab === TAB_ADD && (
-                        <GridRow>
-                          <FormLabel label={labels.password[lang]} required />
-                          <FormValue
-                            component={
-                              <TextInput
-                                type={showPassword ? "text" : "password"}
-                                name="password"
-                                InputProps={{
-                                  endAdornment: (
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => setShowPassword((s) => !s)}
-                                    >
-                                      {showPassword ? (
-                                        <VisibilityOff fontSize="small" />
-                                      ) : (
-                                        <Visibility fontSize="small" />
-                                      )}
-                                    </IconButton>
-                                  ),
-                                }}
-                              />
-                            }
-                          />
-                        </GridRow>
-                      )}
+                      {/* Password is shown on BOTH Add and Edit tabs */}
+                      <GridRow>
+                        <FormLabel label={labels.password[lang]} required />
+                        <FormValue
+                          component={
+                            <TextInput
+                              type={showPassword ? "text" : "password"}
+                              name="password"
+                              autoComplete="new-password"
+                              InputProps={{
+                                endAdornment: (
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => setShowPassword((s) => !s)}
+                                  >
+                                    {showPassword ? (
+                                      <VisibilityOff fontSize="small" />
+                                    ) : (
+                                      <Visibility fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                ),
+                              }}
+                            />
+                          }
+                        />
+                      </GridRow>
                       <Typography sx={{ fontSize: 11, color: "text.secondary", mt: 0.5 }}>
                         {activeTab === TAB_ADD
                           ? "Login code and password are entered manually. One login code covers all selected zones/gats below — access is switched in-app, not via separate logins."
-                          : "One login code covers all selected zones/gats below — access is switched in-app, not via separate logins."}
+                          : "Enter the password the user should log in with. It is saved together with the access changes. One login code covers all selected zones/gats below — access is switched in-app, not via separate logins."}
                       </Typography>
                     </CardContent>
                   </Card>
