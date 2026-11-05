@@ -106,6 +106,7 @@ import { trackApplicationSchema } from "../../utils/validation-schema";
 --------------------------------------------------------- */
 const ROLE_ADMIN = "admin"; // Prashashan Adhikari
 const ROLE_HOD = "hod"; // Head of Department -> multi zone, same as admin
+const ROLE_HEAD_OFFICE = "headoffice"; // Head Office -> single zone, no gat
 const ROLE_ZONE_OFFICER = "zoneofficer";
 const ROLE_GAT = "gat";
 const ROLE_CASHIER = "cashier";
@@ -117,13 +118,14 @@ const getRoleKey = (label = "") => {
   const l = (label || "").toLowerCase();
   if (l.includes("prashashan") || l.includes("adhikari")) return ROLE_ADMIN;
   // \bhod\b matches "HOD" as a whole word only (so "method" etc. won't match)
-  if (/\bhod\b/.test(l) || l.includes("head of department")) return ROLE_HOD;
+  if (/\bhod\b/.test(l) || l.includes("head of department") || l.includes("head office")) return ROLE_HOD;
   if (l.includes("cashier")) return ROLE_CASHIER;
   if ((l.includes("zone") || l.includes("zonal")) && l.includes("officer"))
     return ROLE_ZONE_OFFICER;
   // optional: also match the short form
   if (/\bzo\b/.test(l)) return ROLE_ZONE_OFFICER;
   if (l.includes("gat")) return ROLE_GAT;
+  if (l.includes("head office") || l.includes("headoffice") || l.includes("HeadOffice")) return ROLE_HEAD_OFFICE;
   return "other";
 };
 
@@ -263,9 +265,10 @@ const AddUser = () => {
   const isZoneOfficerRole = roleKey === ROLE_ZONE_OFFICER; // multi zone, no gat
   const isGatRole = roleKey === ROLE_GAT; // single zone, multi gat
   const isCashierRole = roleKey === ROLE_CASHIER; // single zone, cash counter
+  const isHeadOfficeRole = roleKey === ROLE_HEAD_OFFICE; // multi zone, no gat
 
   // Roles that can be given access to more than one zone
-  const isMultiZoneRole = isAdminRole || isHodRole || isZoneOfficerRole;
+  const isMultiZoneRole = isAdminRole || isHodRole || isZoneOfficerRole || isHeadOfficeRole;
 
   const zoneMultiple = isMultiZoneRole;
   const showGatSelect = isGatRole;
@@ -1048,6 +1051,8 @@ const AddUser = () => {
                           ? "Gat: select the zone, then all gats this user should switch between"
                           : isCashierRole
                           ? "Cashier: select the zone and the cash counter"
+                          : isHeadOfficeRole
+                          ? "Head Office: select the zone this user should access"
                           : "Select a zone"
                       }
                       sx={{ pb: 0 }}
