@@ -5,8 +5,9 @@ import {
   submitConcessionApplication,
 } from "../../services/assessment-services";
 
-const AFFIDAVIT_URL =
-  "http://live.publicptaxpcmc.in:8080/PropertyTaxService/?wicket:interface=:3::::#";
+// Replace this with the affidavit's URL exposed by your server (not its disk path).
+// const AFFIDAVIT_URL = "/mnt/nas/159/AFFIDAVIT_MAHILA.pdf";
+const AFFIDAVIT_URL = "/E/AFFIDAVIT_MAHILA.pdf";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REQUIRED_DOCUMENTS = [
   { id: 1, name: "Aadhaar Card" },
@@ -28,6 +29,7 @@ export default function WomenConcessionApplication({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [applicationNumber, setApplicationNumber] = useState("");
+  const [applicationSummary, setApplicationSummary] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -107,10 +109,6 @@ export default function WomenConcessionApplication({ onBack }) {
   const startApplication = async () => {
     if (!allDocumentsReady || !consent) return;
     const upicId = property?.upicId || property?.UPICId || property?.upicID || property?.UPICID || "";
-    if (!upicId) {
-      setError("Property details did not include a UPIC ID. Please retry loading the property details before submitting.");
-      return;
-    }
     setLoading(true);
     setError("");
     try {
@@ -131,12 +129,26 @@ export default function WomenConcessionApplication({ onBack }) {
         })),
       });
       const result = response?.data || response;
+      const responseMessage = typeof result === "string"
+        ? result
+        : result?.message || result?.responseMessage || response?.message || "";
       const number = result?.applicationNo || result?.applicationNumber || result?.applicationId ||
-        result?.application?.applicationNo || result?.application?.applicationNumber;
+        result?.applicationID || result?.applicationid || result?.appId ||
+        result?.application?.applicationNo || result?.application?.applicationNumber ||
+        responseMessage.match(/\bPC\d+\b/i)?.[0];
       if (!number) {
-        throw new Error(result?.message || "The application was submitted, but no application number was returned.");
+        throw new Error(responseMessage || "The application was submitted, but no application number was returned.");
       }
       setApplicationNumber(String(number));
+      setApplicationSummary({
+        srNo: result?.srNo || result?.SRNO || result?.srno || result?.serialNo || "—",
+        propertyCode: result?.propertyCode || property?.propertyCode || propertyCode,
+        propertyName: result?.propertyName || property?.propertyName || property?.ownerName || "—",
+        applicationId: number,
+        mobileNumber: result?.mobileNumber || result?.applicantMobile || property?.propertyMobileNo || property?.mobileNo || "—",
+        concessionName: result?.concessionName || "Women",
+        status: "GAT_Premukh-Pending",
+      });
     } catch (submitError) {
       setError(
         submitError?.response?.data?.message || submitError?.message ||
@@ -152,9 +164,9 @@ export default function WomenConcessionApplication({ onBack }) {
       <div className="cca-bar">
         <div>
           <div className="cca-bar-mr">महिला सवलत योजनेसाठी अर्ज</div>
-          <div className="cca-bar-en">Women Concession Application · Step {step} of 2</div>
+          <div className="cca-bar-en">{applicationNumber ? "Application Confirmation" : `Women Concession Application · Step ${step} of 2`}</div>
         </div>
-        <button type="button" className="cca-back" aria-label="Back" onClick={step === 2 ? () => setStep(1) : onBack}>
+        <button type="button" className="cca-back" aria-label="Back" onClick={applicationNumber ? onBack : step === 2 ? () => setStep(1) : onBack}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
       </div>
@@ -162,19 +174,44 @@ export default function WomenConcessionApplication({ onBack }) {
       {error && <div className="cca-flow-alert" role="alert">{error}</div>}
       {loading && <p className="cca-flow-status" role="status">{property ? "Submitting your application…" : "Loading property details…"}</p>}
 
-      {applicationNumber && (
-        <div className="cca-success-backdrop">
-          <section className="cca-success-dialog" role="dialog" aria-modal="true" aria-labelledby="cca-success-title">
-            <div className="cca-success-mark" aria-hidden="true">✓</div>
-            <h2 id="cca-success-title">Application submitted</h2>
-            <p>Your Women Concession application was submitted successfully.</p>
-            <div className="cca-application-number">Application Number <strong>{applicationNumber}</strong></div>
-            <p className="cca-sms-note">An SMS confirmation will be sent to {property?.propertyMobileNo || property?.mobileNo || "your registered mobile number"}.</p>
+      {applicationNumber ? (
+        <div className="cca-result-screen">
+          <p className="cca-result-success-message">
+            Your application for Women concession has been successfully submitted. Your application number is <strong>{applicationNumber}</strong>.
+          </p>
+          <div className="cca-result-strip" aria-hidden="true" />
+          <p className="cca-result-tip">Please keep your application number for future reference. You can track the application status using the details below.</p>
+          <div className="cca-result-table-wrap">
+            <table className="cca-result-table">
+              <thead>
+                <tr>
+                  <th>SR No.</th>
+                  <th>Application ID</th>
+                  <th>Property Code</th>
+                  <th>Property Name</th>
+                  <th>Mobile Number</th>
+                  <th>Concession Name</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{applicationSummary?.srNo}</td>
+                  <td>{applicationSummary?.applicationId}</td>
+                  <td>{applicationSummary?.propertyCode}</td>
+                  <td>{applicationSummary?.propertyName}</td>
+                  <td>{applicationSummary?.mobileNumber}</td>
+                  <td>{applicationSummary?.concessionName}</td>
+                  <td><span className="cca-result-status">{applicationSummary?.status}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="cca-flow-actions">
             <button type="button" className="cca-flow-primary" onClick={onBack}>Done</button>
-          </section>
+          </div>
         </div>
-      )}
-
+      ) : <>
       {step === 1 && (
         <form className="cca-flow-panel" onSubmit={continueToDocuments}>
           <h2>Property and applicant details</h2>
@@ -237,6 +274,7 @@ export default function WomenConcessionApplication({ onBack }) {
           </div>
         </div>
       )}
+      </>}
     </section>
   );
 }

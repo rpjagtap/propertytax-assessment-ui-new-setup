@@ -241,6 +241,18 @@
 .cca-success-dialog { width: min(100%, 480px); padding: 30px; border-radius: 18px; background: #fff; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.25); }
 .cca-success-dialog h2 { margin: 12px 0 8px; color: var(--teal); }
 .cca-success-dialog p { color: var(--text-soft); line-height: 1.5; }
+.cca-success-dialog .cca-success-message { color: #168047; font-weight: 700; }
+.cca-result-screen { width: calc(100vw - 16px); margin: 0 0 30px calc(50% - 50vw + 8px); text-align: center; }
+.cca-result-success-message { margin: 0; padding: 18px 24px; color: #168047; font-weight: 700; }
+.cca-result-success-message strong { white-space: nowrap; }
+.cca-result-strip { height: 30px; background: #243f86; }
+.cca-result-tip { margin: 0; padding: 12px 24px; color: #17336f; background: #f5f7fa; text-align: center; }
+.cca-result-table-wrap { width: 100%; overflow-x: auto; }
+.cca-result-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; text-align: center; }
+.cca-result-table th, .cca-result-table td { padding: 12px 10px; border: 1px solid #d2d9e2; white-space: nowrap; }
+.cca-result-table th { color: #17336f; background: #f0f3f7; font-weight: 700; }
+.cca-result-table td { color: #20334d; }
+.cca-result-status { color: #9a5a00; font-weight: 700; }
 .cca-success-mark { width: 54px; height: 54px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #279a60; font-size: 30px; font-weight: 700; }
 .cca-application-number { margin: 18px 0; padding: 14px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #cce7e1; border-radius: 10px; background: #f1f8f6; color: var(--text-soft); }
 .cca-application-number strong { color: var(--teal); font-size: 22px; }
