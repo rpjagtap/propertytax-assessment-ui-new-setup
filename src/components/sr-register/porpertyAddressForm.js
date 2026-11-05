@@ -48,11 +48,24 @@ const PropertyAddressForm = () => {
     () => floorList.map((item) => ({ id: item.marFloorName, label: item.marFloorName })),
     [floorList]
   );
-  const wingOptions = useMemo(
+  const floorOptionsEng = useMemo(
+    () => floorList.map((item) => ({ id: item.engFloorName, label: item.engFloorName })),
+    [floorList]
+  );
+  const wingOptionsEng = useMemo(
     () =>
       wingList.map((item) => ({
         id: item.engWingName,
         label: item.engWingName,
+      })),
+    [wingList]
+  );
+
+    const wingOptions = useMemo(
+    () =>
+      wingList.map((item) => ({
+        id: item.marWingName,
+        label: item.marWingName,
       })),
     [wingList]
   );
@@ -166,7 +179,7 @@ const PropertyAddressForm = () => {
               component={<SelectInput name="floorMarathi" options={floorOptions} onBlur={handleAddressBlur} />}
             />
             <FormLabel label={labels.FloorEnglish[lang]} required />
-            <FormValue component={<TextInput name="floor" onBlur={handleAddressBlur} />} />
+            <FormValue component={<SelectInput name="floor" options={floorOptionsEng} onBlur={handleAddressBlur} />} />
           </GridRow>
           <GridRow>
             <FormLabel label={labels.buildingNo[lang]} required />
@@ -182,7 +195,7 @@ const PropertyAddressForm = () => {
               component={<SelectInput name="wingNameMarathi" options={wingOptions} onBlur={handleAddressBlur} />}
             />
             <FormLabel label={labels.WingEnglish[lang]} required />
-            <FormValue component={<TextInput name="wingName" required onBlur={handleAddressBlur} />} />
+            <FormValue component={<SelectInput name="wingName" options={wingOptionsEng} required onBlur={handleAddressBlur} />} />
           </GridRow>
           <GridRow>
             <FormLabel label={labels.SocityName[lang]} required />

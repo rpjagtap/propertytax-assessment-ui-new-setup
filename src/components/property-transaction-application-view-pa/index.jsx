@@ -242,7 +242,7 @@ const PropertyTransactionApplicationViewPa = () => {
     const sessionData = sessionStorage.getItem("sessionData");
     const userDetails = JSON.parse(sessionData);
     const profileId = userDetails?.profileId;
-    console.log("Submitting with body:", body, "Profile ID:", profileId, "Action Type:", actionType);
+   // console.log("Submitting with body:", body, "Profile ID:", profileId, "Action Type:", actionType);
     try {
       //console.log("Submitting with body:", body);
       setLoading(true);
@@ -622,32 +622,38 @@ const PropertyTransactionApplicationViewPa = () => {
             >
               <TableHead>
                 <TableRow sx={{ bgcolor: "#EEF2F7" }}>
+                  <TableCell>{labels.Floor[lang]}</TableCell>
                   <TableCell>{labels.useType[lang]}</TableCell>
                   <TableCell>{labels.secUseType[lang]}</TableCell>
                   <TableCell>{labels.constructionType[lang]}</TableCell>
                   <TableCell>{labels.Occupancy[lang]}</TableCell>
                   <TableCell>{labels.SpecialResidents[lang]}</TableCell>
                   <TableCell>{labels.aakarniDate[lang]}</TableCell>
+                  <TableCell>{labels.AreaType[lang]}</TableCell>
                   <TableCell>{labels.areaInMeter[lang]}</TableCell>
+                  <TableCell>{labels.BillRate[lang]}</TableCell>
                   <TableCell>{labels.taxAmount[lang]}</TableCell>
                   <TableCell>{labels.Toilet[lang]}</TableCell>
-                  <TableCell>{labels.Illegal[lang]}</TableCell>
+                  <TableCell>{labels.ConstructionStatus[lang]}</TableCell>
                 </TableRow>
               </TableHead>
 
               <TableBody>
                 {oldUseTypeDtls.map((row) => (
                   <TableRow key={row.propertyTransactionDetailsId}>
+                    <TableCell>{row.floor}</TableCell>
                     <TableCell>{row.useType}</TableCell>
                     <TableCell>{row.subUseType}</TableCell>
                     <TableCell>{row.constructionType}</TableCell>
                     <TableCell>{row.occuapncy}</TableCell>
                     <TableCell>{row.specialOccupant}</TableCell>
                     <TableCell>{row.assessmentDate}</TableCell>
+                    <TableCell>{row.areaType}</TableCell>
                     <TableCell>{row.area}</TableCell>
+                    <TableCell>{row.rate}</TableCell>
                     <TableCell>{row.rateableValue}</TableCell>
                     <TableCell>{row.toilet ? "Yes" : "No"}</TableCell>
-                    <TableCell>{row.permision ? "Yes" : "No"}</TableCell>
+                    <TableCell>{row.permision === false ? "Legal" : "Illegal"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

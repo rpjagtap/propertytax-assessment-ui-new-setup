@@ -790,7 +790,7 @@ const TransferDashboardTable = ({
                 sx: { width: "46%", height: "102%", maxHeight: "none" },
               }}
             >
-              <DialogTitle>Calculate Transfer Fee</DialogTitle>
+              <DialogTitle>Calculate Transfer Fee </DialogTitle>
               <DialogContent>
                 {rows.map((row, index) => (
                   <Box
@@ -841,7 +841,7 @@ const TransferDashboardTable = ({
                             slotProps={{
                               textField: {
                                 required: true,
-                                sx: { maxWidth: 150 }, // Decrease width
+                                sx: { maxWidth: 170 }, // Decrease width
 
                                 fullWidth: true,
                               },
@@ -861,7 +861,7 @@ const TransferDashboardTable = ({
                             handleChange(index, "bajarMulya", e.target.value);
                             // handleCalculate(index, e.target.value);
                           }}
-                          sx={{ width: 150 }}
+                          sx={{ width: 170 }}
                         />
                       </Grid>
 
