@@ -41,6 +41,7 @@ import {
 } from "@mui/icons-material";
 import { labels } from "../../lang/labels";
 import { useSelector } from "react-redux";
+import { getUserDetails } from "../../utils/sessionUtils";
 
 // Theme tokens (same as Property Transfer Dashboard)
 const NAVY = "#12233F";
@@ -150,7 +151,8 @@ const ZonewisePropertyTransferReport = () => {
   const [detailTableData, setDetailTableData] = useState([]);
   const [zoneTotal, setZoneTotal] = useState({});
   const [selectedZone, setSelectedZone] = useState("");
-    const lang = useSelector((state) => state.userDetails?.lang);
+  const lang = useSelector((state) => state.userDetails?.lang);
+  const loggedInUser = getUserDetails() || {};
 
   const fetchData = async (fromDate, toDate) => {
     try {
@@ -158,6 +160,8 @@ const ZonewisePropertyTransferReport = () => {
       const response = await getZonewisePropertyTransferReport({
         fromDate,
         toDate,
+        zoneKey: loggedInUser.zoneKey,
+        gatKey: loggedInUser.gatKey,
       });
       const apiData = response || {};
       setZoneData(apiData?.propertyTransferDetails || []);
@@ -194,7 +198,7 @@ const ZonewisePropertyTransferReport = () => {
     fetchData(toDateStr(formik.values.fromDate), toDateStr(formik.values.toDate));
   };
 
-  const handleZoneClick = async (zonename) => {
+  const handleZoneClick = async (zonename, zoneKey) => {
     try {
       setLoading(true);
       setSelectedZone(zonename);
@@ -202,6 +206,8 @@ const ZonewisePropertyTransferReport = () => {
         fromDate: toDateStr(formik.values.fromDate),
         toDate: toDateStr(formik.values.toDate),
         zoneName: zonename,
+        zoneKey: zoneKey || loggedInUser.zoneKey,
+        gatKey: loggedInUser.gatKey,
       });
       setDetailTableData(res?.propertyTransferDetails || []);
       setZoneTotal(res || {});
@@ -230,7 +236,7 @@ const ZonewisePropertyTransferReport = () => {
             </Avatar>
             {isZoneTable ? (
               <Link
-                onClick={() => handleZoneClick(row.zoneName)}
+                onClick={() => handleZoneClick(row.zoneName, row.zoneKey)}
                 component="button"
                 sx={{ fontWeight: 600, color: MINT, fontSize: "13px" }}
               >

@@ -23,11 +23,12 @@ export default function WomenConcessionApplication({ onBack }) {
   const [property, setProperty] = useState(null);
   const [email, setEmail] = useState("");
   const [documents, setDocuments] = useState(() =>
-    REQUIRED_DOCUMENTS.map((document) => ({ ...document, file: null, documentBase64: "" }))
+    REQUIRED_DOCUMENTS.map((document) => ({ ...document, file: null, documentBase64: "", previewUrl: "" }))
   );
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
   const [applicationNumber, setApplicationNumber] = useState("");
   const [applicationSummary, setApplicationSummary] = useState(null);
 
@@ -65,26 +66,20 @@ export default function WomenConcessionApplication({ onBack }) {
 
   const selectFile = (index, event) => {
     const selected = event.target.files?.[0];
-    setDocuments((current) => current.map((document, row) => row === index
-      ? { ...document, file: selected || null, documentBase64: "" }
-      : document));
     setError("");
+    setUploadSuccess("");
     if (!selected) return;
     if (selected.type !== "application/pdf" && !selected.name.toLowerCase().endsWith(".pdf")) {
       setDocuments((current) => current.map((document, row) => row === index
-        ? { ...document, file: null, documentBase64: "" }
+        ? { ...document, file: null, documentBase64: "", previewUrl: "" }
         : document));
       setError(`Please select ${REQUIRED_DOCUMENTS[index].name} as a PDF.`);
       event.target.value = "";
-    }
-  };
-
-  const uploadDocument = (index) => {
-    const file = documents[index]?.file;
-    if (!file) {
-      setError(`Choose the ${REQUIRED_DOCUMENTS[index].name} PDF first.`);
       return;
     }
+    setDocuments((current) => current.map((document, row) => row === index
+      ? { ...document, file: selected, documentBase64: "", previewUrl: "" }
+      : document));
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = typeof reader.result === "string" ? reader.result : "";
@@ -92,16 +87,25 @@ export default function WomenConcessionApplication({ onBack }) {
         ? dataUrl.slice(dataUrl.indexOf(",") + 1)
         : dataUrl;
       if (!documentBase64.startsWith("JVBER") || documentBase64.length < 100) {
+        setDocuments((current) => current.map((document, row) => row === index
+          ? { ...document, file: null, documentBase64: "", previewUrl: "" }
+          : document));
         setError(`${REQUIRED_DOCUMENTS[index].name} does not appear to be a valid PDF. Please choose the scanned PDF and try again.`);
         return;
       }
       setDocuments((current) => current.map((document, row) => row === index
-        ? { ...document, documentBase64 }
+        ? { ...document, documentBase64, previewUrl: dataUrl }
         : document));
       setError("");
+      setUploadSuccess(`${REQUIRED_DOCUMENTS[index].name}: File uploaded successfully.`);
     };
-    reader.onerror = () => setError("Could not read the selected PDF. Please choose it again.");
-    reader.readAsDataURL(file);
+    reader.onerror = () => {
+      setDocuments((current) => current.map((document, row) => row === index
+        ? { ...document, file: null, documentBase64: "", previewUrl: "" }
+        : document));
+      setError("Could not read the selected PDF. Please choose it again.");
+    };
+    reader.readAsDataURL(selected);
   };
 
   const allDocumentsReady = documents.every((document) => document.documentBase64);
@@ -172,6 +176,7 @@ export default function WomenConcessionApplication({ onBack }) {
       </div>
 
       {error && <div className="cca-flow-alert" role="alert">{error}</div>}
+      {uploadSuccess && <div className="cca-flow-success" role="status">{uploadSuccess}</div>}
       {loading && <p className="cca-flow-status" role="status">{property ? "Submitting your application…" : "Loading property details…"}</p>}
 
       {applicationNumber ? (
@@ -246,17 +251,22 @@ export default function WomenConcessionApplication({ onBack }) {
           </a>
           <div className="cca-doc-table-wrap">
             <table className="cca-doc-table">
-              <thead><tr><th>Sr. No.</th><th>Document Name</th><th>Choose PDF</th><th>Upload</th></tr></thead>
+              <thead><tr><th>Sr. No.</th><th>Document Name</th><th>Choose PDF</th></tr></thead>
               <tbody>{documents.map((document, index) => (
                 <tr key={document.id}>
                   <td>{index + 1}</td>
                   <td>{document.name}<span className="cca-required-mark"> *</span></td>
-                  <td><input type="file" accept="application/pdf,.pdf" aria-label={`Choose ${document.name} PDF`} onChange={(event) => selectFile(index, event)} /></td>
                   <td>
-                    <button type="button" className="cca-flow-secondary" onClick={() => uploadDocument(index)} disabled={!document.file}>
-                      {document.documentBase64 ? "Ready" : "Upload"}
-                    </button>
-                    {document.documentBase64 && <span className="cca-doc-ready" role="status"> Ready</span>}
+                    <input type="file" accept="application/pdf,.pdf" aria-label={`Choose ${document.name} PDF`} onChange={(event) => selectFile(index, event)} />
+                    {document.previewUrl && (
+                      <div className="cca-document-preview">
+                        <iframe
+                          src={`${document.previewUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                          title={`${document.name} PDF thumbnail`}
+                        />
+                        <span>{document.file?.name}</span>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}</tbody>
