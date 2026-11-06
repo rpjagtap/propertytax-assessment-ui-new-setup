@@ -18,6 +18,7 @@
 .cca *, .cca *::before, .cca *::after { box-sizing: border-box; }
 
 .cca-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.cca-category-content { zoom: .792; }
 
 .cca-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -71,6 +72,23 @@
 .cca-card[data-tone="olive"] { --c1: #8FA64A; --c2: #3C4A1E; }
 .cca-card[data-tone="teal"]  { --c1: #14B8A6; --c2: #0B3C49; }
 .cca-card[data-tone="leaf"]  { --c1: #4CC38A; --c2: #12563A; }
+
+/* Keep the three main concession labels readable at the reduced page scale. */
+.cca-card[data-tone="rose"] .cca-mr,
+.cca-card[data-tone="sky"] .cca-mr,
+.cca-card[data-tone="olive"] .cca-mr,
+.cca-card[data-tone="teal"] .cca-mr,
+.cca-card[data-tone="leaf"] .cca-mr { font-size: 22px; line-height: 1.4; }
+.cca-card[data-tone="rose"] .cca-en,
+.cca-card[data-tone="sky"] .cca-en,
+.cca-card[data-tone="olive"] .cca-en,
+.cca-card[data-tone="teal"] .cca-en,
+.cca-card[data-tone="leaf"] .cca-en,
+.cca-card[data-tone="rose"] .cca-apply,
+.cca-card[data-tone="sky"] .cca-apply,
+.cca-card[data-tone="olive"] .cca-apply,
+.cca-card[data-tone="teal"] .cca-apply,
+.cca-card[data-tone="leaf"] .cca-apply { font-size: 19px; line-height: 1.5; }
 
 /* Slightly shorter cards for the two environmental concessions. */
 .cca-card[data-tone="teal"],
@@ -203,6 +221,7 @@
 .cca-flow-panel h2 { margin: 0 0 18px; color: var(--teal); font-size: 20px; }
 .cca-flow-status { text-align: center; color: var(--text-soft); }
 .cca-flow-alert { max-width: 880px; margin: 0 auto 16px; padding: 12px 16px; color: #8c1d18; background: #fff0ef; border: 1px solid #f2b8b5; border-radius: 10px; }
+.cca-flow-success { max-width: 880px; margin: 0 auto 16px; padding: 12px 16px; color: #176b43; background: #edf8f1; border: 1px solid #b7dfc5; border-radius: 10px; }
 .cca-property-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin-bottom: 20px; }
 .cca-property-detail { display: grid; grid-template-columns: minmax(120px, .8fr) 1.2fr; gap: 12px; padding: 12px 4px; border-bottom: 1px solid #e7efed; }
 .cca-property-detail span { color: var(--text-soft); }
@@ -225,6 +244,9 @@
 .cca-doc-table th { color: var(--teal); background: #f1f8f6; font-size: 14px; }
 .cca-doc-table tbody tr:nth-child(even) { background: #fafcfb; }
 .cca-doc-table input[type="file"] { max-width: 100%; font: inherit; font-size: 13px; }
+.cca-document-preview { display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; color: var(--text-soft); font-size: 12px; }
+.cca-document-preview iframe { width: 84px; height: 110px; flex: none; border: 1px solid #cbd9d6; border-radius: 5px; background: #fff; }
+.cca-document-preview span { max-width: 220px; overflow-wrap: anywhere; }
 .cca-required-mark { color: #b42318; }
 .cca-doc-ready { display: block; margin-top: 4px; color: #176b43; font-size: 12px; }
 .cca-consent { display: flex; align-items: flex-start; gap: 10px; margin-top: 22px; line-height: 1.5; }
@@ -266,3 +288,61 @@
   .cca-flow-actions { justify-content: stretch; }
   .cca-flow-actions button { flex: 1; }
 }
+
+/* Handicapped application palette: coordinate the confirmation screen with the teal header. */
+.cca-handicapped-flow .cca-bar {
+  background: linear-gradient(135deg, #e7f6f4, #f4fbfa);
+  border-color: #b9dfda;
+  border-left-color: #0e6973;
+  box-shadow: 0 14px 30px -20px rgba(11, 60, 73, .5);
+}
+.cca-handicapped-flow .cca-bar-mr { color: #0b5963; }
+.cca-handicapped-flow .cca-back {
+  background: linear-gradient(180deg, #168b91, #0b5963);
+  box-shadow: 0 8px 18px -6px rgba(11, 60, 73, .6), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.cca-handicapped-flow .cca-flow-success {
+  color: #176b52;
+  background: #edf8f3;
+  border-color: #b7dfca;
+}
+.cca-handicapped-flow .cca-result-success-message { color: #0b706a; }
+.cca-handicapped-flow .cca-result-strip { background: #0e6973; }
+.cca-handicapped-flow .cca-result-tip {
+  color: #174f59;
+  background: #e8f4f3;
+}
+.cca-handicapped-flow .cca-result-table th {
+  color: #0b5963;
+  background: #eaf5f4;
+}
+.cca-handicapped-flow .cca-result-status { color: #8b5b08; }
+
+/* Ex-serviceman application palette: coordinate the confirmation screen with the teal header. */
+.cca-exserviceman-flow .cca-bar {
+  background: linear-gradient(135deg, #e7f6f4, #f4fbfa);
+  border-color: #b9dfda;
+  border-left-color: #0e6973;
+  box-shadow: 0 14px 30px -20px rgba(11, 60, 73, .5);
+}
+.cca-exserviceman-flow .cca-bar-mr { color: #0b5963; }
+.cca-exserviceman-flow .cca-back {
+  background: linear-gradient(180deg, #168b91, #0b5963);
+  box-shadow: 0 8px 18px -6px rgba(11, 60, 73, .6), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.cca-exserviceman-flow .cca-flow-success {
+  color: #176b52;
+  background: #edf8f3;
+  border-color: #b7dfca;
+}
+.cca-exserviceman-flow .cca-result-success-message { color: #0b706a; }
+.cca-exserviceman-flow .cca-result-strip { background: #0e6973; }
+.cca-exserviceman-flow .cca-result-tip {
+  color: #174f59;
+  background: #e8f4f3;
+}
+.cca-exserviceman-flow .cca-result-table th {
+  color: #0b5963;
+  background: #eaf5f4;
+}
+.cca-exserviceman-flow .cca-result-status { color: #8b5b08; }
