@@ -705,9 +705,11 @@ export const submitConcessionApplication = async (body) => {
 // }
 
 export const getredzonedataforzo = async (zonekey) => {
-  const response = await apiClient.post(`/property/get_redzone_data_for_zo`, {
-    zonekey: Number(zonekey),
-  });
+  const zoneKey = Number(zonekey);
+  const response = await apiClient.post(
+    `/property/get_redzone_data_for_zo?zoneKey=${zoneKey}`,
+    { zoneKey },
+  );
   return response.data;
 };
 

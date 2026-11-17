@@ -6,8 +6,8 @@ import {
 } from "../../services/assessment-services";
 
 // Replace this with the affidavit's URL exposed by your server (not its disk path).
-// const AFFIDAVIT_URL = "/mnt/nas/159/AFFIDAVIT_MAHILA.pdf";
-const AFFIDAVIT_URL = "/E/AFFIDAVIT_MAHILA.pdf";
+const AFFIDAVIT_URL = "/mnt/nas/159/AFFIDAVIT_MAHILA.pdf";
+// const AFFIDAVIT_URL = "/E/AFFIDAVIT_MAHILA.pdf";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REQUIRED_DOCUMENTS = [
   { id: 1, name: "Aadhaar Card" },

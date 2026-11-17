@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Link, Typography } from "@mui/material";
 
 // Change these two values to your company name and website
-const COMPANY_NAME = "tech9services";
+const COMPANY_NAME = "Tech 9 Services";
 const COMPANY_URL = "http://tech9services.com/";
 
 const PoweredByFooter = () => ( 
