@@ -73,8 +73,10 @@ const PropertyTypeZO = () => {
 
             if (list.length === 0) {
                 setError("No zone found for this user");
-            } else if (list.length === 1) {
-                setZonekey(getZoneKey(list[0])); // preselect single zone
+            } else {
+                const key = getZoneKey(list[0]);
+                setZonekey(key);
+                await fetchData(key);
             }
         } catch (err) {
             console.error(err);
@@ -82,15 +84,6 @@ const PropertyTypeZO = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    // Show button
-    const handleShow = () => {
-        if (zonekey === "" || zonekey === undefined || zonekey === null) {
-            setError("Please select zone");
-            return;
-        }
-        fetchData(zonekey);
     };
 
     // get report data: body { zonekey: <selected zone> }
@@ -108,6 +101,8 @@ const PropertyTypeZO = () => {
             setSelectAll(false);
         } catch (err) {
             console.error(err);
+            setData([]);
+            setSearched(false);
             setError(err?.response?.data?.message || "Failed to fetch list");
         } finally {
             if (showLoader) setLoading(false);
@@ -194,11 +189,13 @@ const PropertyTypeZO = () => {
                             label={labels?.Zone?.[lang] || "Zone"}
                             value={zonekey}
                             onChange={(e) => {
-                                setZonekey(e.target.value);
+                                const key = e.target.value;
+                                setZonekey(key);
                                 setSearched(false);
                                 setData([]);
                                 setSelected({});
                                 setSelectAll(false);
+                                fetchData(key);
                             }}
                         >
                             {zones.map((z) => (
@@ -209,14 +206,6 @@ const PropertyTypeZO = () => {
                         </Select>
                     </FormControl>
 
-                    <Button
-                        variant="contained"
-                        size="small"
-                        onClick={handleShow}
-                        disabled={loading}
-                    >
-                        {labels?.Show?.[lang] || "Show"}
-                    </Button>
                 </Box>
 
                 {loading ? (
