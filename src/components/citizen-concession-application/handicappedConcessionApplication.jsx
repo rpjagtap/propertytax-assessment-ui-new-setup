@@ -144,7 +144,7 @@ export default function HandicappedConcessionApplication({ onBack }) {
         applicationId: number,
         mobileNumber: result?.mobileNumber || result?.applicantMobile || property?.propertyMobileNo || property?.mobileNo || "—",
         concessionName: result?.concessionName || "Handicapped",
-        status: "GAT_Premukh-Pending",
+        status: "ZO-Pending",
       });
     } catch (submitError) {
       setError(
