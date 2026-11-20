@@ -275,7 +275,8 @@ const PropertyTransactionApplicationObjection = () => {
           setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000); // Send to Hearing -> S3
         } else if (profileId === 14 && actionType === "accept") {
           // 14 is PA
-          setTimeout(() => navigate("/GenerateSr3"), 2000); // Send to sr3
+          //setTimeout(() => navigate("/GenerateSr3"), 2000); // Send to sr3
+          setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
         }
       } else {
         showToastError("Error occurred. Please try again.");

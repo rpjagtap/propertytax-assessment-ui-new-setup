@@ -569,7 +569,7 @@ const SrRegister = () => {
         localStorage.setItem("transactionTypeId", values.transactionType);
 
         if (response?.responseMsg === "SR3") {
-          navigate("/sr3-document");     // SR3 flow
+          navigate("/GenerateSr3"); 
         } else {
           navigate("/assessment-document"); // existing flow, unchanged
         }
