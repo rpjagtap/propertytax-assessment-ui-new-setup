@@ -144,7 +144,7 @@ export default function ExServicemanConcessionApplication({ onBack }) {
         applicationId: number,
         mobileNumber: result?.mobileNumber || result?.applicantMobile || property?.propertyMobileNo || property?.mobileNo || "—",
         concessionName: result?.concessionName || "Ex-servicemen",
-        status: "GAT_Premukh-Pending",
+        status: "ZO-Premukh-Pending",
       });
     } catch (submitError) {
       setError(

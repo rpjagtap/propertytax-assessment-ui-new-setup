@@ -1,299 +1,185 @@
 import React, { useEffect, useState } from "react";
-import DashBoardContainer from "../layout/dashboard-container";
-import { useSelector } from "react-redux";
 import {
-    Checkbox,
-    CircularProgress,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Box,
-    Button,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Checkbox,
+  Button,
+  Typography,
+  Box,
 } from "@mui/material";
-
+import Loader from "../../components/loader/loader";
+import { getUserDetails } from "../../utils/sessionUtils";
 import {
-    sendToZoDashboard,
-    getredzonedataforzo,
-    getZoneByProfile,
+  getRedZoneDataForZO,
+  approvedPropertyType,
 } from "../../services/assessment-services";
-import useApiState from "../common/useApiState";
-import AlertMsg from "../common/alert";
-import FormTitle from "../form-fields/form-title";
-import { labels } from "../../lang/labels";
 
-// zone list items look like { value: <zonekey>, label: <zone name> }
-const getZoneKey = (z) => z?.value ?? z?.zonekey ?? z?.zoneKey ?? z?.id;
-const getZoneName = (z) =>
-    z?.label ?? z?.zonename ?? z?.zoneName ?? z?.name ?? `Zone ${getZoneKey(z)}`;
-
-// turn any API response into an array
-const toArray = (res) => {
-    const raw = res?.data ?? res?.result ?? res;
-    if (Array.isArray(raw)) return raw;
-    return raw ? [raw] : [];
+// Handles: plain array, single object, or list wrapped in a key
+const normalizeList = (res) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (res.propertyKey !== undefined) return [res];
+  const firstArray = Object.values(res).find((v) => Array.isArray(v));
+  return firstArray || [];
 };
 
 const PropertyTypeZO = () => {
-    const { loading, setLoading, error, setError } = useApiState();
-    const lang = useSelector((state) => state.userDetails.lang);
+  const sessionData = getUserDetails();
+  console.log("sessionData:", sessionData);
 
-    const [zones, setZones] = useState([]);
-    const [zonekey, setZonekey] = useState("");
-    const [data, setData] = useState([]);
-    const [searched, setSearched] = useState(false);
-    const [selected, setSelected] = useState({});
-    const [selectAll, setSelectAll] = useState(false);
+  // Try common field names; adjust once you see the console output
+  const zoneKey =
+    sessionData?.zoneKey ??
+    sessionData?.zoneId ??
+    sessionData?.zone ??
+    sessionData?.zoneCode;
 
-    // On screen open: load zones
-    useEffect(() => {
-        loadZones();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+  const [rows, setRows] = useState([]);
+  const [selected, setSelected] = useState([]); // propertyKey values
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-    const loadZones = async () => {
-        try {
-            setLoading(true);
-            setError("");
+  const loadData = async () => {
+    console.log("loadData called with zoneKey:", zoneKey);
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getRedZoneDataForZO(zoneKey);
+      console.log("RAW RESPONSE:", res);
+      const list = normalizeList(res);
+      console.log("ROWS:", list);
+      setRows(list);
+      setSelected([]);
+    } catch (err) {
+      console.error(err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            const res = await getZoneByProfile(); // no arguments, same as the dashboard
-            console.log("ZONE RESPONSE:", res);
+  useEffect(() => {
+    if (zoneKey) {
+      loadData();
+    } else {
+      console.warn("zoneKey not found in session");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoneKey]);
 
-            const list = (res?.zoneLst || []).filter(
-                (z) => getZoneKey(z) !== undefined
-            );
-            setZones(list);
+  const allSelected = rows.length > 0 && selected.length === rows.length;
+  const someSelected = selected.length > 0 && !allSelected;
 
-            if (list.length === 0) {
-                setError("No zone found for this user");
-            } else {
-                const key = getZoneKey(list[0]);
-                setZonekey(key);
-                await fetchData(key);
-            }
-        } catch (err) {
-            console.error(err);
-            setError("Failed to load zones");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleSelectAll = (e) =>
+    setSelected(e.target.checked ? rows.map((r) => r.propertyKey) : []);
 
-    // get report data: body { zonekey: <selected zone> }
-    const fetchData = async (key, showLoader = true) => {
-        try {
-            if (showLoader) setLoading(true);
-            setError("");
-
-            const res = await getredzonedataforzo(key);
-            console.log("Fetched data:", res);
-
-            setData(toArray(res));
-            setSearched(true);
-            setSelected({});
-            setSelectAll(false);
-        } catch (err) {
-            console.error(err);
-            setData([]);
-            setSearched(false);
-            setError(err?.response?.data?.message || "Failed to fetch list");
-        } finally {
-            if (showLoader) setLoading(false);
-        }
-    };
-
-    // Row checkbox
-    const handleCheckbox = (key) => {
-        const updated = { ...selected, [key]: !selected[key] };
-        setSelected(updated);
-        setSelectAll(
-            data.length > 0 && data.every((item) => updated[item.propertyKey])
-        );
-    };
-
-    // Select all
-    const handleSelectAll = () => {
-        const updated = {};
-        if (!selectAll) {
-            data.forEach((item) => {
-                updated[item.propertyKey] = true;
-            });
-        }
-        setSelected(updated);
-        setSelectAll(!selectAll);
-    };
-
-    // Submit
-    const handleSubmit = async () => {
-        const selectedRows = data.filter((item) => selected[item.propertyKey]);
-
-        if (selectedRows.length === 0) {
-            setError("Please select at least one record");
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setError("");
-
-            for (const row of selectedRows) {
-                await sendToZoDashboard(row.propertyKey, true);
-            }
-
-            alert("Submitted successfully");
-
-            // reload the same zone's list (no full page refresh)
-            await fetchData(zonekey, false);
-        } catch (err) {
-            console.error("FULL ERROR:", err);
-            if (err.response) {
-                setError(err.response.data?.message || "Server error");
-            } else {
-                setError("Network / API not reachable");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <DashBoardContainer>
-            {error && (
-                <AlertMsg
-                    message={error}
-                    severity="error"
-                    onClose={() => setError("")}
-                />
-            )}
-
-            <Paper elevation={4} sx={{ p: 3 }}>
-                <FormTitle
-                    title={labels?.PropertyType?.[lang] || "Red Zone Property"}
-                />
-
-                {/* zone dropdown + Show button */}
-                <Box display="flex" gap={2} alignItems="center" mt={3}>
-                    <FormControl size="small" sx={{ minWidth: 260 }}>
-                        <InputLabel id="zone-label">
-                            {labels?.Zone?.[lang] || "Zone"}
-                        </InputLabel>
-                        <Select
-                            labelId="zone-label"
-                            label={labels?.Zone?.[lang] || "Zone"}
-                            value={zonekey}
-                            onChange={(e) => {
-                                const key = e.target.value;
-                                setZonekey(key);
-                                setSearched(false);
-                                setData([]);
-                                setSelected({});
-                                setSelectAll(false);
-                                fetchData(key);
-                            }}
-                        >
-                            {zones.map((z) => (
-                                <MenuItem key={getZoneKey(z)} value={getZoneKey(z)}>
-                                    {getZoneName(z)}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                </Box>
-
-                {loading ? (
-                    <Box display="flex" justifyContent="center" mt={5}>
-                        <CircularProgress />
-                    </Box>
-                ) : (
-                    searched && (
-                        <TableContainer component={Paper} sx={{ mt: 4 }}>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow sx={{ backgroundColor: "#e6eaeb" }}>
-                                        <TableCell align="center">
-                                            {labels?.SrNo?.[lang] || "Sr No"}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            {labels?.PropertyCode?.[lang] || "Property Code"}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            {labels?.PropertyName?.[lang] || "Property Name"}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            {labels?.Address?.[lang] || "Address"}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            Red Zone
-                                            <br />
-                                            <Checkbox
-                                                checked={selectAll}
-                                                onChange={handleSelectAll}
-                                                disabled={data.length === 0}
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                </TableHead>
-
-                                <TableBody>
-                                    {data.length === 0 && (
-                                        <TableRow>
-                                            <TableCell align="center" colSpan={5}>
-                                                No records found
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-
-                                    {data.map((item, index) => (
-                                        <TableRow key={item.propertyKey ?? index}>
-                                            <TableCell align="center">{index + 1}</TableCell>
-                                            <TableCell align="center">
-                                                {item.propertyCode || "-"}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                {item.propertyName || "-"}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                {item.propertyAddress || "-"}
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <Checkbox
-                                                    checked={selected[item.propertyKey] || false}
-                                                    onChange={() => handleCheckbox(item.propertyKey)}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-
-                                    {data.length > 0 && (
-                                        <TableRow>
-                                            <TableCell align="center" colSpan={5}>
-                                                <Button
-                                                    variant="contained"
-                                                    size="small"
-                                                    color="success"
-                                                    onClick={handleSubmit}
-                                                >
-                                                    SUBMIT
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    )
-                )}
-            </Paper>
-        </DashBoardContainer>
+  const handleSelectOne = (key) =>
+    setSelected((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
+
+  const handleApprove = async () => {
+    if (selected.length === 0) return;
+    try {
+      setLoading(true);
+      await Promise.all(selected.map((key) => approvedPropertyType(key, true)));
+      await loadData(); // refresh list after approval
+    } catch (err) {
+      console.error(err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (error) {
+    return (
+      <Box p={2}>
+        <Typography color="error">Error: {error.message}</Typography>
+        <Button sx={{ mt: 1 }} variant="outlined" onClick={loadData}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  return (
+    <Box p={2}>
+      {loading && <Loader />}
+
+      <Box display="flex" justifyContent="space-between" mb={2}>
+        <Typography variant="h6">Red Zone Properties</Typography>
+        <Button
+          variant="contained"
+          onClick={loadData}
+          disabled={!zoneKey || loading}
+        >
+          Show
+        </Button>
+      </Box>
+
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Sr No</TableCell>
+            <TableCell>Property Code</TableCell>
+            <TableCell>Property Name</TableCell>
+            <TableCell>Property Address</TableCell>
+            <TableCell padding="checkbox">
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected}
+                onChange={handleSelectAll}
+                disabled={rows.length === 0}
+              />
+            </TableCell>
+          </TableRow>
+        </TableHead>
+
+        <TableBody>
+          {rows.length === 0 && !loading && (
+            <TableRow>
+              <TableCell colSpan={5} align="center">
+                <Typography>No records found</Typography>
+              </TableCell>
+            </TableRow>
+          )}
+
+          {rows.map((r, i) => (
+            <TableRow
+              key={r.propertyKey ?? i}
+              hover
+              selected={selected.includes(r.propertyKey)}
+            >
+              <TableCell>{i + 1}</TableCell>
+              <TableCell>{r.propertyCode}</TableCell>
+              <TableCell>{r.propertyName}</TableCell>
+              <TableCell>{r.propertyAddress}</TableCell>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  checked={selected.includes(r.propertyKey)}
+                  onChange={() => handleSelectOne(r.propertyKey)}
+                />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Button
+        variant="contained"
+        color="success"
+        disabled={selected.length === 0 || loading}
+        onClick={handleApprove}
+        sx={{ mt: 2 }}
+      >
+        Approve ({selected.length})
+      </Button>
+    </Box>
+  );
 };
 
-export default React.memo(PropertyTypeZO);
+export default PropertyTypeZO;

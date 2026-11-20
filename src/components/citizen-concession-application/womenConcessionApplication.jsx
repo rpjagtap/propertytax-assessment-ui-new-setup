@@ -151,7 +151,7 @@ export default function WomenConcessionApplication({ onBack }) {
         applicationId: number,
         mobileNumber: result?.mobileNumber || result?.applicantMobile || property?.propertyMobileNo || property?.mobileNo || "—",
         concessionName: result?.concessionName || "Women",
-        status: "GAT_Premukh-Pending",
+        status: "ZO-Premukh-Pending",
       });
     } catch (submitError) {
       setError(

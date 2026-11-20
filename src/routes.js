@@ -71,6 +71,7 @@ import CitizenConcessionApplication from "./components/citizen-concession-applic
 import PropertyTransactionApplicationSR3 from "./components/property-transaction-application-sr3";
 import SthapatyaAddProperty from "./components/sthapatya-add-property";
 import GenerateSR3 from "./components/generate-sr-3";
+import ConcessionDashboardZo from "./components/concession-dashboard-zo";
 
 const routes = [
   {
@@ -342,6 +343,10 @@ const routes = [
   {
     path: "CitizenConcessionApplication",
     component: CitizenConcessionApplication,
+  },
+  {
+    path: "ConcessionDashboardZo",
+    component: ConcessionDashboardZo,
   },
   {
     path: "propertyTransactionApplicationSR3",
