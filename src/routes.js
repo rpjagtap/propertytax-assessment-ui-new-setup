@@ -70,6 +70,7 @@ import HearingLetterPage from "./components/hearing-letter-pdf";
 import CitizenConcessionApplication from "./components/citizen-concession-application/citizenConcessionApplication";
 import PropertyTransactionApplicationSR3 from "./components/property-transaction-application-sr3";
 import SthapatyaAddProperty from "./components/sthapatya-add-property";
+import GenerateSR3 from "./components/generate-sr-3";
 import ConcessionDashboardZo from "./components/concession-dashboard-zo";
 
 const routes = [
@@ -354,6 +355,10 @@ const routes = [
   {
     path: "SthapatyaAddProperty",
     component: SthapatyaAddProperty,
+  },
+  {
+    path: "GenerateSR3",
+    component: GenerateSR3,
   }
   // Add other routes here
 ];
