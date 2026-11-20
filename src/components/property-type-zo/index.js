@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Table,
   TableHead,
@@ -9,10 +9,18 @@ import {
   Button,
   Typography,
   Box,
+  MenuItem,
+  TextField,
+  Dialog,
+  DialogContent,
+  Zoom,
 } from "@mui/material";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import DashBoardContainer from "../layout/dashboard-container";
 import Loader from "../../components/loader/loader";
-import { getUserDetails } from "../../utils/sessionUtils";
+import AlertMsg from "../common/alert";
 import {
+  getZoneByProfile,
   getRedZoneDataForZO,
   approvedPropertyType,
 } from "../../services/assessment-services";
@@ -27,48 +35,67 @@ const normalizeList = (res) => {
 };
 
 const PropertyTypeZO = () => {
-  const sessionData = getUserDetails();
-  console.log("sessionData:", sessionData);
-
-  // Try common field names; adjust once you see the console output
-  const zoneKey =
-    sessionData?.zoneKey ??
-    sessionData?.zoneId ??
-    sessionData?.zone ??
-    sessionData?.zoneCode;
-
+  const [zones, setZones] = useState([]); // ZO चे zones
+  const [zoneKey, setZoneKey] = useState(""); // "" = सर्व zones
   const [rows, setRows] = useState([]);
   const [selected, setSelected] = useState([]); // propertyKey values
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const loadData = async () => {
-    console.log("loadData called with zoneKey:", zoneKey);
+  // एका किंवा सर्व zones चा डेटा आणतो
+  const loadData = useCallback(async (zoneList, chosenKey) => {
     try {
       setLoading(true);
-      setError(null);
-      const res = await getRedZoneDataForZO(zoneKey);
-      console.log("RAW RESPONSE:", res);
-      const list = normalizeList(res);
-      console.log("ROWS:", list);
-      setRows(list);
+      setError("");
+
+      const keys = chosenKey
+        ? [chosenKey]
+        : (zoneList || []).map((z) => z.value);
+
+      const results = await Promise.all(
+        keys.map((k) => getRedZoneDataForZO(k)) // -> /property/get_redzone_data_for_zo?zoneKey=k
+      );
+
+      // merge + duplicate propertyKey काढून टाका
+      const merged = results.flatMap(normalizeList);
+      const unique = Array.from(
+        new Map(merged.map((r) => [r.propertyKey, r])).values()
+      );
+
+      setRows(unique);
       setSelected([]);
     } catch (err) {
       console.error(err);
-      setError(err);
+      setError("Failed to load red zone properties");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // Tab उघडल्यावर: zones आणा -> डेटा आपोआप लोड करा
   useEffect(() => {
-    if (zoneKey) {
-      loadData();
-    } else {
-      console.warn("zoneKey not found in session");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoneKey]);
+    const init = async () => {
+      try {
+        setLoading(true);
+        const res = await getZoneByProfile();
+        const list = res?.zoneLst || [];
+        setZones(list);
+
+        if (list.length === 1) {
+          setZoneKey(list[0].value);
+          await loadData(list, list[0].value);
+        } else {
+          await loadData(list, ""); // अनेक zones असतील तर सर्व दाखवा
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load zones");
+        setLoading(false);
+      }
+    };
+    init();
+  }, [loadData]);
 
   const allSelected = rows.length > 0 && selected.length === rows.length;
   const someSelected = selected.length > 0 && !allSelected;
@@ -81,104 +108,200 @@ const PropertyTypeZO = () => {
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
 
-  const handleApprove = async () => {
+  const handleSubmit = async () => {
     if (selected.length === 0) return;
     try {
       setLoading(true);
-      await Promise.all(selected.map((key) => approvedPropertyType(key, true)));
-      await loadData(); // refresh list after approval
+      setError("");
+
+      const count = selected.length;
+      const res = await approvedPropertyType(selected); // संपूर्ण array एकदाच
+
+      setSuccess(
+        res?.message ||
+          (count === 1
+            ? "1 property submitted successfully"
+            : `${count} properties submitted successfully`)
+      );
+      await loadData(zones, zoneKey); // list refresh
     } catch (err) {
       console.error(err);
-      setError(err);
-    } finally {
+      setError(
+        err?.response?.data?.message || "Failed to submit selected properties"
+      );
       setLoading(false);
     }
   };
 
-  if (error) {
-    return (
-      <Box p={2}>
-        <Typography color="error">Error: {error.message}</Typography>
-        <Button sx={{ mt: 1 }} variant="outlined" onClick={loadData}>
-          Retry
-        </Button>
-      </Box>
-    );
-  }
-
   return (
-    <Box p={2}>
-      {loading && <Loader />}
+    <DashBoardContainer>
+      {error && (
+        <AlertMsg message={error} severity="error" onClose={() => setError("")} />
+      )}
 
-      <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="h6">Red Zone Properties</Typography>
-        <Button
-          variant="contained"
-          onClick={loadData}
-          disabled={!zoneKey || loading}
+      {/* ---------- Fancy success dialog (sky blue) ---------- */}
+      <Dialog
+        open={!!success}
+        onClose={() => setSuccess("")}
+        TransitionComponent={Zoom}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            textAlign: "center",
+            boxShadow: "0 20px 60px rgba(14,165,233,0.30)",
+          },
+        }}
+      >
+        <DialogContent sx={{ pt: 5, pb: 4, px: 4 }}>
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              mx: "auto",
+              mb: 2.5,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 0 8px #E0F2FE, 0 8px 20px rgba(14,165,233,0.35)",
+            }}
+          >
+            <CheckRoundedIcon sx={{ color: "#fff", fontSize: 46 }} />
+          </Box>
+
+          <Typography
+            sx={{ fontWeight: 700, fontSize: 22, color: "#12233F", mb: 1 }}
+          >
+            Success!
+          </Typography>
+
+          <Typography sx={{ color: "text.secondary", fontSize: 15, mb: 3 }}>
+            {success}
+          </Typography>
+
+          <Button
+            variant="contained"
+            onClick={() => setSuccess("")}
+            sx={{
+              px: 6,
+              py: 1,
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 600,
+              background: "linear-gradient(90deg, #0EA5E9 0%, #38BDF8 100%)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #0284C7 0%, #0EA5E9 100%)",
+              },
+            }}
+          >
+            OK
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Box p={2}>
+        {loading && <Loader />}
+
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+          gap={2}
         >
-          Show
-        </Button>
-      </Box>
+          <Typography variant="h6">Red Zone Properties</Typography>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Sr No</TableCell>
-            <TableCell>Property Code</TableCell>
-            <TableCell>Property Name</TableCell>
-            <TableCell>Property Address</TableCell>
-            <TableCell padding="checkbox">
-              <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
-                onChange={handleSelectAll}
-                disabled={rows.length === 0}
-              />
-            </TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {rows.length === 0 && !loading && (
-            <TableRow>
-              <TableCell colSpan={5} align="center">
-                <Typography>No records found</Typography>
-              </TableCell>
-            </TableRow>
-          )}
-
-          {rows.map((r, i) => (
-            <TableRow
-              key={r.propertyKey ?? i}
-              hover
-              selected={selected.includes(r.propertyKey)}
+          <Box display="flex" gap={2} alignItems="center">
+            {zones.length > 1 && (
+              <TextField
+                select
+                size="small"
+                label="Zone"
+                value={zoneKey}
+                onChange={(e) => setZoneKey(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Zones</MenuItem>
+                {zones.map((z) => (
+                  <MenuItem key={z.value} value={z.value}>
+                    {z.label ?? z.name ?? z.value}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+            <Button
+              variant="contained"
+              onClick={() => loadData(zones, zoneKey)}
+              disabled={loading}
             >
-              <TableCell>{i + 1}</TableCell>
-              <TableCell>{r.propertyCode}</TableCell>
-              <TableCell>{r.propertyName}</TableCell>
-              <TableCell>{r.propertyAddress}</TableCell>
+              Show
+            </Button>
+          </Box>
+        </Box>
+
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Sr No</TableCell>
+              <TableCell>Property Code</TableCell>
+              <TableCell>Property Name</TableCell>
+              <TableCell>Property Address</TableCell>
               <TableCell padding="checkbox">
                 <Checkbox
-                  checked={selected.includes(r.propertyKey)}
-                  onChange={() => handleSelectOne(r.propertyKey)}
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={handleSelectAll}
+                  disabled={rows.length === 0}
                 />
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
 
-      <Button
-        variant="contained"
-        color="success"
-        disabled={selected.length === 0 || loading}
-        onClick={handleApprove}
-        sx={{ mt: 2 }}
-      >
-        Approve ({selected.length})
-      </Button>
-    </Box>
+          <TableBody>
+            {rows.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  <Typography>No records found</Typography>
+                </TableCell>
+              </TableRow>
+            )}
+
+            {rows.map((r, i) => (
+              <TableRow
+                key={r.propertyKey ?? i}
+                hover
+                selected={selected.includes(r.propertyKey)}
+              >
+                <TableCell>{i + 1}</TableCell>
+                <TableCell>{r.propertyCode}</TableCell>
+                <TableCell>{r.propertyName}</TableCell>
+                <TableCell>{r.propertyAddress}</TableCell>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selected.includes(r.propertyKey)}
+                    onChange={() => handleSelectOne(r.propertyKey)}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        <Box display="flex" justifyContent="center" mt={3}>
+          <Button
+            variant="contained"
+            color="success"
+            disabled={selected.length === 0 || loading}
+            onClick={handleSubmit}
+          >
+            Submit ({selected.length})
+          </Button>
+        </Box>
+      </Box>
+    </DashBoardContainer>
   );
 };
 
