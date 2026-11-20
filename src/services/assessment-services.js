@@ -821,12 +821,26 @@ export const getRedZoneDataForZO = async (zoneKey) => {
 };
 
 // Final approval
-export const approvedPropertyType = async (propertyKey, isChecked = true) => {
-  const response = await apiClient.post(`/property/approved_property_type`, {
-    propertyKey,
-    isChecked,
-  });
-  return response.data;
+// export const approvedPropertyType = async (propertyKey, isChecked = true) => {
+//   const response = await apiClient.post(`/property/approved_property_type`, {
+//     propertyKey,
+//     isChecked,
+//   });
+//   return response.data;
+// };
+
+export const approvedPropertyType = async (propertyKeys) => {
+  const body = {
+    propertyROLst: propertyKeys.map((key) => ({
+      propertyKey: Number(key),
+      isChecked: true,
+    })),
+  };
+
+  console.log("APPROVE BODY:", JSON.stringify(body));
+
+  const res = await apiClient.post("/property/approved_property_type", body);
+  return res.data;
 };
 
 export const revertApplication = async (body) => {
