@@ -699,13 +699,30 @@ export const submitConcessionApplication = async (body) => {
   return response.data;
 };
 
+export const getConcessionApplicationsForZo = async (body) => {
+  const response = await apiClient.post(
+    `/concession/pending-property-concession-application`,
+    body,
+  );
+  return response.data;
+};
+
+export const reviewConcessionApplication = async (body) => {
+  const response = await apiClient.post(
+    `/concession/submit-property-concession`,
+    body,
+  );
+  return response.data;
+};
+
 // export const getredzonedataforzo = async () => {
 //   const response = await apiClient.get(`/property/get_redzone_data_for_zo`);
 //   return response.data;
 // }
 
-export const getredzonedataforzo = async (zonekey) => {
-  const zoneKey = Number(zonekey);
+export const getRedZoneDataForZo = async (zonekey) => {
+  const rawZoneKey = String(zonekey ?? "").trim();
+  const zoneKey = rawZoneKey === "" ? "" : Number(rawZoneKey);
   const response = await apiClient.post(
     `/property/get_redzone_data_for_zo?zoneKey=${zoneKey}`,
     { zoneKey },
@@ -772,6 +789,18 @@ export const generateTransferNotice = async (body) => {
 //   });
 // };
 
+
+// export const getRedZoneDataForZO = async (propertyKey, isChecked) => {
+//   const response = await apiClient.post(
+//     `/property/get_redzone_data_for_zo?zoneKey=?`,
+//     {
+//       propertyKey,
+//       isChecked,
+//     }
+//   );
+//   return response.data;
+// };
+
 export const sendToZoDashboard = async (propertyKey, isChecked) => {
   return await apiClient.post("/property/approved_property_type", {
     propertyROLst: [
@@ -783,14 +812,22 @@ export const sendToZoDashboard = async (propertyKey, isChecked) => {
   });
 };
 
-// export const viewPendingApplications = async (body) => {
-//   const response = await apiClient.post(
-//     `/property-transactions/get-pending-applications`,
-//   )};
-/*export const viewPendingApplications = async (body) => {
-  const response = await apiClient.post(
-    `/property-transactions/get-pending-applications`,
-  )};*/
+// 1. Load the list: GET with zoneKey in the query string
+export const getRedZoneDataForZO = async (zoneKey) => {
+  const response = await apiClient.get(
+    `/property/get_redzone_data_for_zo?zoneKey=${zoneKey}`
+  );
+  return response.data;
+};
+
+// Final approval
+export const approvedPropertyType = async (propertyKey, isChecked = true) => {
+  const response = await apiClient.post(`/property/approved_property_type`, {
+    propertyKey,
+    isChecked,
+  });
+  return response.data;
+};
 
 export const revertApplication = async (body) => {
   const response = await apiClient.post(

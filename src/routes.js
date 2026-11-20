@@ -70,6 +70,7 @@ import HearingLetterPage from "./components/hearing-letter-pdf";
 import CitizenConcessionApplication from "./components/citizen-concession-application/citizenConcessionApplication";
 import PropertyTransactionApplicationSR3 from "./components/property-transaction-application-sr3";
 import SthapatyaAddProperty from "./components/sthapatya-add-property";
+import ConcessionDashboardZo from "./components/concession-dashboard-zo";
 
 const routes = [
   {
@@ -341,6 +342,10 @@ const routes = [
   {
     path: "CitizenConcessionApplication",
     component: CitizenConcessionApplication,
+  },
+  {
+    path: "ConcessionDashboardZo",
+    component: ConcessionDashboardZo,
   },
   {
     path: "propertyTransactionApplicationSR3",
