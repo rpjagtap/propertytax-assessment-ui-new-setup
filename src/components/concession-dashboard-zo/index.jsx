@@ -209,7 +209,7 @@ export default function ConcessionDashboardZo() {
 
         {selected ? (
           <>
-            <Button onClick={() => setSelected(null)} sx={{ mb: 2 }}>â† Back to applications</Button>
+            <Button onClick={() => setSelected(null)} sx={{ mb: 2 }}>Back to applications</Button>
             <Grid container spacing={2.5}>
               <Grid item xs={12} md={4}>
                 <Card variant="outlined" sx={{ borderRadius: 3, mb: 2 }}>
@@ -330,7 +330,24 @@ function ConcessionDocumentPreview({ document, name }) {
   if (loading) return <Box sx={{ py: 4, display: "grid", placeItems: "center" }}><CircularProgress size={26} /></Box>;
   if (error) return <Alert severity="warning">{error}</Alert>;
   return <>
-    <Button size="small" startIcon={<VisibilityOutlined />} component="a" href={source} target="_blank" rel="noreferrer" sx={{ mb: 1 }}>Open document</Button>
-    <Box component="iframe" title={name} src={`${source}#toolbar=1`} sx={{ width: "100%", height: { xs: 360, md: 560 }, border: 0, bgcolor: "#f4f7f8", borderRadius: 1 }} />
+    <Button
+      size="small"
+      startIcon={<VisibilityOutlined />}
+      component="a"
+      href={source}
+      target="_blank"
+      rel="noreferrer"
+      sx={{ mb: 1, minHeight: 44 }}
+    >
+      Open document
+    </Button>
+    {/* Mobile browsers often do not render PDFs inside an iframe. Let their
+        built-in PDF viewer handle the blob URL after a direct user tap. */}
+    <Box
+      component="iframe"
+      title={name}
+      src={`${source}#toolbar=1`}
+      sx={{ display: { xs: "none", md: "block" }, width: "100%", height: 560, border: 0, bgcolor: "#f4f7f8", borderRadius: 1 }}
+    />
   </>;
 }
