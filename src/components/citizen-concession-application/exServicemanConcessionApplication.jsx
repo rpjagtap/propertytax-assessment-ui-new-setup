@@ -110,7 +110,7 @@ export default function ExServicemanConcessionApplication({ onBack }) {
     setError("");
     try {
       const response = await submitConcessionApplication({
-        concessionName: "Ex-servicemen",
+        concessionName: "ExServiceMen",
         propertyCode: property?.propertyCode || propertyCode,
         propertyName: property?.propertyName || property?.ownerName || "",
         // applicantMobile: property?.propertyMobileNo || property?.mobileNo || "",
@@ -143,7 +143,7 @@ export default function ExServicemanConcessionApplication({ onBack }) {
         propertyName: result?.propertyName || property?.propertyName || property?.ownerName || "—",
         applicationId: number,
         mobileNumber: result?.mobileNumber || result?.applicantMobile || property?.propertyMobileNo || property?.mobileNo || "—",
-        concessionName: result?.concessionName || "Ex-servicemen",
+        concessionName: result?.concessionName || "ExServiceMen",
         status: "ZO-Premukh-Pending",
       });
     } catch (submitError) {
@@ -161,7 +161,7 @@ export default function ExServicemanConcessionApplication({ onBack }) {
       <div className="cca-bar">
         <div>
           <div className="cca-bar-mr">माजी सैनिक सवलत योजनेसाठी अर्ज</div>
-          <div className="cca-bar-en">{applicationNumber ? "Application Confirmation" : `Ex-servicemen Concession Application · Step ${step} of 2`}</div>
+          <div className="cca-bar-en">{applicationNumber ? "Application Confirmation" : `ExServiceMen Concession Application · Step ${step} of 2`}</div>
         </div>
         <button type="button" className="cca-back" aria-label="Back" onClick={applicationNumber ? onBack : step === 2 ? () => setStep(1) : onBack}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
