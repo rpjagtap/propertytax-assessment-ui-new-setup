@@ -218,7 +218,7 @@ const ViewReceipt = () => {
             height="80px"
             src="/pcmclogo.jpeg"
             alt="Logo"
-            style={{ marginLeft: "15%", marginTop: "-10px" }}
+            style={{ marginLeft: "15%", marginTop: "-10px", height: "80px" }}
           ></img>
 
           <Typography

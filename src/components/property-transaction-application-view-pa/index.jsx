@@ -118,6 +118,7 @@ const PropertyTransactionApplicationViewPa = () => {
   const transactionTypeIdFromURL = searchParams.get("transactionTypeId");
   const propertyCodeFromURL = searchParams.get("propertyCode");
   const applicationNoFromURL = searchParams.get("applicationNo");
+  const appStatus = searchParams.get("appStatus");
   const navigate = useNavigate();
 
   const initialState = {
@@ -242,26 +243,31 @@ const PropertyTransactionApplicationViewPa = () => {
     const sessionData = sessionStorage.getItem("sessionData");
     const userDetails = JSON.parse(sessionData);
     const profileId = userDetails?.profileId;
-   // console.log("Submitting with body:", body, "Profile ID:", profileId, "Action Type:", actionType);
+    // console.log("Submitting with body:", body, "Profile ID:", profileId, "Action Type:", actionType);
     try {
       //console.log("Submitting with body:", body);
       setLoading(true);
       const response = await revertApplication(body);
       if (response?.applicationId !== "") {
         showToastSuccess("Record saved successfully. Redirecting in 5 Sec");
-        if (profileId === 8 && actionType === "accept") { // 8 is ZO
+        if (profileId === 8 && actionType === "accept") {
+          // 8 is ZO
           setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
-        } 
-        else if (profileId === 8 && actionType === "reject") { // 8 is ZO
+        } else if (profileId === 8 && actionType === "reject") {
+          // 8 is ZO
           setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
-        }
-        else if (profileId === 14 && actionType === "reject") // 14 is PA
+        } else if (profileId === 14 && actionType === "reject") // 14 is PA
         {
           setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000); // Send to Hearing -> S3
-        } 
-        else if (profileId === 14 && actionType === "accept")  // 14 is PA
+        } else if (profileId === 14 && actionType === "accept") // 14 is PA
         {
-          setTimeout(() => navigate("/GenerateSr2"), 2000); // Send to sr2
+          if (appStatus === "PASR3Approval Pending") {
+            // Send to SR3
+            setTimeout(() => navigate("/GenerateSR3"), 2000);
+          } else {
+            // Existing flow - Send to SR2
+            setTimeout(() => navigate("/GenerateSr2"), 2000);
+          }
         }
       } else {
         showToastError("Error occurred. Please try again.");
@@ -557,7 +563,11 @@ const PropertyTransactionApplicationViewPa = () => {
           subtitle="Documents submitted with this application"
         >
           <Table
-            sx={{ width: "100%", border: `1px solid ${BORDER}`, borderRadius: 1 }}
+            sx={{
+              width: "100%",
+              border: `1px solid ${BORDER}`,
+              borderRadius: 1,
+            }}
             size="small"
           >
             <TableHead>
@@ -653,7 +663,9 @@ const PropertyTransactionApplicationViewPa = () => {
                     <TableCell>{row.rate}</TableCell>
                     <TableCell>{row.rateableValue}</TableCell>
                     <TableCell>{row.toilet ? "Yes" : "No"}</TableCell>
-                    <TableCell>{row.permision === false ? "Legal" : "Illegal"}</TableCell>
+                    <TableCell>
+                      {row.permision === false ? "Legal" : "Illegal"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
