@@ -268,6 +268,9 @@ const PropertyTransactionApplicationViewPa = () => {
             // Existing flow - Send to SR2
             setTimeout(() => navigate("/GenerateSr2"), 2000);
           }
+        } else if (profileId === 20 && actionType === "accept") // 20 is HO
+        {
+          setTimeout(() => navigate("/PropertyTransactionsDashBoardZO"), 5000);
         }
       } else {
         showToastError("Error occurred. Please try again.");
@@ -693,7 +696,7 @@ const PropertyTransactionApplicationViewPa = () => {
                 variant="contained"
                 color="error"
                 onClick={() => handleSubmit("reject")} // Reject action
-                disabled={remarkEmpty}
+                disabled={remarkEmpty || appStatus === "SR3Review Pending" || appStatus === "HODSR3Approval Pending"} // Disable reject for SR3 pending
                 sx={{ textTransform: "none", fontWeight: 600 }}
               >
                 Reject
